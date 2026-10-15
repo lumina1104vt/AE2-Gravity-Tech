@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "formed=false": {
+      "model": "ae2_gvt:block/fusion_controller"
+    },
+    "formed=true": {
+      "model": "ae2_gvt:block/fusion_controller_formed"
+    }
+  }
+}

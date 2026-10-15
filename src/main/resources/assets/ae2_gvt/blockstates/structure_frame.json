@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "formed=false": [
+      {
+        "model": "ae2_gvt:block/structure_frame"
+      },
+      {
+        "model": "ae2_gvt:block/structure_frame_v1"
+      },
+      {
+        "model": "ae2_gvt:block/structure_frame_v2"
+      },
+      {
+        "model": "ae2_gvt:block/structure_frame_v3"
+      }
+    ],
+    "formed=true": {
+      "type": "ae2_gvt:structure_frame_formed"
+    }
+  }
+}

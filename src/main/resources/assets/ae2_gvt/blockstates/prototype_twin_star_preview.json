@@ -1,0 +1,52 @@
+{
+  "variants": {
+    "formed=true,px=false,py=false,pz=false": {
+      "model": "ae2_gvt:block/prototype_controller_formed_000"
+    },
+    "formed=false,px=false,py=false,pz=false": {
+      "model": "ae2_gvt:block/prototype_twin_star_preview"
+    },
+    "formed=true,px=false,py=false,pz=true": {
+      "model": "ae2_gvt:block/prototype_controller_formed_001"
+    },
+    "formed=false,px=false,py=false,pz=true": {
+      "model": "ae2_gvt:block/prototype_twin_star_preview"
+    },
+    "formed=true,px=false,py=true,pz=false": {
+      "model": "ae2_gvt:block/prototype_controller_formed_010"
+    },
+    "formed=false,px=false,py=true,pz=false": {
+      "model": "ae2_gvt:block/prototype_twin_star_preview"
+    },
+    "formed=true,px=false,py=true,pz=true": {
+      "model": "ae2_gvt:block/prototype_controller_formed_011"
+    },
+    "formed=false,px=false,py=true,pz=true": {
+      "model": "ae2_gvt:block/prototype_twin_star_preview"
+    },
+    "formed=true,px=true,py=false,pz=false": {
+      "model": "ae2_gvt:block/prototype_controller_formed_100"
+    },
+    "formed=false,px=true,py=false,pz=false": {
+      "model": "ae2_gvt:block/prototype_twin_star_preview"
+    },
+    "formed=true,px=true,py=false,pz=true": {
+      "model": "ae2_gvt:block/prototype_controller_formed_101"
+    },
+    "formed=false,px=true,py=false,pz=true": {
+      "model": "ae2_gvt:block/prototype_twin_star_preview"
+    },
+    "formed=true,px=true,py=true,pz=false": {
+      "model": "ae2_gvt:block/prototype_controller_formed_110"
+    },
+    "formed=false,px=true,py=true,pz=false": {
+      "model": "ae2_gvt:block/prototype_twin_star_preview"
+    },
+    "formed=true,px=true,py=true,pz=true": {
+      "model": "ae2_gvt:block/prototype_controller_formed_111"
+    },
+    "formed=false,px=true,py=true,pz=true": {
+      "model": "ae2_gvt:block/prototype_twin_star_preview"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "ae2_gvt:block/large_gravity_bud"
+  }
+}

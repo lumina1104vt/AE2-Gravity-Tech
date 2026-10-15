@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "part=0": {
+      "model": "ae2_gvt:block/graviton_collector/part_0"
+    },
+    "part=1": {
+      "model": "ae2_gvt:block/graviton_collector/part_1"
+    },
+    "part=2": {
+      "model": "ae2_gvt:block/graviton_collector/part_2"
+    },
+    "part=3": {
+      "model": "ae2_gvt:block/graviton_collector/part_3"
+    },
+    "part=4": {
+      "model": "ae2_gvt:block/graviton_collector/part_4"
+    }
+  }
+}

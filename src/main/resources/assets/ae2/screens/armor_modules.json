@@ -1,0 +1,58 @@
+{
+  "includes": [
+    "common/common.json",
+    "common/player_inventory.json"
+  ],
+  "background": {
+    "texture": "ae2_gvt:textures/gui/armor_modules.png",
+    "srcRect": [
+      0,
+      0,
+      200,
+      232
+    ]
+  },
+  "slots": {
+    "AE2GVT_ARMOR_MODULE_INSTALL": {
+      "left": 168,
+      "top": 12
+    },
+    "PLAYER_INVENTORY": {
+      "left": 32,
+      "bottom": 84,
+      "grid": "BREAK_AFTER_9COLS"
+    },
+    "PLAYER_HOTBAR": {
+      "left": 32,
+      "bottom": 26,
+      "grid": "HORIZONTAL"
+    }
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.ae2_gvt.armor_modules"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    },
+    "player_inventory_title": {
+      "text": {
+        "translate": "container.inventory"
+      },
+      "position": {
+        "left": 32,
+        "bottom": 95
+      }
+    }
+  },
+  "widgets": {
+    "scrollbar": {
+      "left": 180,
+      "top": 41,
+      "height": 92
+    }
+  }
+}

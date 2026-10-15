@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "ae2_gvt:graviton_cell_housing",
+    "ae2_gvt:graviton_cell_component_256k"
+  ],
+  "result": {
+    "id": "ae2_gvt:graviton_storage_cell_256k"
+  }
+}

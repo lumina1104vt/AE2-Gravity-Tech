@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "ae2_gvt:block/imaginary_computing_unit"
+    }
+  }
+}

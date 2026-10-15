@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "ae2_gvt:block/gravity_processing_factory"
+    },
+    "facing=east": {
+      "model": "ae2_gvt:block/gravity_processing_factory",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "ae2_gvt:block/gravity_processing_factory",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "ae2_gvt:block/gravity_processing_factory",
+      "y": 270
+    }
+  }
+}

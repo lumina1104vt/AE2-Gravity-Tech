@@ -1,0 +1,48 @@
+{
+  "includes": [
+    "common/common.json"
+  ],
+  "background": {
+    "texture": "ae2_gvt:textures/gui/fusion_controller.png",
+    "srcRect": [
+      0,
+      0,
+      176,
+      136
+    ]
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "block.ae2_gvt.fusion_controller"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    },
+    "cap_unit": {
+      "text": {
+        "text": "FE/t"
+      },
+      "position": {
+        "left": 130,
+        "top": 44
+      }
+    }
+  },
+  "widgets": {
+    "cap": {
+      "left": 20,
+      "top": 17,
+      "width": 138,
+      "height": 62
+    },
+    "capInput": {
+      "left": 23,
+      "top": 42,
+      "width": 103,
+      "height": 12
+    }
+  }
+}

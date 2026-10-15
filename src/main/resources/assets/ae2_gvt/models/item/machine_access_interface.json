@@ -1,0 +1,9 @@
+{
+  "parent": "ae2:item/cable_interface",
+  "textures": {
+    "sides": "ae2:part/interface_sides",
+    "back": "ae2_gvt:part/machine_access_interface_back",
+    "front": "ae2_gvt:part/machine_access_interface",
+    "particle": "ae2_gvt:part/machine_access_interface"
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "includes": [
+    "common/common.json",
+    "common/player_inventory.json"
+  ],
+  "background": {
+    "texture": "ae2_gvt:textures/gui/gravity_processing_factory.png",
+    "srcRect": [
+      0,
+      0,
+      208,
+      178
+    ]
+  },
+  "slots": {
+    "GRAVITY_FACTORY_INPUT_ROW_0": {
+      "left": 8,
+      "top": 19,
+      "grid": "HORIZONTAL"
+    },
+    "GRAVITY_FACTORY_INPUT_ROW_1": {
+      "left": 8,
+      "top": 37,
+      "grid": "HORIZONTAL"
+    },
+    "GRAVITY_FACTORY_INPUT_ROW_2": {
+      "left": 8,
+      "top": 55,
+      "grid": "HORIZONTAL"
+    },
+    "GRAVITY_FACTORY_OUTPUT_ROW_0": {
+      "left": 129,
+      "top": 19,
+      "grid": "HORIZONTAL"
+    },
+    "GRAVITY_FACTORY_OUTPUT_ROW_1": {
+      "left": 129,
+      "top": 37,
+      "grid": "HORIZONTAL"
+    },
+    "GRAVITY_FACTORY_OUTPUT_ROW_2": {
+      "left": 129,
+      "top": 55,
+      "grid": "HORIZONTAL"
+    },
+    "GRAVITY_CATALYST": {
+      "left": 96,
+      "top": 57
+    },
+    "PLAYER_INVENTORY": {
+      "left": 23,
+      "bottom": 84,
+      "grid": "BREAK_AFTER_9COLS"
+    },
+    "PLAYER_HOTBAR": {
+      "left": 23,
+      "bottom": 26,
+      "grid": "HORIZONTAL"
+    }
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "block.ae2_gvt.gravity_processing_factory"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    },
+    "player_inventory_title": {
+      "text": {
+        "translate": "container.inventory"
+      },
+      "position": {
+        "left": 23,
+        "bottom": 95
+      }
+    }
+  }
+}

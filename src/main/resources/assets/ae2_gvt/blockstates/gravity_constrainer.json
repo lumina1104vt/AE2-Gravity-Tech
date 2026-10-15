@@ -1,0 +1,30 @@
+{
+  "variants": {
+    "facing=up": {
+      "model": "ae2_gvt:block/gravity_constrainer"
+    },
+    "facing=down": {
+      "model": "ae2_gvt:block/gravity_constrainer",
+      "x": 180
+    },
+    "facing=north": {
+      "model": "ae2_gvt:block/gravity_constrainer",
+      "x": 90
+    },
+    "facing=east": {
+      "model": "ae2_gvt:block/gravity_constrainer",
+      "x": 90,
+      "y": 90
+    },
+    "facing=south": {
+      "model": "ae2_gvt:block/gravity_constrainer",
+      "x": 90,
+      "y": 180
+    },
+    "facing=west": {
+      "model": "ae2_gvt:block/gravity_constrainer",
+      "x": 90,
+      "y": 270
+    }
+  }
+}

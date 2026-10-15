@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "ae2_gvt:block/paradox_crafting_unit"
+    }
+  }
+}

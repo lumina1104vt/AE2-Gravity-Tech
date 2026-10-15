@@ -1,0 +1,9 @@
+{
+  "parent": "ae2:item/display_base",
+  "textures": {
+    "front": "ae2_gvt:part/twin_star_pattern_terminal",
+    "front_bright": "ae2_gvt:part/twin_star_pattern_terminal_bright",
+    "front_medium": "ae2_gvt:part/twin_star_pattern_terminal_medium",
+    "front_dark": "ae2_gvt:part/twin_star_pattern_terminal_dark"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "ae2_gvt:block/quantum_controller/controller",
+    "side": "ae2_gvt:block/quantum_controller/column"
+  }
+}

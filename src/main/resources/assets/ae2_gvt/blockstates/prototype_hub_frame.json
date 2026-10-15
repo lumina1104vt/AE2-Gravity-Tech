@@ -1,0 +1,346 @@
+{
+  "variants": {
+    "facing=north,kind=sky_stone_brick": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=sky_stone_brick": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=sky_stone_brick": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=sky_stone_brick": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=sky_stone_brick": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=sky_stone_brick": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=north,kind=mysterious_cube": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=mysterious_cube": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=mysterious_cube": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=mysterious_cube": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=mysterious_cube": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=mysterious_cube": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=north,kind=tinted_glass": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=tinted_glass": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=tinted_glass": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=tinted_glass": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=tinted_glass": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=tinted_glass": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=north,kind=end_rod": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=end_rod": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=end_rod": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=end_rod": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=end_rod": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=end_rod": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=north,kind=access_point": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=north,kind=paradox_block": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=access_point": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=paradox_block": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=access_point": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=paradox_block": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=access_point": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=paradox_block": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=access_point": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=paradox_block": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=access_point": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=paradox_block": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=north,kind=structure_frame": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=structure_frame": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=structure_frame": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=structure_frame": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=structure_frame": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=structure_frame": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=north,kind=other": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=other": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=other": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=other": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=other": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=other": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=north,kind=blank_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=north,kind=black_hole_core": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=north,kind=white_hole_core": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=north,kind=singular_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=north,kind=singular_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=north,kind=imaginary_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=north,kind=imaginary_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=north,kind=paradox_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=north,kind=paradox_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=north,kind=planck_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=north,kind=planck_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=blank_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=black_hole_core": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=white_hole_core": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=singular_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=singular_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=imaginary_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=imaginary_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=paradox_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=paradox_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=planck_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=east,kind=planck_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=blank_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=black_hole_core": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=white_hole_core": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=singular_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=singular_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=imaginary_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=imaginary_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=paradox_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=paradox_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=planck_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=south,kind=planck_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=blank_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=black_hole_core": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=white_hole_core": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=singular_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=singular_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=imaginary_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=imaginary_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=paradox_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=paradox_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=planck_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=west,kind=planck_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=blank_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=black_hole_core": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=white_hole_core": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=singular_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=singular_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=imaginary_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=imaginary_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=paradox_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=paradox_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=planck_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=up,kind=planck_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=blank_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=black_hole_core": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=white_hole_core": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=singular_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=singular_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=imaginary_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=imaginary_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=paradox_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=paradox_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=planck_crafting_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    },
+    "facing=down,kind=planck_computing_unit": {
+      "model": "ae2_gvt:block/prototype_hub_frame"
+    }
+  }
+}

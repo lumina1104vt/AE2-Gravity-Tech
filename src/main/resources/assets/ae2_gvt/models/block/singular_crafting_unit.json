@@ -1,0 +1,7 @@
+{
+  "parent": "ae2_gvt:block/lit_unit",
+  "textures": {
+    "all": "ae2_gvt:block/singular_crafting_unit",
+    "lights": "ae2_gvt:block/singular_crafting_unit_light"
+  }
+}

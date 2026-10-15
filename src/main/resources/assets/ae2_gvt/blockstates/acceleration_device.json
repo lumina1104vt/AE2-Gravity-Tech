@@ -1,0 +1,27 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "ae2_gvt:block/acceleration_device"
+    },
+    "facing=east": {
+      "model": "ae2_gvt:block/acceleration_device",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "ae2_gvt:block/acceleration_device",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "ae2_gvt:block/acceleration_device",
+      "y": 270
+    },
+    "facing=up": {
+      "model": "ae2_gvt:block/acceleration_device",
+      "x": 270
+    },
+    "facing=down": {
+      "model": "ae2_gvt:block/acceleration_device",
+      "x": 90
+    }
+  }
+}
