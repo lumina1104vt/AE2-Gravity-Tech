@@ -90,6 +90,9 @@ public final class EngineLog {
             plan.missing.forEach((id, a) -> miss.add(item(index, id) + " ×" + amount(a)));
             out.add("  缺料：" + String.join("、", miss));
         }
+        for (var r : plan.recycles)
+            out.add("  循環使用：" + item(index, r.item()) + " 只準備種子 ×" + amount(r.seed()) + "，其餘靠樣板 "
+                    + java.util.Arrays.toString(r.patterns()) + " 吐回後重複使用");
         if (!plan.leftover.isEmpty()) {
             List<String> left = new ArrayList<>();
             plan.leftover.forEach((id, a) -> left.add(item(index, id) + " ×" + amount(a)));

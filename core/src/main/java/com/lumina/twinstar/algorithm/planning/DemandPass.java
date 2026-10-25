@@ -14,6 +14,7 @@ import com.lumina.twinstar.algorithm.model.Pattern;
 import com.lumina.twinstar.algorithm.model.StockSnapshot;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -57,6 +58,27 @@ public final class DemandPass {
 
     public final AmountArray avail;     // network stock still free in this plan
     public final AmountArray ledger;    // made but not yet used: ceil rounding and extra outputs
+    /**
+     * Where ledger amounts came from: item → pattern that made it → amount (what {@link #fire} adds;
+     * a loop solve's own accounting stays untagged). An item a pattern gives back to its own inputs
+     * (the bucket of a water bucket, back from what the water bucket makes) cannot serve the steps
+     * that pattern waits for: it is there only after the pattern has run.
+     */
+    final Map<Integer, AmountMap> lots;
+    /**
+     * Items used again through a loop, counted over the whole order (an item reopens with small
+     * extra demand; the seed is for the whole loop, not per reopening): the seed planned so far, the
+     * demand the loop has taken, what it has given back to it, and the patterns that give it back.
+     */
+    final AmountMap recycleSeed = new AmountMap();
+    final AmountMap recycleDemand = new AmountMap();
+    final AmountMap recycleReused = new AmountMap();
+    final Map<Integer, Set<Integer>> recycleFrom = new HashMap<>();
+    /**
+     * (item, pattern) → is the item upstream of the pattern (can any recipe turn it into one of its
+     * inputs)? Depends on the snapshot only, so C1's trial passes share the order's map.
+     */
+    private Map<Long, Boolean> upstreamMemo = new HashMap<>();
     public final AmountArray need;
     public final AmountArray done;
     final AmountArray hold;             // catalysts / containers: max over all uses
@@ -88,8 +110,9 @@ public final class DemandPass {
     private int pops;
     private final int popLimit;
 
-    DemandPass(Snapshot snap, StockSnapshot stock, AmountArray avail, AmountArray ledger, Overlay overlay, Deadline dl,
-               boolean policyOnly, Map<Integer, List<Split>> forced, int forcedFirstItem, int forcedFirstPattern) {
+    DemandPass(Snapshot snap, StockSnapshot stock, AmountArray avail, AmountArray ledger, Map<Integer, AmountMap> lots,
+               Overlay overlay, Deadline dl, boolean policyOnly, Map<Integer, List<Split>> forced, int forcedFirstItem,
+               int forcedFirstPattern) {
         this.snap = snap;
         this.stock = stock;
         this.overlay = overlay;
@@ -101,6 +124,7 @@ public final class DemandPass {
         int n = Math.max(snap.itemCount(), stock.size());
         this.avail = avail.size() >= n ? avail : avail.resized(n);
         this.ledger = ledger.size() >= n ? ledger : ledger.resized(n);
+        this.lots = lots;
         this.need = new AmountArray(n);
         this.done = new AmountArray(n);
         this.hold = new AmountArray(n);
@@ -114,7 +138,7 @@ public final class DemandPass {
     /** A fresh pass over the whole order. */
     static DemandPass start(Snapshot snap, StockSnapshot stock, Overlay overlay, Deadline dl, Map<Integer, List<Split>> forced) {
         int n = Math.max(snap.itemCount(), stock.size());
-        return new DemandPass(snap, stock, stock.copyStock(n), new AmountArray(n), overlay, dl, false, forced, -1, -1);
+        return new DemandPass(snap, stock, stock.copyStock(n), new AmountArray(n), new HashMap<>(), overlay, dl, false, forced, -1, -1);
     }
 
     /**
@@ -122,7 +146,10 @@ public final class DemandPass {
      * with {@code p} first and the policy below. True if nothing is missing.
      */
     public boolean trial(int x, Amount n, int p) {
-        DemandPass t = new DemandPass(snap, stock, avail.copy(), ledger.copy(), overlay, dl, true, Map.of(), x, p);
+        Map<Integer, AmountMap> lotsCopy = new HashMap<>();
+        lots.forEach((item, byPattern) -> lotsCopy.put(item, byPattern.copy()));
+        DemandPass t = new DemandPass(snap, stock, avail.copy(), ledger.copy(), lotsCopy, overlay, dl, true, Map.of(), x, p);
+        t.upstreamMemo = upstreamMemo;
         t.push(x, n, ctx[x]);
         try {
             t.run();
@@ -222,6 +249,10 @@ public final class DemandPass {
             done.set(x, need.get(x));
 
             Amount fromStorage = d.sub(mustMake(x, d));
+            // what a later pattern gives back serves all but one round: only the seed is still to find
+            Amount reused = recycle(x, fromStorage);
+            fromStorage = fromStorage.sub(reused);
+            d = d.sub(reused);
             Amount took = takeStock(x, fromStorage);
             if (took.compareTo(fromStorage) < 0)
                 took = took.add(takeSubstitutes(x, fromStorage.sub(took)));
@@ -231,7 +262,7 @@ public final class DemandPass {
             if (d.signum() <= 0)
                 continue;
 
-            int[] routes = routes(x);
+            int[] routes = withoutGivers(x, routes(x));
             if (routes.length == 0) {
                 missing.add(x, d);
                 continue;
@@ -337,11 +368,132 @@ public final class DemandPass {
         return taken;
     }
 
+    /**
+     * From the ledger: what nobody made for a pattern of this plan first (a loop solve's own), then
+     * what a pattern made that cannot come back to its own inputs. An amount that does come back
+     * is left to {@link #recycle}.
+     */
     private Amount takeLedger(int x, Amount d) {
-        Amount t = ledger.get(x).min(d).clampNonNegative();
-        if (t.signum() > 0)
-            ledger.sub(x, t);
-        return t;
+        AmountMap byPattern = lots.get(x);
+        Amount tagged = byPattern == null ? Amount.ZERO : byPattern.total();
+        Amount taken = ledger.get(x).sub(tagged).min(d).clampNonNegative();
+        if (byPattern != null)
+            for (int p : byPattern.keys()) {
+                if (taken.compareTo(d) >= 0)
+                    break;
+                if (upstreamOf(x, p))
+                    continue;
+                Amount u = byPattern.get(p).min(d.sub(taken));
+                byPattern.sub(p, u);
+                taken = taken.add(u);
+            }
+        if (taken.signum() > 0)
+            ledger.sub(x, taken);
+        return taken;
+    }
+
+    /**
+     * Demand for x that patterns of this plan give back: x is upstream of them, so what they give
+     * back comes only after they have run. One round is planned and the rest is used again while
+     * the job runs: over all of the order's demand D for x through the loop, with L given back by
+     * patterns run R times (the fewest runs among them, the safe side), seed = max(c, D − L + b)
+     * where c = min(D, L) / R and b = L / R (both rounded up). A reopening adds only what the seed
+     * grows by. Returns the part of {@code d} the loop serves; the seed is found like any demand.
+     */
+    private Amount recycle(int x, Amount d) {
+        AmountMap byPattern = lots.get(x);
+        if (byPattern == null || d.signum() <= 0)
+            return Amount.ZERO;
+        List<Integer> back = new ArrayList<>();
+        Amount given = Amount.ZERO;
+        Amount runs = null;
+        for (int p : byPattern.keys())
+            if (upstreamOf(x, p)) {
+                back.add(p);
+                given = given.add(byPattern.get(p));
+                Amount r = patternTimes.get(p);
+                runs = runs == null ? r : runs.min(r);
+            }
+        if (back.isEmpty() || given.signum() <= 0 || runs.signum() <= 0)
+            return Amount.ZERO;
+        Amount demand = recycleDemand.get(x).add(d);
+        Amount givenTotal = given.add(recycleReused.get(x));     // given back over the whole order
+        Amount c = demand.min(givenTotal).ceilDiv(runs);
+        Amount b = givenTotal.ceilDiv(runs);
+        Amount seedTotal = c.max(demand.sub(givenTotal).add(b)).min(demand);
+        Amount seed = seedTotal.sub(recycleSeed.get(x)).clampNonNegative().min(d);
+        Amount reused = d.sub(seed).min(given);
+        seed = d.sub(reused);
+        recycleDemand.add(x, d);
+        if (reused.signum() <= 0)
+            return Amount.ZERO;
+        Amount left = reused;
+        for (int p : back) {
+            Amount u = byPattern.get(p).min(left);
+            byPattern.sub(p, u);
+            left = left.sub(u);
+        }
+        ledger.sub(x, reused);
+        recycleReused.add(x, reused);
+        recycleSeed.add(x, seed);
+        recycleFrom.computeIfAbsent(x, k -> new HashSet<>()).addAll(back);
+        return reused;
+    }
+
+    /**
+     * A pattern that gives x back to its own inputs cannot make more x for them either: that x would
+     * wait for the pattern too (the seed of a loop is made outside it, as for policy cycles).
+     */
+    private int[] withoutGivers(int x, int[] routes) {
+        AmountMap byPattern = lots.get(x);
+        Set<Integer> givers = recycleFrom.get(x);
+        if ((byPattern == null || byPattern.isEmpty()) && givers == null)
+            return routes;
+        int kept = 0;
+        int[] out = new int[routes.length];
+        for (int q : routes) {
+            boolean gives = (givers != null && givers.contains(q))
+                    || (byPattern != null && byPattern.get(q).signum() > 0 && upstreamOf(x, q));
+            if (!gives)
+                out[kept++] = q;
+        }
+        return kept == routes.length ? routes : Arrays.copyOf(out, kept);
+    }
+
+    /** Can x, through any recipe, become an input of pattern p (then p's x waits for p)? */
+    private boolean upstreamOf(int x, int p) {
+        long key = ((long) x << 32) | (p & 0xffffffffL);
+        Boolean memo = upstreamMemo.get(key);
+        if (memo != null)
+            return memo;
+        Pattern target = snap.pattern(p);
+        BitSet inputs = new BitSet();
+        for (int s = 0; s < target.inputCount(); s++)
+            inputs.set(target.inputItem(s));
+        BitSet seen = new BitSet();
+        ArrayDeque<Integer> todo = new ArrayDeque<>();
+        todo.add(x);
+        seen.set(x);
+        boolean hit = false;
+        while (!todo.isEmpty() && !hit) {
+            int u = todo.poll();
+            if (inputs.get(u)) {
+                hit = true;
+                break;
+            }
+            for (int q : snap.consumers(u)) {
+                Pattern pat = snap.pattern(q);
+                if (pat == null || !pat.hasInput(u))
+                    continue;   // a substitute only: taken from storage, never made into something
+                for (int o = 0; o < pat.outputCount(); o++)
+                    if (!pat.isByproduct(o) && !seen.get(pat.outputItem(o))) {
+                        seen.set(pat.outputItem(o));
+                        todo.add(pat.outputItem(o));
+                    }
+            }
+        }
+        upstreamMemo.put(key, hit);
+        return hit;
     }
 
     /**
@@ -481,9 +633,13 @@ public final class DemandPass {
     private void fire(int p, Amount runs, int x, Amount used, @Nullable BitSet cx) {
         Pattern pat = snap.pattern(p);
         patternTimes.add(p, runs);
-        for (int o = 0; o < pat.outputCount(); o++)
-            ledger.add(pat.outputItem(o), pat.outputAmount(o).mul(runs));   // every output is a main output
+        for (int o = 0; o < pat.outputCount(); o++) {
+            Amount made = pat.outputAmount(o).mul(runs);
+            ledger.add(pat.outputItem(o), made);
+            lots.computeIfAbsent(pat.outputItem(o), k -> new AmountMap()).add(p, made);
+        }
         ledger.sub(x, used);
+        lots.get(x).sub(p, used);
         for (int s = 0; s < pat.inputCount(); s++) {
             int y = pat.inputItem(s);
             Amount q = inputDemand(pat, s, runs, y);
@@ -703,6 +859,60 @@ public final class DemandPass {
             usage = usage.add(perRun.mul(e.getValue()));
         }
         return new Plan(snap.version(), target, amount, patternTimes.copy(), pulled.copy(), drawLater.copy(), missing.copy(),
-                leftover, usage, contracts, loopSeeds);
+                leftover, usage, contracts, loopSeeds, recycles());
+    }
+
+    /**
+     * The loops of {@link #recycle}: per item, the seed and the patterns of this plan on the way
+     * from the item back to the patterns that give it back (they may use the seed while it is held).
+     */
+    private List<Plan.Recycle> recycles() {
+        if (recycleSeed.isEmpty())
+            return List.of();
+        Map<Integer, List<Integer>> usedBy = new HashMap<>();
+        Map<Integer, List<Integer>> madeBy = new HashMap<>();
+        for (int q : patternTimes.keys()) {
+            Pattern pat = snap.pattern(q);
+            for (int s = 0; s < pat.inputCount(); s++)
+                usedBy.computeIfAbsent(pat.inputItem(s), k -> new ArrayList<>()).add(q);
+            for (int o = 0; o < pat.outputCount(); o++)
+                if (!pat.isByproduct(o))
+                    madeBy.computeIfAbsent(pat.outputItem(o), k -> new ArrayList<>()).add(q);
+        }
+        List<Plan.Recycle> out = new ArrayList<>();
+        for (int x : recycleSeed.keys()) {
+            // downstream of x in this plan ...
+            Set<Integer> down = new HashSet<>();
+            ArrayDeque<Integer> items = new ArrayDeque<>(List.of(x));
+            BitSet seenItems = new BitSet();
+            seenItems.set(x);
+            while (!items.isEmpty())
+                for (int q : usedBy.getOrDefault(items.poll(), List.of()))
+                    if (down.add(q)) {
+                        Pattern pat = snap.pattern(q);
+                        for (int o = 0; o < pat.outputCount(); o++)
+                            if (!pat.isByproduct(o) && !seenItems.get(pat.outputItem(o))) {
+                                seenItems.set(pat.outputItem(o));
+                                items.add(pat.outputItem(o));
+                            }
+                    }
+            // ... and upstream of the patterns that give it back
+            Set<Integer> givers = recycleFrom.get(x);
+            Set<Integer> up = new HashSet<>(givers);
+            ArrayDeque<Integer> todo = new ArrayDeque<>(givers);
+            while (!todo.isEmpty()) {
+                Pattern pat = snap.pattern(todo.poll());
+                for (int s = 0; s < pat.inputCount(); s++)
+                    for (int q : madeBy.getOrDefault(pat.inputItem(s), List.of()))
+                        if (up.add(q))
+                            todo.add(q);
+            }
+            Set<Integer> loop = new java.util.TreeSet<>(givers);
+            for (int q : down)
+                if (up.contains(q))
+                    loop.add(q);
+            out.add(new Plan.Recycle(x, recycleSeed.get(x), loop.stream().mapToInt(Integer::intValue).toArray()));
+        }
+        return out;
     }
 }

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -194,6 +195,7 @@ public final class HubState {
             advanceContract(job, t, n);
             if (t.scc != -1)
                 releaseSeedsIfLoopDone(job, t.scc);
+            releaseRecycleIfLoopDone(job, t.pattern);
             if (t.remaining.signum() > 0)
                 checkReady(job, t);
             deliverFinals(job, env);    // finished products go out batch by batch
@@ -289,7 +291,10 @@ public final class HubState {
         Amount have = job.inventory.get(item);
         if (withLater)
             have = have.add(job.drawLater.get(item));
-        if (t.scc == -1 || !job.sccSeeds.getOrDefault(t.scc, new AmountMap()).contains(item))
+        boolean owner = t.scc != -1 && job.sccSeeds.getOrDefault(t.scc, new AmountMap()).contains(item);
+        for (Plan.Recycle r : job.recycleGuards)
+            owner |= r.item() == item && r.has(t.pattern);
+        if (!owner)
             have = have.sub(job.protectedSeeds.get(item));
         return have.clampNonNegative();
     }
@@ -785,6 +790,24 @@ public final class HubState {
         for (Task other : job.tasks)
             if (other.scc == t.scc)
                 checkReady(job, other);
+    }
+
+    /** A loop that uses an item again holds its seed until every pattern of the loop has run. */
+    private void releaseRecycleIfLoopDone(Job job, int pattern) {
+        for (Iterator<Plan.Recycle> it = job.recycleGuards.iterator(); it.hasNext(); ) {
+            Plan.Recycle r = it.next();
+            if (!r.has(pattern))
+                continue;
+            boolean done = true;
+            for (Task t : job.tasks)
+                if (r.has(t.pattern) && t.remaining.signum() > 0)
+                    done = false;
+            if (!done)
+                continue;
+            it.remove();
+            job.protectedSeeds.sub(r.item(), r.seed());
+            notifyItem(job, r.item());
+        }
     }
 
     /** Seeds stay protected until the whole loop has run; then they are ordinary stock again. */

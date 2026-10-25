@@ -50,6 +50,8 @@ public final class Job {
     /** seeds of loops still running: other tasks may not eat them */
     final AmountMap protectedSeeds = new AmountMap();
     final Map<Integer, AmountMap> sccSeeds = new HashMap<>();
+    /** seeds of items the plan uses again through a loop (Plan.recycles), still held for their loop */
+    final List<Plan.Recycle> recycleGuards = new ArrayList<>();
     final Map<Integer, Integer> contractStep = new HashMap<>();
     final Map<Integer, Amount> contractLeft = new HashMap<>();
     /** durability tools: runs used so far per tool item */
@@ -108,6 +110,10 @@ public final class Job {
                 sccSeeds.put(t.scc, seeds);
                 seeds.forEach(protectedSeeds::add);
             }
+        for (Plan.Recycle r : plan.recycles) {
+            recycleGuards.add(r);
+            protectedSeeds.add(r.item(), r.seed());
+        }
         for (Map.Entry<Integer, CycleContract> e : plan.contracts.entrySet()) {
             contractStep.put(e.getKey(), 0);
             contractLeft.put(e.getKey(), e.getValue().batches()[0]);

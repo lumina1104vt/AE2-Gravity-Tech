@@ -80,6 +80,73 @@ class PlannerTest {
         assertEquals(Amount.ONE, p.patternTimes.get(2));
     }
 
+    /** water bucket → (cake + bucket back): only one bucket is made, the cake's buckets carry the rest. */
+    @Test
+    void itemGivenBackIsSeededNotMadeAgain() {
+        final int WATER = 10, BUCKET = 11, WATER_BUCKET = 12, CAKE = 13;
+        TestGraphs g = new TestGraphs();
+        g.pattern(b -> b.input(INGOT, 3).output(BUCKET, 1));                                   // P0
+        g.pattern(b -> b.input(BUCKET, 1).input(WATER, 1).output(WATER_BUCKET, 1));            // P1
+        g.pattern(b -> b.input(WATER_BUCKET, 1).input(ORE, 1).output(CAKE, 1).byproduct(BUCKET, 1));   // P2
+        g.stock(INGOT, 1000).stock(WATER, 1000).stock(ORE, 1000);
+        Plan p = plan(g, CAKE, 100);
+        assertTrue(p.isComplete(), p.toString());
+        assertEquals(Amount.ONE, p.patternTimes.get(0), "one bucket starts the loop");
+        assertEquals(Amount.of(100), p.patternTimes.get(1));
+        assertEquals(Amount.of(100), p.patternTimes.get(2));
+        assertEquals(1, p.recycles.size(), p.toString());
+        Plan.Recycle r = p.recycles.get(0);
+        assertEquals(BUCKET, r.item());
+        assertEquals(Amount.ONE, r.seed());
+        assertTrue(r.has(1) && r.has(2) && !r.has(0), "the seed is for the loop's own patterns");
+        assertEquals(Amount.ONE, p.leftover.get(BUCKET), "the last bucket back goes home");
+    }
+
+    /** Uses 3, gives back 2 per run: the shortfall of every run but the last is made up front. */
+    @Test
+    void loopGivingBackLessNeedsTheShortfall() {
+        final int WATER = 10, BUCKET = 11, WATER_BUCKET = 12, CAKE = 13;
+        TestGraphs g = new TestGraphs();
+        g.pattern(b -> b.input(INGOT, 3).output(BUCKET, 1));                                   // P0
+        g.pattern(b -> b.input(BUCKET, 1).input(WATER, 1).output(WATER_BUCKET, 1));            // P1
+        g.pattern(b -> b.input(WATER_BUCKET, 3).input(ORE, 1).output(CAKE, 1).byproduct(BUCKET, 2));   // P2
+        g.stock(INGOT, 1000).stock(WATER, 1000).stock(ORE, 1000);
+        Plan p = plan(g, CAKE, 100);
+        assertTrue(p.isComplete(), p.toString());
+        // 300 used, 200 back: max(2, 300 − 200 + 2) = 102 up front
+        assertEquals(Amount.of(102), p.patternTimes.get(0));
+        assertEquals(Amount.of(102), p.recycles.get(0).seed());
+    }
+
+    /** A dear mold that comes back after each run: one is enough, it is no shortage. */
+    @Test
+    void dearItemGivenBackIsNoShortage() {
+        final int MOLD = 10, CAST = 11;
+        TestGraphs g = new TestGraphs();
+        g.pattern(b -> b.input(MOLD, 1).input(ORE, 1).output(CAST, 1).byproduct(MOLD, 1));    // P0
+        g.stock(MOLD, 1).stock(ORE, 1000);
+        Plan p = plan(g, CAST, 50);
+        assertTrue(p.isComplete(), p.toString());
+        assertEquals(Amount.ONE, p.pulled.get(MOLD), "only the seed is pulled");
+        assertEquals(Amount.ONE, p.recycles.get(0).seed());
+    }
+
+    /** Slag from smelting is no input of the smelting: it serves another step of the order as it is. */
+    @Test
+    void byproductThatCannotComeBackIsUsedAsUsual() {
+        final int SLAG = 10, BRICK = 11, FRAME = 12;
+        TestGraphs g = new TestGraphs();
+        g.pattern(b -> b.input(ORE, 1).output(INGOT, 1).byproduct(SLAG, 1));                  // P0
+        g.pattern(b -> b.input(SLAG, 1).output(BRICK, 1));                                     // P1
+        g.pattern(b -> b.input(INGOT, 1).input(BRICK, 1).output(FRAME, 1));                    // P2
+        g.stock(ORE, 1000);
+        Plan p = plan(g, FRAME, 5);
+        assertTrue(p.isComplete(), p.toString());
+        assertEquals(Amount.of(5), p.patternTimes.get(0));
+        assertEquals(Amount.of(5), p.patternTimes.get(1), "the bricks are made from the smelting's slag");
+        assertTrue(p.recycles.isEmpty(), p.toString());
+    }
+
     @Test
     void roundingGoesToTheLedger() {
         TestGraphs g = new TestGraphs();

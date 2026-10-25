@@ -3,6 +3,8 @@ package com.lumina.twinstar.algorithm.planning;
 import com.lumina.twinstar.algorithm.model.Amount;
 import com.lumina.twinstar.algorithm.model.AmountMap;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,10 +34,31 @@ public final class Plan {
     public final Map<Integer, CycleContract> contracts;
     /** the seeds each policy cycle starts from (the planner picks among the loop's rotations); key = scc index */
     public final Map<Integer, AmountMap> loopSeeds;
+    /** items a pattern of this plan gives back to its own inputs (the bucket of a water bucket): only seeds are planned */
+    public final List<Recycle> recycles;
+
+    /**
+     * One loop of an item the plan uses again: {@code seed} of {@code item} starts it, the rest of the
+     * demand is what the loop gives back while the job runs. The seed is for the loop's own
+     * {@code patterns} only until they have all run.
+     */
+    public record Recycle(int item, Amount seed, int[] patterns) {
+        public boolean has(int pattern) {
+            for (int p : patterns)
+                if (p == pattern)
+                    return true;
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return "Recycle{" + item + " seed " + seed + ", patterns " + Arrays.toString(patterns) + "}";
+        }
+    }
 
     Plan(long snapshotVersion, int target, Amount amount, AmountMap patternTimes, AmountMap pulled, AmountMap drawLater,
          AmountMap missing, AmountMap leftover, Amount usage, Map<Integer, CycleContract> contracts,
-         Map<Integer, AmountMap> loopSeeds) {
+         Map<Integer, AmountMap> loopSeeds, List<Recycle> recycles) {
         this.snapshotVersion = snapshotVersion;
         this.target = target;
         this.amount = amount;
@@ -47,6 +70,7 @@ public final class Plan {
         this.usage = usage;
         this.contracts = Map.copyOf(contracts);
         this.loopSeeds = Map.copyOf(loopSeeds);
+        this.recycles = List.copyOf(recycles);
     }
 
     /** Can be made with what the network has. */
@@ -57,6 +81,7 @@ public final class Plan {
     @Override
     public String toString() {
         return "Plan{target=" + target + " ×" + amount + ", runs=" + patternTimes + ", pulled=" + pulled
-                + ", missing=" + missing + ", leftover=" + leftover + ", usage=" + usage + "}";
+                + ", missing=" + missing + ", leftover=" + leftover + ", usage=" + usage
+                + (recycles.isEmpty() ? "" : ", recycles=" + recycles) + "}";
     }
 }
