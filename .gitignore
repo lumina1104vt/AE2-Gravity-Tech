@@ -39,6 +39,6 @@ run/
 repo/
 !**/src/**/repo/
 
-tools/
-docs/
-reference/
+./tools/
+./docs/
+./reference/
