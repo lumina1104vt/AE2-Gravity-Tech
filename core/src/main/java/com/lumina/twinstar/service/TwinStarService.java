@@ -311,8 +311,15 @@ public final class TwinStarService implements ITwinStarService, IGridServiceProv
             planned(what, amount, "超過 1 秒，計算逾時", took);
             if (EngineLog.enabled())
                 Twinstar.LOGGER.info("[雙星] 規劃 {} ×{}：超過 1 秒，計算逾時", EngineLog.item(index, target), EngineLog.amount(amount));
-            throw new IllegalStateException("Twin-star engine: crafting calculation timed out");
+            throw new PlanTimedOutException();
         });
+    }
+
+    /** The plan took longer than the hard limit (the future fails with this as its cause). */
+    public static final class PlanTimedOutException extends IllegalStateException {
+        PlanTimedOutException() {
+            super("Twin-star engine: crafting calculation timed out");
+        }
     }
 
     /** What the order screen shows about an item (server thread). */

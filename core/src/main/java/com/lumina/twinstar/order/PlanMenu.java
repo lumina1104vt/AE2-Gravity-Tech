@@ -12,6 +12,7 @@ import appeng.menu.ISubMenu;
 import appeng.menu.MenuOpener;
 import appeng.menu.guisync.GuiSync;
 import appeng.menu.locator.MenuHostLocator;
+import com.lumina.twinstar.Twinstar;
 import com.lumina.twinstar.algorithm.ae2.PlanWrapper;
 import com.lumina.twinstar.algorithm.model.Amount;
 import com.lumina.twinstar.api.ITwinStarService;
@@ -122,6 +123,9 @@ public class PlanMenu extends AEBaseMenu implements ISubMenu {
             result = done.get();
         } catch (ExecutionException e) {
             error = "timeout";
+            // a timeout is expected now and then; anything else is a bug and must not vanish silently
+            if (!(e.getCause() instanceof TwinStarService.PlanTimedOutException))
+                Twinstar.LOGGER.error("[雙星] 規劃 {} ×{} 時引擎出錯", what, amount, e.getCause());
             return;
         } catch (Exception e) {
             return;     // cancelled

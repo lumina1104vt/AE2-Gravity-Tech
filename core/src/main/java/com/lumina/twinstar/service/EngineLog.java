@@ -17,6 +17,7 @@ import com.lumina.twinstar.util.BigAmountFormat;
 import net.neoforged.fml.loading.FMLEnvironment;
 
 import java.text.NumberFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -182,29 +183,46 @@ public final class EngineLog {
                 for (int o = 0; o < pat.outputCount(); o++)
                     producedBy.computeIfAbsent(pat.outputItem(o), k -> new ArrayList<>()).add(p);
         });
-        node(plan, snap, index, producedBy, plan.target, 1, new HashSet<>(), out);
+        // depth first, with a stack of its own: a chain thousands of levels deep must not overflow the
+        // engine thread's stack, and nothing past the line limit is built at all
+        Set<Integer> listed = new HashSet<>();
+        ArrayDeque<TreeStep> todo = new ArrayDeque<>();
+        todo.push(new TreeStep(plan.target, -1, 1));
+        while (!todo.isEmpty()) {
+            if (out.full()) {
+                out.cut();
+                return;
+            }
+            TreeStep step = todo.pop();
+            int x = step.item();
+            String pad = "  ".repeat(step.depth());
+            String from = sources(plan, index, x);
+            if (step.pattern() >= 0) {
+                // one of x's patterns: its line, then its inputs (in order) one level down
+                int p = step.pattern();
+                Pattern pat = snap.pattern(p);
+                out.add(pad + item(index, x) + " ← " + "P" + p + " ×" + amount(plan.patternTimes.get(p)) + " 次 "
+                        + pattern(pat, index) + (from.isEmpty() ? "" : "；另 " + from));
+                for (int s = pat.inputCount() - 1; s >= 0; s--)
+                    todo.push(new TreeStep(pat.inputItem(s), -1, step.depth() + 1));
+                continue;
+            }
+            List<Integer> ps = producedBy.getOrDefault(x, List.of());
+            if (ps.isEmpty()) {
+                out.add(pad + item(index, x) + " ← " + (from.isEmpty() ? "（無來源）" : from));
+                continue;
+            }
+            if (!listed.add(x)) {
+                out.add(pad + item(index, x) + " ← （共用，已列在上方）");
+                continue;
+            }
+            for (int k = ps.size() - 1; k >= 0; k--)
+                todo.push(new TreeStep(x, ps.get(k), step.depth()));
+        }
     }
 
-    private static void node(Plan plan, Snapshot snap, ItemIndex index, Map<Integer, List<Integer>> producedBy,
-                             int x, int depth, Set<Integer> listed, Lines out) {
-        String pad = "  ".repeat(depth);
-        String from = sources(plan, index, x);
-        List<Integer> ps = producedBy.getOrDefault(x, List.of());
-        if (ps.isEmpty()) {
-            out.add(pad + item(index, x) + " ← " + (from.isEmpty() ? "（無來源）" : from));
-            return;
-        }
-        if (!listed.add(x)) {
-            out.add(pad + item(index, x) + " ← （共用，已列在上方）");
-            return;
-        }
-        for (int p : ps) {
-            Pattern pat = snap.pattern(p);
-            out.add(pad + item(index, x) + " ← " + "P" + p + " ×" + amount(plan.patternTimes.get(p)) + " 次 "
-                    + pattern(pat, index) + (from.isEmpty() ? "" : "；另 " + from));
-            for (int s = 0; s < pat.inputCount(); s++)
-                node(plan, snap, index, producedBy, pat.inputItem(s), depth + 1, listed, out);
-        }
+    /** An item to list, or (pattern ≥ 0) one of its patterns with the inputs below it. */
+    private record TreeStep(int item, int pattern, int depth) {
     }
 
     private static String sources(Plan plan, ItemIndex index, int x) {
@@ -285,6 +303,8 @@ public final class EngineLog {
         private final List<String> lines = new ArrayList<>();
         private int dropped;
 
+        private boolean cut;
+
         void add(String line) {
             if (lines.size() < MAX_LINES)
                 lines.add(line);
@@ -292,8 +312,19 @@ public final class EngineLog {
                 dropped++;
         }
 
+        boolean full() {
+            return lines.size() >= MAX_LINES;
+        }
+
+        /** The rest was not even looked at (too much to list). */
+        void cut() {
+            cut = true;
+        }
+
         void print() {
-            if (dropped > 0)
+            if (cut)
+                lines.add("  …（以下省略）");
+            else if (dropped > 0)
                 lines.add("  …（省略 " + dropped + " 行）");
             Twinstar.LOGGER.info(String.join("\n", lines));
         }
