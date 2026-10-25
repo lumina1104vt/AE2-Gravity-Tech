@@ -35,6 +35,11 @@ public final class Scc {
         this.net = net;
     }
 
+    /** The same cycle under another number (cycles are numbered in component order at publish). */
+    Scc withIndex(int index) {
+        return new Scc(index, members, policy, patterns, kind, seedItems, seedAmounts, seedOptions, net);
+    }
+
     public int memberCount() {
         return members.length;
     }

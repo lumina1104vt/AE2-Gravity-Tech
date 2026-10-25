@@ -371,7 +371,7 @@ public final class TwinStarService implements ITwinStarService, IGridServiceProv
         }
         TheoryLayer.FlushStats st = lastFlush;
         if (st != null) {
-            String kind = st.fellBack() ? "增量更新遇到循環，改為全部重建" : st.rebuilt() ? "全部重建" : "增量更新 " + st.processed() + " 個物品";
+            String kind = st.rebuilt() ? "全部重建" : "增量更新 " + st.processed() + " 個元件";
             out.add(String.format("  上次更新：%s，%.1f ms（%s，%d 秒前）", kind, st.nanos() / 1e6, lastFlushWhy, (now - lastFlushAt) / 1000));
         }
         int queued = ENGINE.getQueue().size();

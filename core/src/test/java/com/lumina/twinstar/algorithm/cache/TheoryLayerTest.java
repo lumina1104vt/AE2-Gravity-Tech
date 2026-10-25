@@ -2,6 +2,7 @@ package com.lumina.twinstar.algorithm.cache;
 
 import com.lumina.twinstar.algorithm.TestGraphs;
 import com.lumina.twinstar.algorithm.model.Amount;
+import com.lumina.twinstar.algorithm.model.InputKind;
 import com.lumina.twinstar.algorithm.model.Pattern;
 import com.lumina.twinstar.algorithm.model.SccKind;
 import org.junit.jupiter.api.Test;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -164,11 +166,17 @@ class TheoryLayerTest {
                         fresh.onStockChanged(i, Amount.of(v), false);
                 Snapshot b = fresh.flush();
                 for (int i = 0; i < items; i++) {
+                    String at = "round " + round + " step " + step + " item " + i;
                     double ca = a.logCost(i), cb = b.logCost(i);
                     if (Double.isInfinite(ca) || Double.isInfinite(cb))
-                        assertEquals(cb, ca, "round " + round + " step " + step + " item " + i);
+                        assertEquals(cb, ca, at);
                     else
-                        assertEquals(cb, ca, 1e-6, "round " + round + " step " + step + " item " + i);
+                        assertEquals(cb, ca, 1e-6, at);
+                    // a component is computed from scratch either way: the route, level and BOM match too
+                    assertEquals(b.best(i), a.best(i), at + " best");
+                    assertEquals(b.level(i), a.level(i), at + " level");
+                    assertArrayEquals(b.bomItems(i), a.bomItems(i), at + " bom");
+                    assertArrayEquals(b.bomLog(i), a.bomLog(i), 1e-6, at + " bom");
                 }
             }
         }
@@ -195,11 +203,20 @@ class TheoryLayerTest {
             int in = dag ? rnd.nextInt(out) : rnd.nextInt(items);
             if (in == out)
                 in = (in + 1) % items;
-            b.input(in, 1 + rnd.nextInt(4));
+            // now and then substitutes: they never change a cost, nor the components
+            int[] alts = rnd.nextInt(5) == 0 ? new int[]{rnd.nextInt(items)} : new int[0];
+            b.input(in, Amount.of(1 + rnd.nextInt(4)), InputKind.CONSUME, 0, alts);
         }
         if (!dag)
             b.input(rnd.nextInt(5), 1 + rnd.nextInt(4));
+        // catalysts, containers and byproducts from anywhere: no cost edges, but levels and routes see them
+        if (rnd.nextInt(5) == 0)
+            b.catalyst(rnd.nextInt(items), 1);
+        if (rnd.nextInt(6) == 0)
+            b.container(rnd.nextInt(items), 1);
         b.output(out, 1 + rnd.nextInt(4));
+        if (rnd.nextInt(5) == 0)
+            b.byproduct(rnd.nextInt(items), 1 + rnd.nextInt(2));
         return b.build(id);
     }
 }

@@ -28,9 +28,12 @@ import java.util.function.IntFunction;
  * pattern, flattened BOM, level, policy cycles), independent of any order. Stock only enters through
  * raw prices, which change when a raw's stock crosses a power of ten.
  * <p>
- * Built bottom-up once; afterwards only the affected paths are repaired, level by level, stopping
- * where nothing changed. Changes that touch a policy cycle, or that would close a new one, fall back
- * to a full rebuild (rare; the rebuild is linear apart from the policy iteration of cycles).
+ * Works on the components of the cost graph (Tarjan: an input whose cost matters → the pattern's
+ * main products), kept between flushes, sources first. A component is always computed from scratch
+ * (old values inside a loop cannot be trusted); a change recomputes the components it touches and
+ * goes downstream component by component, stopping where nothing a consumer reads changed. A full
+ * rebuild is the same with every component marked, so the two give the same result. Pattern
+ * changes run Tarjan again (linear) and recompute every component that is new, split or merged.
  * <p>
  * Not thread-safe by itself: every public method is synchronized. {@link #snapshot()} returns the
  * last published immutable version without locking.
@@ -70,16 +73,24 @@ public final class TheoryLayer {
      * their recipes stay as conversions. Decided by a rebuild only.
      */
     private final BitSet mined = new BitSet();
-    /** a pattern was added or removed since the last flush */
+    /** a pattern was added or removed, or new items appeared, since the last flush */
     private boolean patternsChanged;
+    /** the policy cycles of every component, in component order (rebuilt at publish) */
     private final ArrayList<Scc> sccs = new ArrayList<>();
 
-    private final DirtySet dirty = new DirtySet();
+    // ── components of the cost graph, sources first, kept between flushes ──
+    private List<int[]> comps = new ArrayList<>();
+    private int[] compOf = new int[0];                  // item → its component; −1 until the next flush
+    private List<List<Scc>> compSccs = new ArrayList<>();   // per component, its policy cycles
+    /** items whose component must be recomputed at the next flush */
+    private final BitSet pending = new BitSet();
+    /** the policy cycles of the component being computed */
+    private List<Scc> building = new ArrayList<>();
+
     private boolean needRebuild = true;
     private long version;
     private volatile Snapshot published = null;
-    private volatile FlushStats lastFlush = new FlushStats(0, false, false, 0, 0);
-    private int processed;
+    private volatile FlushStats lastFlush = new FlushStats(0, false, 0, 0);
 
     // ─────────────────────────────── public API ───────────────────────────────
 
@@ -107,14 +118,10 @@ public final class TheoryLayer {
                 producers[p.outputItem(i)] = append(producers[p.outputItem(i)], p.id);
         for (int in : distinctInputs(p))
             consumers[in] = append(consumers[in], p.id);
-        patternsChanged = true;     // flush checks whether the mined items moved
-        if (!needRebuild) {
-            computeRunCost(p.id);
-            computePatBom(p.id);
-            for (int i = 0; i < p.outputCount(); i++)
-                if (!p.isByproduct(i))
-                    markDirty(p.outputItem(i));
-        }
+        patternsChanged = true;
+        for (int i = 0; i < p.outputCount(); i++)
+            if (!p.isByproduct(i))
+                pending.set(p.outputItem(i));
     }
 
     public synchronized void removePattern(int id) {
@@ -129,15 +136,10 @@ public final class TheoryLayer {
         patterns.set(id, null);
         patBomItems[id] = EMPTY;
         patBomLog[id] = new double[0];
-        if (needRebuild)
-            return;
         patternsChanged = true;
-        for (Scc s : sccs)
-            for (int j = 0; j < s.patternCount(); j++)
-                if (s.pattern(j) == id)
-                    needRebuild = true;
         for (int i = 0; i < p.outputCount(); i++)
-            markDirty(p.outputItem(i));
+            if (!p.isByproduct(i))
+                pending.set(p.outputItem(i));
     }
 
     /** Reads a whole stock snapshot; only raws whose price tier changed become dirty. */
@@ -173,33 +175,58 @@ public final class TheoryLayer {
             }
         }
         if (changed && (producers[k].length == 0 || mined.get(k)))
-            markDirty(k);
+            pending.set(k);
     }
 
-    /** Applies all pending changes (incrementally when possible) and publishes a new version. */
+    /**
+     * Applies all pending changes and publishes a new version: the components the changes touch
+     * are recomputed, sources first, and so is everything downstream of a component whose result
+     * changed. A rebuild marks every component; otherwise the same steps.
+     */
     public synchronized Snapshot flush() {
         long t0 = System.nanoTime();
-        processed = 0;
-        if (patternsChanged && !needRebuild) {
-            // a pattern can merge or split loops and so move which items are mined (cheap to
-            // recompute, linear in the patterns); when it does, values around them change everywhere
-            BitSet before = (BitSet) mined.clone();
-            computeMined();
-            if (!before.equals(mined))
-                needRebuild = true;
-        }
-        patternsChanged = false;
         boolean rebuilt = needRebuild;
-        boolean fellBack = false;
-        if (needRebuild)
-            build();
-        else if (!incremental()) {
-            fellBack = true;
-            rebuilt = true;
-            build();
+        java.util.TreeSet<Integer> dirty = new java.util.TreeSet<>();
+        if (needRebuild || patternsChanged) {
+            BitSet minedBefore = (BitSet) mined.clone();
+            computeMined();
+            regroup(dirty, rebuilt);
+            // mined items are priced by their stock: a change moves everything that uses them
+            if (!rebuilt) {
+                minedBefore.xor(mined);
+                for (int x = minedBefore.nextSetBit(0); x >= 0; x = minedBefore.nextSetBit(x + 1))
+                    dirty.add(compOf[x]);
+            }
+        }
+        if (!rebuilt)
+            for (int x = pending.nextSetBit(0); x >= 0; x = pending.nextSetBit(x + 1))
+                dirty.add(compOf[x]);
+        pending.clear();
+        patternsChanged = false;
+        needRebuild = false;
+
+        int processed = 0;
+        while (!dirty.isEmpty()) {
+            int c = dirty.pollFirst();
+            int[] comp = comps.get(c);
+            Before before = new Before(comp);
+            computeComponent(c);
+            processed++;
+            // a consumer reads cost, BOM, level and the route: when any of them moved, its component is next
+            for (int i = 0; i < comp.length; i++) {
+                int m = comp[i];
+                if (before.same(i, m))
+                    continue;
+                for (int q : consumers[m]) {
+                    Pattern p = patterns.get(q);
+                    for (int o = 0; o < p.outputCount(); o++)
+                        if (!p.isByproduct(o) && compOf[p.outputItem(o)] > c)
+                            dirty.add(compOf[p.outputItem(o)]);
+                }
+            }
         }
         Snapshot s = publish();
-        lastFlush = new FlushStats(s.version(), rebuilt, fellBack, processed, System.nanoTime() - t0);
+        lastFlush = new FlushStats(s.version(), rebuilt, processed, System.nanoTime() - t0);
         return s;
     }
 
@@ -207,10 +234,47 @@ public final class TheoryLayer {
      * What the last flush did, for logs.
      *
      * @param rebuilt   built everything again
-     * @param fellBack  started incremental but had to rebuild (a policy cycle, a new loop, or something not makeable)
-     * @param processed dirty items repaired incrementally (0 for a rebuild)
+     * @param processed components computed (all of them for a rebuild)
      */
-    public record FlushStats(long version, boolean rebuilt, boolean fellBack, int processed, long nanos) {
+    public record FlushStats(long version, boolean rebuilt, int processed, long nanos) {
+    }
+
+    /** What a component's members were before it is recomputed: unchanged ones stop the change here. */
+    private final class Before {
+        private final double[] cost;
+        private final int[] route;
+        private final int[] lvl;
+        private final int[][] bomK;
+        private final double[][] bomV;
+
+        Before(int[] comp) {
+            int n = comp.length;
+            cost = new double[n];
+            route = new int[n];
+            lvl = new int[n];
+            bomK = new int[n][];
+            bomV = new double[n][];
+            for (int i = 0; i < n; i++) {
+                int m = comp[i];
+                cost[i] = logCost[m];
+                route[i] = best[m];
+                lvl[i] = level[m];
+                bomK[i] = bomItems[m];
+                bomV[i] = bomLog[m];
+            }
+        }
+
+        /** cost within ε, the same best route, the same level and the BOM within ε item by item */
+        boolean same(int i, int m) {
+            if (route[i] != best[m] || lvl[i] != level[m] || !LogMath.sameWithin(cost[i], logCost[m], EPS))
+                return false;
+            if (!Arrays.equals(bomK[i], bomItems[m]))
+                return false;
+            for (int j = 0; j < bomV[i].length; j++)
+                if (!LogMath.sameWithin(bomV[i][j], bomLog[m][j], EPS))
+                    return false;
+            return true;
+        }
     }
 
     public FlushStats lastFlushStats() {
@@ -255,7 +319,10 @@ public final class TheoryLayer {
         producers = Arrays.copyOf(producers, n);
         consumers = Arrays.copyOf(consumers, n);
         priceTier = Arrays.copyOf(priceTier, n);
+        compOf = Arrays.copyOf(compOf, n);
+        patternsChanged = true;     // new items have no component yet: Tarjan runs again
         for (int i = old; i < n; i++) {
+            compOf[i] = -1;
             scc[i] = -1;
             best[i] = -1;
             producers[i] = EMPTY;
@@ -268,6 +335,19 @@ public final class TheoryLayer {
     }
 
     private Snapshot publish() {
+        // policy cycles are numbered in component order, as a rebuild creates them
+        sccs.clear();
+        for (List<Scc> list : compSccs)
+            for (int j = 0; j < list.size(); j++) {
+                Scc c = list.get(j);
+                if (c.index != sccs.size()) {
+                    c = c.withIndex(sccs.size());
+                    list.set(j, c);
+                }
+                for (int i = 0; i < c.memberCount(); i++)
+                    scc[c.member(i)] = c.index;
+                sccs.add(c);
+            }
         version++;
         Snapshot s = new Snapshot(version, items, level.clone(), scc.clone(), logCost.clone(), rawPrices(), best.clone(),
                 bomItems.clone(), bomLog.clone(), producers.clone(), consumers.clone(),
@@ -291,10 +371,6 @@ public final class TheoryLayer {
         if (noStock.get(k))
             return LOG_HIGH;
         return -priceTier[k];
-    }
-
-    private void markDirty(int x) {
-        dirty.push(x, level[x]);
     }
 
     // ─────────────────────────────── costs & BOM ───────────────────────────────
@@ -432,45 +508,92 @@ public final class TheoryLayer {
         producers[x] = sorted;
     }
 
-    private int maxInputLevel(int q) {
+    /**
+     * Highest level among the inputs of {@code q} (made for {@code x}) in {@code x}'s component or an
+     * earlier one. A catalyst or container from a later component is a back edge: its level is not
+     * known yet, and a rebuild would not know it either.
+     */
+    private int maxInputLevel(int q, int x) {
         Pattern p = patterns.get(q);
         int m = 0;
         for (int i = 0; i < p.inputCount(); i++)
-            m = Math.max(m, level[p.inputItem(i)]);
+            if (compOf[p.inputItem(i)] <= compOf[x])
+                m = Math.max(m, level[p.inputItem(i)]);
         return m;
     }
 
     // ─────────────────────────────── full build ───────────────────────────────
 
-    private void build() {
-        dirty.clear();
-        sccs.clear();
-        for (int i = 0; i < items; i++) {
-            // a rebuild must not depend on history: start every producer list in id order
-            producers[i] = producers[i].clone();
-            Arrays.sort(producers[i]);
-            scc[i] = -1;
-            level[i] = 0;
-            best[i] = -1;
-            logCost[i] = LogMath.INF;
-        }
-        computeMined();
-        int[] all = new int[items];
+    /**
+     * Runs Tarjan on the cost graph again (every pattern; linear) and marks the components that are
+     * not exactly a component of before (new, split or merged), or all of them for a rebuild. The
+     * policy cycles of an unchanged component carry over.
+     */
+    private void regroup(java.util.TreeSet<Integer> dirty, boolean all) {
+        int[] nodes = new int[items];
         for (int i = 0; i < items; i++)
-            all[i] = i;
-        // the complete graph (every pattern, input → output); only the first build walks all of it
-        List<int[]> comps = Tarjan.components(all, this::successors);
-        for (int[] comp : comps) {
-            if (comp.length == 1 && !selfLoop(comp[0]))
-                processSingle(comp[0]);
-            else
-                policyIteration(comp);
+            nodes[i] = i;
+        List<int[]> oldComps = comps;
+        List<List<Scc>> oldSccs = compSccs;
+        int[] oldCompOf = compOf.clone();
+        comps = Tarjan.components(nodes, this::successors);
+        compSccs = new ArrayList<>();
+        for (int c = 0; c < comps.size(); c++) {
+            int[] comp = comps.get(c);
+            for (int m : comp)
+                compOf[m] = c;
+            int was = oldCompOf[comp[0]];
+            boolean same = !all && was >= 0 && Arrays.equals(oldComps.get(was), comp);
+            compSccs.add(same ? oldSccs.get(was) : new ArrayList<>());
+            if (!same)
+                dirty.add(c);
         }
+        if (all)
+            return;
+        // a catalyst or container counts (for levels and the loop guesses) only when its component
+        // comes first: where that flipped, the result depends on it, so the component is redone
+        for (int x = 0; x < items; x++) {
+            if (oldCompOf[x] < 0)
+                continue;
+            for (int q : producers[x]) {
+                Pattern p = patterns.get(q);
+                for (int i = 0; i < p.inputCount(); i++) {
+                    InputKind kind = p.inputKind(i);
+                    int y = p.inputItem(i);
+                    if (kind == InputKind.CONSUME || kind == InputKind.TOOL || oldCompOf[y] < 0)
+                        continue;
+                    if ((oldCompOf[y] <= oldCompOf[x]) != (compOf[y] <= compOf[x]))
+                        dirty.add(compOf[x]);
+                }
+            }
+        }
+    }
+
+    /**
+     * Computes one component from scratch, its inputs from earlier components final: a single item
+     * from its cheapest route, a loop by policy iteration. Nothing depends on what the members were.
+     */
+    private void computeComponent(int c) {
+        int[] comp = comps.get(c);
+        for (int m : comp) {
+            // the order of the routes must not depend on history either: start from id order
+            producers[m] = producers[m].clone();
+            Arrays.sort(producers[m]);
+            scc[m] = -1;
+            level[m] = 0;
+            best[m] = -1;
+            logCost[m] = LogMath.INF;
+        }
+        building = new ArrayList<>();
+        if (comp.length == 1 && !selfLoop(comp[0]))
+            processSingle(comp[0]);
+        else
+            policyIteration(comp);
+        compSccs.set(c, building);
         // B and C1 take the first route as the policy: policy iteration picks best[] on its own
         // (ties never switch), so put it in front where the sorted order differs
-        for (int i = 0; i < items; i++)
-            bestFirst(i);
-        needRebuild = false;
+        for (int m : comp)
+            bestFirst(m);
     }
 
     private void bestFirst(int x) {
@@ -615,7 +738,9 @@ public final class TheoryLayer {
                 if (!p.isByproduct(i))
                     out.add(p.outputItem(i));
         }
-        return out.stream().mapToInt(Integer::intValue).toArray();
+        // sorted: Tarjan's order (and so which components count as earlier) must not depend on the
+        // order patterns were added in
+        return out.stream().mapToInt(Integer::intValue).sorted().toArray();
     }
 
     private boolean selfLoop(int u) {
@@ -634,8 +759,8 @@ public final class TheoryLayer {
     }
 
     private void processSingle(int x) {
-        if (producers[x].length == 0) {
-            setRaw(x);
+        if (producers[x].length == 0 || mined.get(x)) {
+            setRaw(x);      // a mined item is priced by its stock, like a raw (its recipes are conversions)
             level[x] = 0;
             return;
         }
@@ -647,7 +772,7 @@ public final class TheoryLayer {
         int p = producers[x][0];
         best[x] = p;
         logCost[x] = unitCost(p, x);
-        level[x] = 1 + maxInputLevel(p);
+        level[x] = 1 + maxInputLevel(p, x);
         setItemBomFrom(x, p);
     }
 
@@ -1058,7 +1183,8 @@ public final class TheoryLayer {
                         ? LogMath.mul(logCost[y], -Math.log10(p.inputDurability(s)))
                         : LogMath.mul(p.inputAmount(s).log10(), logCost[y]));
                 default -> {
-                    if (logCost[y] == LogMath.INF)
+                    // a catalyst or container from a later component has no value yet (nor in a rebuild)
+                    if (compOf[y] > compOf[m] || logCost[y] == LogMath.INF)
                         return LogMath.INF;
                 }
             }
@@ -1248,7 +1374,7 @@ public final class TheoryLayer {
                     continue;
                 }
                 best[first] = q;
-                level[first] = 1 + maxInputLevel(q);
+                level[first] = 1 + maxInputLevel(q, first);
                 computeRunCost(q);
                 computePatBom(q);
                 setItemBomFrom(first, q);
@@ -1279,15 +1405,14 @@ public final class TheoryLayer {
             distinct.add(policy[i]);
             Pattern p = patterns.get(policy[i]);
             for (int s = 0; s < p.inputCount(); s++)
-                if (!members.contains(p.inputItem(s)))
+                if (!members.contains(p.inputItem(s)) && compOf[p.inputItem(s)] <= compOf[group[i]])
                     lvl = Math.max(lvl, level[p.inputItem(s)]);
         }
         lvl += 1;
-        int index = sccs.size();
+        int index = -1;     // numbered at publish
         for (int i = 0; i < k; i++) {
             level[group[i]] = lvl;
             best[group[i]] = policy[i];
-            scc[group[i]] = index;
         }
         int[] pats = distinct.stream().mapToInt(Integer::intValue).toArray();
 
@@ -1353,7 +1478,7 @@ public final class TheoryLayer {
         options.sort(java.util.Comparator.comparing(AmountMap::total));     // stable: rotation order on ties
         options.add(0, first);
 
-        sccs.add(new Scc(index, group.clone(), policy, pats, growth ? SccKind.GROWTH : SccKind.ENTANGLED,
+        building.add(new Scc(index, group.clone(), policy, pats, growth ? SccKind.GROWTH : SccKind.ENTANGLED,
                 seedItems, seedAmounts, options.toArray(AmountMap[]::new), net));
         sccBom(group, policy, members);
     }
@@ -1426,117 +1551,6 @@ public final class TheoryLayer {
         }
         for (int q : policy)
             computePatBom(q);
-    }
-
-    // ─────────────────────────────── incremental ───────────────────────────────
-
-    /**
-     * Repairs the dirty items lowest level first, so every input is final when an item is taken out:
-     * getting cheaper and getting more expensive use the same path, and each item is handled at most
-     * once per change. Returns false when a full rebuild is needed instead.
-     */
-    private boolean incremental() {
-        // each item settles in a few passes; far more means values keep feeding back (an undetected
-        // loop): give up and rebuild rather than spin on the engine thread
-        long limit = processed + 64L * (items + patterns.size() + 16);
-        while (!dirty.isEmpty()) {
-            int x = dirty.popMin(level);
-            if (++processed > limit)
-                return false;
-            if (x >= items)
-                continue;
-            if (scc[x] != -1)
-                return false;   // a policy cycle: do not trust old values inside it
-
-            if (producers[x].length == 0 || mined.get(x)) {
-                double c = logRawPrice(x);
-                if (best[x] == -1 && LogMath.sameWithin(c, logCost[x], EPS))
-                    continue;
-                setRaw(x);
-                propagate(x);
-                continue;
-            }
-
-            for (int q : producers[x])
-                computeRunCost(q);
-            sortProducers(x);
-            int p = producers[x][0];
-            double c = unitCost(p, x);
-            if (c == LogMath.INF)
-                return false;   // only a loop could still make it (a growth loop needs the exact solve)
-
-            if (patterns.get(p).hasInput(x))
-                return false;       // the route takes x itself (2 templates from 1): a growth loop
-            if (p != best[x]) {
-                int maxIn = maxInputLevel(p);
-                if (maxIn >= level[x] && !raiseLevel(x, maxIn + 1, p))
-                    return false;   // the new route closes a loop through x
-            }
-            if (p == best[x] && LogMath.sameWithin(c, logCost[x], EPS))
-                continue;           // unchanged: stop here
-            logCost[x] = c;
-            best[x] = p;
-            computePatBom(p);
-            setItemBomFrom(x, p);
-            propagate(x);
-        }
-        return true;
-    }
-
-    private void propagate(int x) {
-        for (int q : consumers[x]) {
-            computeRunCost(q);
-            computePatBom(q);
-            Pattern p = patterns.get(q);
-            for (int i = 0; i < p.outputCount(); i++) {
-                int o = p.outputItem(i);
-                // watch edges only pass on "now ahead of the best route" (cheaper, or a priority
-                // route that became possible); the best route's own changes always pass
-                // an item that cannot be made yet is always rechecked: a new input may open a loop for it
-                if (best[o] == q || best[o] < 0 || patterns.get(best[o]) == null || logCost[o] == LogMath.INF
-                        || compareRoutes(q, best[o], o) < 0)
-                    markDirty(o);
-            }
-        }
-    }
-
-    /**
-     * Raises x (and everything whose best route uses it) to at least {@code target}, like sifting up
-     * in a heap. Returns false if this reaches an input of {@code newBest}: the policy would loop.
-     */
-    private boolean raiseLevel(int x, int target, int newBest) {
-        Set<Integer> loopInputs = new HashSet<>();
-        Pattern np = patterns.get(newBest);
-        for (int s = 0; s < np.inputCount(); s++)
-            loopInputs.add(np.inputItem(s));
-        ArrayList<int[]> stack = new ArrayList<>();
-        stack.add(new int[]{x, target});
-        while (!stack.isEmpty()) {
-            int[] e = stack.remove(stack.size() - 1);
-            int u = e[0];
-            int l = e[1];
-            if (level[u] >= l)
-                continue;
-            if (u != x && loopInputs.contains(u))
-                return false;
-            // without loops no level exceeds the item count: still rising means the best routes
-            // already go round in a loop elsewhere (seen with a real modpack: levels rose until
-            // the heap ran out) - rebuild instead
-            if (l > items)
-                return false;
-            if (scc[u] != -1)
-                return false;
-            level[u] = l;
-            for (int q : consumers[u]) {
-                Pattern p = patterns.get(q);
-                for (int i = 0; i < p.outputCount(); i++) {
-                    int o = p.outputItem(i);
-                    if (best[o] == q && o != x)
-                        stack.add(new int[]{o, l + 1});
-                }
-            }
-        }
-        return true;
     }
 
     // ─────────────────────────────── helpers ───────────────────────────────

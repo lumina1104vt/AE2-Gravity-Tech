@@ -64,8 +64,7 @@ public final class EngineLog {
         if (!enabled || (!st.rebuilt() && st.processed() == 0))
             return;
         Lines out = new Lines();
-        String what = st.fellBack() ? "增量更新遇到策略環／新的環／做不出來的物品，改為全部重建"
-                : st.rebuilt() ? "全部重建" : "增量更新 " + st.processed() + " 個物品";
+        String what = st.rebuilt() ? "全部重建" : "增量更新 " + st.processed() + " 個元件";
         int patterns = 0;
         for (int p = 0; p < snap.patternCount(); p++)
             if (snap.pattern(p) != null)
