@@ -63,6 +63,23 @@ class PlannerTest {
         assertEquals(Amount.ZERO, p.pulled.get(GEAR));
     }
 
+    /** A remainder the pattern does not list (the bucket of a water bucket) is a byproduct: it comes out, but it is no route. */
+    @Test
+    void byproductIsNoRoute() {
+        final int WATER = 10, BUCKET = 11, WATER_BUCKET = 12, CAKE = 13;
+        TestGraphs g = new TestGraphs();
+        g.pattern(b -> b.input(INGOT, 3).output(BUCKET, 1));                                   // P0
+        g.pattern(b -> b.input(BUCKET, 1).input(WATER, 1).output(WATER_BUCKET, 1));            // P1
+        g.pattern(b -> b.input(WATER_BUCKET, 1).input(ORE, 1).output(CAKE, 1).byproduct(BUCKET, 1));   // P2
+        g.stock(INGOT, 100).stock(WATER, 100).stock(ORE, 100);
+        Snapshot s = g.flush();
+        assertEquals(1, s.producers(BUCKET).length, "the cake pattern is no route to the bucket");
+        assertEquals(0, s.producers(BUCKET)[0]);
+        Plan p = plan(g, CAKE, 1);
+        assertTrue(p.isComplete(), p.toString());
+        assertEquals(Amount.ONE, p.patternTimes.get(2));
+    }
+
     @Test
     void roundingGoesToTheLedger() {
         TestGraphs g = new TestGraphs();

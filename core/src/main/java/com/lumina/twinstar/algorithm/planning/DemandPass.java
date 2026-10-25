@@ -269,7 +269,7 @@ public final class DemandPass {
     }
 
     Split whole(int p, int x, Amount d) {
-        return new Split(p, d.ceilDiv(snap.pattern(p).outputAmountOf(x)), d);
+        return new Split(p, d.ceilDiv(snap.pattern(p).mainOutputAmountOf(x)), d);
     }
 
     /** C2's fixed allocation, cut or topped up to the demand this pass actually has. */
@@ -457,7 +457,7 @@ public final class DemandPass {
         }
         if (sum == LogMath.ZERO || sum == LogMath.INF)
             return sum;
-        return sum - snap.pattern(q).outputAmountOf(x).log10();
+        return sum - snap.pattern(q).mainOutputAmountOf(x).log10();
     }
 
     private boolean usesReserved(int q) {

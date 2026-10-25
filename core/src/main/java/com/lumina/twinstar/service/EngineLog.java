@@ -242,6 +242,8 @@ public final class EngineLog {
             if (i > 0)
                 sb.append(" + ");
             sb.append(amount(p.outputAmount(i))).append('×').append(item(index, p.outputItem(i)));
+            if (p.isByproduct(i))
+                sb.append("（副產物）");
         }
         sb.append("] ").append(switch (p.where) {
             case HUB_INTERNAL -> "中樞內部";

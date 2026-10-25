@@ -187,12 +187,12 @@ class RecipePackBench {
                 boolean container = slot.size() > 2 && slot.get(2).getAsString().equals("container");
                 b.input(opts.get(0).getAsInt(), Amount.of(count), container ? InputKind.CONTAINER : InputKind.CONSUME, 0, alts);
             }
-            Map<Integer, Long> outs = new LinkedHashMap<>();
-            for (String key : new String[]{"out", "rem"})
-                if (r.has(key))
-                    for (JsonElement o : r.getAsJsonArray(key))
-                        outs.merge(o.getAsJsonArray().get(0).getAsInt(), o.getAsJsonArray().get(1).getAsLong(), Long::sum);
-            outs.forEach(b::output);
+            for (JsonElement o : r.getAsJsonArray("out"))
+                b.output(o.getAsJsonArray().get(0).getAsInt(), o.getAsJsonArray().get(1).getAsLong());
+            // items left behind that the recipe does not list (the bucket of a water bucket): byproducts
+            if (r.has("rem"))
+                for (JsonElement o : r.getAsJsonArray("rem"))
+                    b.byproduct(o.getAsJsonArray().get(0).getAsInt(), o.getAsJsonArray().get(1).getAsLong());
             out.add(b.allowSubst(subst).build(out.size()));
         }
         return out;
@@ -220,8 +220,14 @@ class RecipePackBench {
                 b.input(slot.get(0).getAsInt(), Amount.of(new BigInteger(slot.get(1).getAsString())),
                         InputKind.valueOf(slot.get(2).getAsString()), slot.get(3).getAsInt(), alts);
             }
-            for (JsonElement o : outs)
-                b.output(o.getAsJsonArray().get(0).getAsInt(), Amount.of(new BigInteger(o.getAsJsonArray().get(1).getAsString())));
+            for (JsonElement o : outs) {
+                JsonArray a = o.getAsJsonArray();
+                Amount n = Amount.of(new BigInteger(a.get(1).getAsString()));
+                if (a.size() > 2 && a.get(2).getAsBoolean())
+                    b.byproduct(a.get(0).getAsInt(), n);
+                else
+                    b.output(a.get(0).getAsInt(), n);
+            }
             out.add(b.build(id));
         }
         AmountArray stock = new AmountArray(items.size());

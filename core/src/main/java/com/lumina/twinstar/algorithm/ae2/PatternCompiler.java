@@ -25,7 +25,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   possible inputs become alternatives and mark the pattern as allowing substitution;</li>
  *   <li>a remaining key equal to the input (the item comes back unchanged) makes the slot a
  *   CONTAINER; a different remaining key (water bucket → bucket, damaged tool) stays CONSUME and the
- *   remainder is added as an output — all outputs are equal, the ledger keeps them;</li>
+ *   remainder is added as a byproduct: the pattern does not list it, so it is no route to that item,
+ *   but the ledger keeps it for the order's later steps;</li>
  *   <li>AE2 patterns carry no durability, so TOOL only comes from adapters.</li>
  * </ul>
  */
@@ -81,7 +82,7 @@ public final class PatternCompiler {
         for (GenericStack out : details.getOutputs())
             b.output(index.idOf(out.what()), out.amount());
         for (GenericStack r : remainders)
-            b.output(index.idOf(r.what()), r.amount());
+            b.byproduct(index.idOf(r.what()), r.amount());
         return b.allowSubst(subst).energyPerRun(energy).build(nextId.getAndIncrement());
     }
 }

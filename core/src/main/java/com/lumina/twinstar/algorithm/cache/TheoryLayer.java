@@ -103,7 +103,8 @@ public final class TheoryLayer {
         ensureItems(maxItem + 1);
         patterns.set(p.id, p);
         for (int i = 0; i < p.outputCount(); i++)
-            producers[p.outputItem(i)] = append(producers[p.outputItem(i)], p.id);
+            if (!p.isByproduct(i))      // a byproduct is no route to the item
+                producers[p.outputItem(i)] = append(producers[p.outputItem(i)], p.id);
         for (int in : distinctInputs(p))
             consumers[in] = append(consumers[in], p.id);
         patternsChanged = true;     // flush checks whether the mined items moved
@@ -111,7 +112,8 @@ public final class TheoryLayer {
             computeRunCost(p.id);
             computePatBom(p.id);
             for (int i = 0; i < p.outputCount(); i++)
-                markDirty(p.outputItem(i));
+                if (!p.isByproduct(i))
+                    markDirty(p.outputItem(i));
         }
     }
 
@@ -120,7 +122,8 @@ public final class TheoryLayer {
             return;
         Pattern p = patterns.get(id);
         for (int i = 0; i < p.outputCount(); i++)
-            producers[p.outputItem(i)] = without(producers[p.outputItem(i)], id);
+            if (!p.isByproduct(i))
+                producers[p.outputItem(i)] = without(producers[p.outputItem(i)], id);
         for (int in : distinctInputs(p))
             consumers[in] = without(consumers[in], id);
         patterns.set(id, null);
@@ -320,7 +323,7 @@ public final class TheoryLayer {
     }
 
     private double unitCost(int q, int x) {
-        Amount out = patterns.get(q).outputAmountOf(x);
+        Amount out = patterns.get(q).mainOutputAmountOf(x);
         if (out.isZero())
             return LogMath.INF;
         double c = patRunLogCost[q];
@@ -353,7 +356,7 @@ public final class TheoryLayer {
     }
 
     private void setItemBomFrom(int x, int q) {
-        double out = patterns.get(q).outputAmountOf(x).log10();
+        double out = patterns.get(q).mainOutputAmountOf(x).log10();
         int[] ks = patBomItems[q];
         double[] vs = patBomLog[q].clone();
         for (int j = 0; j < vs.length; j++)
@@ -597,19 +600,35 @@ public final class TheoryLayer {
         return ExactSimplex.feasible(a, b);
     }
 
+    /**
+     * Edges of the graph the components are built on: only what carries cost. A consumed or tool
+     * input (the slot's first item, the one costs use) leads to the pattern's main products;
+     * substitutes, catalysts and containers never change a cost, and a byproduct is no route.
+     */
     private int[] successors(int u) {
         LinkedHashSet<Integer> out = new LinkedHashSet<>();
         for (int q : consumers[u]) {
             Pattern p = patterns.get(q);
+            if (!costInput(p, u))
+                continue;
             for (int i = 0; i < p.outputCount(); i++)
-                out.add(p.outputItem(i));
+                if (!p.isByproduct(i))
+                    out.add(p.outputItem(i));
         }
         return out.stream().mapToInt(Integer::intValue).toArray();
     }
 
     private boolean selfLoop(int u) {
         for (int q : consumers[u])
-            if (patterns.get(q).produces(u))
+            if (costInput(patterns.get(q), u) && patterns.get(q).producesMain(u))
+                return true;
+        return false;
+    }
+
+    /** Does the cost of {@code p} depend on {@code u}: a consumed or tool slot whose item is {@code u}. */
+    private static boolean costInput(Pattern p, int u) {
+        for (int i = 0; i < p.inputCount(); i++)
+            if (p.inputItem(i) == u && (p.inputKind(i) == InputKind.CONSUME || p.inputKind(i) == InputKind.TOOL))
                 return true;
         return false;
     }
@@ -853,6 +872,7 @@ public final class TheoryLayer {
      * (without losing any). Rare in real packs; bounded by {@link #MAX_SEED_EVALUATIONS}.
      */
     private void seedLoops(int[] comp, Set<Integer> in, int[] pol) {
+        LocalEval local = new LocalEval(comp, pol);
         int evaluations = 0;
         boolean improved = true;
         while (improved && evaluations < MAX_SEED_EVALUATIONS) {
@@ -861,24 +881,141 @@ public final class TheoryLayer {
                 int m = comp[i];
                 if (logCost[m] != LogMath.INF)
                     continue;
-                double[] before = costsOf(comp);
+                // only m and what depends on it can change; the same set whichever route m takes
+                int[] down = local.downstream(i);
+                double[] before = local.costs(down);
                 int finite = countFinite(before);
                 int old = pol[i];
+                boolean switched = false;
                 for (int q : producers[m]) {
                     if (q == old)
                         continue;
                     pol[i] = q;
-                    evaluate(comp, in, pol);
+                    local.evaluate(down);
                     evaluations++;
-                    if (!regressed(comp, before) && countFinite(costsOf(comp)) > finite) {
+                    double[] now = local.costs(down);
+                    if (!regressed(before, now) && countFinite(now) > finite) {
+                        local.routeChanged(i, old);
                         improved = true;
+                        switched = true;
                         break;
                     }
-                    pol[i] = old;
                 }
-                if (pol[i] == old)
-                    evaluate(comp, in, pol);
+                if (!switched) {
+                    pol[i] = old;
+                    local.restore(down, before);
+                }
             }
+        }
+    }
+
+    /**
+     * Re-evaluates what one member's route switch can change: the member and what depends on it
+     * along the policy, its downstream in the component. Nothing upstream depends on the switch, so
+     * it keeps its value; groups are solved the same way as {@link #evaluate}, so the result is the
+     * same as evaluating the whole component. Expects the component evaluated for {@code pol} when
+     * created, and {@link #routeChanged} after every switch that is kept.
+     */
+    private final class LocalEval {
+        private final int[] comp;
+        private final int[] pol;
+        private final Map<Integer, Integer> idx = new HashMap<>();
+        /** per member (local index): the members whose route takes it as an input */
+        private final List<List<Integer>> users = new ArrayList<>();
+
+        LocalEval(int[] comp, int[] pol) {
+            this.comp = comp;
+            this.pol = pol;
+            for (int i = 0; i < comp.length; i++) {
+                idx.put(comp[i], i);
+                users.add(new ArrayList<>());
+            }
+            for (int i = 0; i < comp.length; i++)
+                link(i, pol[i], true);
+        }
+
+        private void link(int i, int q, boolean add) {
+            if (q < 0)
+                return;
+            Pattern p = patterns.get(q);
+            for (int s = 0; s < p.inputCount(); s++) {
+                Integer y = idx.get(p.inputItem(s));
+                if (y == null)
+                    continue;
+                if (add)
+                    users.get(y).add(i);
+                else
+                    users.get(y).remove(Integer.valueOf(i));
+            }
+        }
+
+        /** Member {@code i} now keeps the route in {@code pol[i]} instead of {@code old}. */
+        void routeChanged(int i, int old) {
+            link(i, old, false);
+            link(i, pol[i], true);
+        }
+
+        /** {@code i} and everything that depends on it along the policy, as sorted local indices. */
+        int[] downstream(int i) {
+            boolean[] seen = new boolean[comp.length];
+            ArrayDeque<Integer> queue = new ArrayDeque<>();
+            seen[i] = true;
+            queue.add(i);
+            while (!queue.isEmpty())
+                for (int v : users.get(queue.poll()))
+                    if (!seen[v]) {
+                        seen[v] = true;
+                        queue.add(v);
+                    }
+            int n = 0;
+            for (boolean b : seen)
+                if (b)
+                    n++;
+            int[] out = new int[n];
+            int k = 0;
+            for (int j = 0; j < comp.length; j++)
+                if (seen[j])
+                    out[k++] = j;
+            return out;
+        }
+
+        double[] costs(int[] down) {
+            double[] c = new double[down.length];
+            for (int j = 0; j < down.length; j++)
+                c[j] = logCost[comp[down[j]]];
+            return c;
+        }
+
+        void restore(int[] down, double[] saved) {
+            for (int j = 0; j < down.length; j++)
+                logCost[comp[down[j]]] = saved[j];
+        }
+
+        /** Groups the policy graph on {@code down} (edges from outside it are inputs, already final) and solves them in order. */
+        void evaluate(int[] down) {
+            int[] nodes = new int[down.length];
+            Map<Integer, List<Integer>> succ = new HashMap<>();
+            for (int j = 0; j < down.length; j++)
+                nodes[j] = comp[down[j]];
+            Set<Integer> part = new HashSet<>();
+            for (int v : nodes)
+                part.add(v);
+            for (int j = 0; j < down.length; j++) {
+                int q = pol[down[j]];
+                if (q < 0)
+                    continue;
+                Pattern p = patterns.get(q);
+                for (int s = 0; s < p.inputCount(); s++) {
+                    int y = p.inputItem(s);
+                    if (part.contains(y))
+                        succ.computeIfAbsent(y, k -> new ArrayList<>()).add(nodes[j]);
+                }
+            }
+            for (int[] group : Tarjan.components(nodes, u -> {
+                List<Integer> l = succ.get(u);
+                return l == null ? EMPTY : l.stream().mapToInt(Integer::intValue).toArray();
+            }))
+                evaluateGroup(group, idx, pol);
         }
     }
 
@@ -904,7 +1041,7 @@ public final class TheoryLayer {
                 }
             }
         }
-        return sum / Math.pow(10, p.outputAmountOf(m).log10());
+        return sum / Math.pow(10, p.mainOutputAmountOf(m).log10());
     }
 
     /** Unit cost with every input inside the component taken as free (only outside inputs count). */
@@ -928,7 +1065,7 @@ public final class TheoryLayer {
         }
         if (sum == LogMath.ZERO || sum == LogMath.INF)
             return sum;
-        return sum - p.outputAmountOf(m).log10();
+        return sum - p.mainOutputAmountOf(m).log10();
     }
 
     private int firstAllowed(int m, int i, Set<Long> banned) {
@@ -949,6 +1086,13 @@ public final class TheoryLayer {
     private boolean regressed(int[] comp, double[] before) {
         for (int i = 0; i < comp.length; i++)
             if (before[i] != LogMath.INF && logCost[comp[i]] == LogMath.INF)
+                return true;
+        return false;
+    }
+
+    private static boolean regressed(double[] before, double[] now) {
+        for (int i = 0; i < before.length; i++)
+            if (before[i] != LogMath.INF && now[i] == LogMath.INF)
                 return true;
         return false;
     }
@@ -979,22 +1123,26 @@ public final class TheoryLayer {
         Map<Integer, Integer> idx = new HashMap<>();
         for (int i = 0; i < comp.length; i++)
             idx.put(comp[i], i);
-        for (int[] group : policyGroups(comp, in, pol)) {
-            if (group.length == 1) {
-                int m = group[0];
-                int q = pol[idx.get(m)];
-                if (q < 0) {
-                    logCost[m] = mined.get(m) ? logRawPrice(m) : LogMath.INF;
-                    continue;
-                }
-                if (!patterns.get(q).hasInput(m)) {
-                    computeRunCost(q);
-                    logCost[m] = unitCost(q, m);
-                    continue;
-                }
+        for (int[] group : policyGroups(comp, in, pol))
+            evaluateGroup(group, idx, pol);
+    }
+
+    /** One group of the policy graph, its inputs from outside the group already final. */
+    private void evaluateGroup(int[] group, Map<Integer, Integer> idx, int[] pol) {
+        if (group.length == 1) {
+            int m = group[0];
+            int q = pol[idx.get(m)];
+            if (q < 0) {
+                logCost[m] = mined.get(m) ? logRawPrice(m) : LogMath.INF;
+                return;
             }
-            solveGroupCost(group, idx, pol);
+            if (!patterns.get(q).hasInput(m)) {
+                computeRunCost(q);
+                logCost[m] = unitCost(q, m);
+                return;
+            }
         }
+        solveGroupCost(group, idx, pol);
     }
 
     /** c = A c + b for a cycle of the policy; no external source (or a non-convergent loop) → ∞. */
@@ -1014,7 +1162,7 @@ public final class TheoryLayer {
                 return;
             }
             Pattern p = patterns.get(q);
-            double outLog = p.outputAmountOf(m).log10();
+            double outLog = p.mainOutputAmountOf(m).log10();
             double b = LogMath.ZERO;
             for (int s = 0; s < p.inputCount(); s++) {
                 int y = p.inputItem(s);
@@ -1221,7 +1369,7 @@ public final class TheoryLayer {
         Set<Integer> raws = new java.util.TreeSet<>();
         for (int i = 0; i < k; i++) {
             Pattern p = patterns.get(policy[i]);
-            double outLog = p.outputAmountOf(group[i]).log10();
+            double outLog = p.mainOutputAmountOf(group[i]).log10();
             TreeMap<Integer, Double> e = new TreeMap<>();
             for (int s = 0; s < p.inputCount(); s++) {
                 InputKind kind = p.inputKind(s);

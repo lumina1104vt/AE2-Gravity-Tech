@@ -32,7 +32,7 @@ import java.util.List;
  * the theory layer's last published version, and the network's stock as the engine takes it before
  * planning. Format: {@code items} = key names ({@link KeyNames}; index = the engine's item id),
  * {@code patterns} = {id, where, priority, subst, in: [[item, amount, kind, durability,
- * [alternatives…]]…], out: [[item, amount]…]}, {@code stock} = [[item, amount]…], {@code infinite} =
+ * [alternatives…]]…], out: [[item, amount, byproduct]…]}, {@code stock} = [[item, amount]…], {@code infinite} =
  * [item…]. Amounts are decimal strings (they can exceed a long).
  */
 public final class NetworkDump {
@@ -156,6 +156,7 @@ public final class NetworkDump {
             JsonArray o = new JsonArray();
             o.add(p.outputItem(i));
             o.add(p.outputAmount(i).bigValue().toString());
+            o.add(p.isByproduct(i));
             out.add(o);
         }
         json.add("out", out);

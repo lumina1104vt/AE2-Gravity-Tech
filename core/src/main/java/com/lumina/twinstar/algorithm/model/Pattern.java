@@ -9,7 +9,10 @@ import java.util.List;
  * One internal pattern: what goes in and what comes out of ONE run. Immutable; arrays are copied on
  * construction and never handed out.
  * <p>
- * All outputs are equal (no main product / byproduct). Input slot {@code i} matches AE2's
+ * Outputs are main products, except byproducts: what a recipe leaves behind without the pattern
+ * saying so (the bucket of a water bucket). A byproduct comes out like any output (the ledger and the
+ * executor take it), but it is no route to the item: costs, routes and the theory layer's graph only
+ * see main products. Input slot {@code i} matches AE2's
  * {@code IPatternDetails.getInputs()[i]} for patterns translated from AE2, so the executor can build
  * the per-slot {@code KeyCounter[]} for {@code pushPattern} directly.
  */
@@ -24,6 +27,7 @@ public final class Pattern {
 
     private final int[] outputItems;
     private final Amount[] outputAmounts;
+    private final boolean[] outputByproduct;
 
     public final PatternLocation where;
     public final int priority;                  // provider priority (AE2, higher first)
@@ -48,20 +52,27 @@ public final class Pattern {
             inputAlternatives[i] = b.inAlternatives.get(i).clone();
         }
         // outputs: merge repeated items so outputAmount(x) is a single lookup
+        // (an item that is also a main output is a main output for the whole amount)
         List<Integer> oi = new ArrayList<>();
         List<Amount> oa = new ArrayList<>();
+        List<Boolean> ob = new ArrayList<>();
         for (int i = 0; i < b.outItems.size(); i++) {
             int item = b.outItems.get(i);
             int at = oi.indexOf(item);
-            if (at >= 0)
+            if (at >= 0) {
                 oa.set(at, oa.get(at).add(b.outAmounts.get(i)));
-            else {
+                ob.set(at, ob.get(at) && b.outByproduct.get(i));
+            } else {
                 oi.add(item);
                 oa.add(b.outAmounts.get(i));
+                ob.add(b.outByproduct.get(i));
             }
         }
         this.outputItems = oi.stream().mapToInt(Integer::intValue).toArray();
         this.outputAmounts = oa.toArray(new Amount[0]);
+        this.outputByproduct = new boolean[ob.size()];
+        for (int i = 0; i < ob.size(); i++)
+            outputByproduct[i] = ob.get(i);
         this.where = b.where;
         this.priority = b.priority;
         this.allowSubst = b.allowSubst;
@@ -109,7 +120,11 @@ public final class Pattern {
         return outputAmounts[i];
     }
 
-    /** Amount of {@code item} one run produces; ZERO if it is not an output. */
+    public boolean isByproduct(int i) {
+        return outputByproduct[i];
+    }
+
+    /** Amount of {@code item} one run produces, byproducts included; ZERO if it is not an output. */
     public Amount outputAmountOf(int item) {
         for (int i = 0; i < outputItems.length; i++)
             if (outputItems[i] == item)
@@ -117,11 +132,25 @@ public final class Pattern {
         return Amount.ZERO;
     }
 
+    /** Amount of {@code item} one run makes as a main product: what a route to {@code item} counts; ZERO otherwise. */
+    public Amount mainOutputAmountOf(int item) {
+        for (int i = 0; i < outputItems.length; i++)
+            if (outputItems[i] == item)
+                return outputByproduct[i] ? Amount.ZERO : outputAmounts[i];
+        return Amount.ZERO;
+    }
+
+    /** Any output, byproducts included. */
     public boolean produces(int item) {
         for (int o : outputItems)
             if (o == item)
                 return true;
         return false;
+    }
+
+    /** A main product: the pattern is a route to {@code item}. */
+    public boolean producesMain(int item) {
+        return mainOutputAmountOf(item).signum() > 0;
     }
 
     /** Amount of {@code item} one run consumes (CONSUME slots only). */
@@ -159,6 +188,8 @@ public final class Pattern {
             if (i > 0)
                 sb.append(" + ");
             sb.append(outputAmounts[i]).append('×').append(outputItems[i]);
+            if (outputByproduct[i])
+                sb.append("(BYPRODUCT)");
         }
         return sb.append(']').toString();
     }
@@ -171,6 +202,7 @@ public final class Pattern {
         private final List<int[]> inAlternatives = new ArrayList<>();
         private final List<Integer> outItems = new ArrayList<>();
         private final List<Amount> outAmounts = new ArrayList<>();
+        private final List<Boolean> outByproduct = new ArrayList<>();
         private PatternLocation where = PatternLocation.HUB_INTERNAL;
         private int priority;
         private boolean allowSubst;
@@ -209,10 +241,24 @@ public final class Pattern {
         }
 
         public Builder output(int item, Amount amount) {
+            return output(item, amount, false);
+        }
+
+        /** What the recipe leaves behind without the pattern saying so: comes out, but is no route to the item. */
+        public Builder byproduct(int item, long amount) {
+            return output(item, Amount.of(amount), true);
+        }
+
+        public Builder byproduct(int item, Amount amount) {
+            return output(item, amount, true);
+        }
+
+        private Builder output(int item, Amount amount, boolean byproduct) {
             if (amount.signum() <= 0)
                 throw new IllegalArgumentException("output amount must be positive");
             outItems.add(item);
             outAmounts.add(amount);
+            outByproduct.add(byproduct);
             return this;
         }
 
@@ -242,8 +288,8 @@ public final class Pattern {
         }
 
         public Pattern build(int id) {
-            if (outItems.isEmpty())
-                throw new IllegalStateException("a pattern needs at least one output");
+            if (!outByproduct.contains(false))
+                throw new IllegalStateException("a pattern needs at least one main output");
             return new Pattern(this, id);
         }
     }

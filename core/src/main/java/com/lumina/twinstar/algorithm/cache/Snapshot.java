@@ -146,7 +146,7 @@ public final class Snapshot {
         int[] ks = patBomItems[p];
         for (int i = 0; i < ks.length; i++)
             if (ks[i] == k)
-                return patBomLog[p][i] - patterns[p].outputAmountOf(x).log10();
+                return patBomLog[p][i] - patterns[p].mainOutputAmountOf(x).log10();
         return LogMath.ZERO;
     }
 
@@ -156,7 +156,7 @@ public final class Snapshot {
 
     /** log10 of the unit cost of making {@code x} with {@code p} (other outputs are not deducted). */
     public double unitLogCost(int p, int x) {
-        Amount out = patterns[p].outputAmountOf(x);
+        Amount out = patterns[p].mainOutputAmountOf(x);
         if (out.isZero())
             return LogMath.INF;
         double c = patRunLogCost[p];

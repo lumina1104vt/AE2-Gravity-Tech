@@ -37,7 +37,7 @@ public final class RouteCeiling {
             Amount m = routeCeiling(pass, p, x, left);
             if (m.signum() <= 0)
                 continue;
-            out.add(new Split(p, m.ceilDiv(pass.snapshot().pattern(p).outputAmountOf(x)), m));
+            out.add(new Split(p, m.ceilDiv(pass.snapshot().pattern(p).mainOutputAmountOf(x)), m));
             left = left.sub(m);
         }
         if (left.signum() > 0 && forceRest)
