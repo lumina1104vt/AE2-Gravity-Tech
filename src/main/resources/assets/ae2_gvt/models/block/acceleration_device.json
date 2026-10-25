@@ -659,7 +659,10 @@
           "texture": "#dark"
         }
       },
-      "light_emission": 12
+      "neoforge_data": {
+        "block_light": 12,
+        "sky_light": 12
+      }
     },
     {
       "from": [

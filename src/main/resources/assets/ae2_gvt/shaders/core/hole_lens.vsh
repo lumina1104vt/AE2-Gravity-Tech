@@ -1,11 +1,11 @@
-#version 330
+#version 150
 
 // Hole lens panel (see HoleRenderTypes / HoleRenderer). ENTITY format:
 //   UV0      = position on the panel, in hole radii (camera-facing, so x right / y up on screen)
 //   Color.r  = 1 for a white hole
 
-#moj_import <minecraft:dynamictransforms.glsl>
-#moj_import <minecraft:projection.glsl>
+uniform mat4 ModelViewMat;
+uniform mat4 ProjMat;
 
 in vec3 Position;
 in vec4 Color;

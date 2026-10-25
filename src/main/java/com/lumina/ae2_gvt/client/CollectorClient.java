@@ -7,12 +7,6 @@ import com.lumina.ae2_gvt.blockentities.GravitonCollector;
 import org.joml.Vector3f;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
-import com.lumina.ae2_gvt.prototype.hole.client.SceneSnapshot;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -21,17 +15,14 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.rendertype.RenderSetup;
-import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.RenderStateShard;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.LightCoordsUtil;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 /**
@@ -39,23 +30,18 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
  * frame and the glass chamber the world behind swirls toward the core and is magnified near it,
  * with rings running inward. Done like the holes' lensing - after the world, a copy of the frame
  * ({@link SceneSnapshot}) is redrawn bent on a camera-facing panel at each core; depth-tested, so
- * the pillars and glass in front stay put. Shader: collector_lens.
+ * the pillars and glass in front stay put. Shader: collector_lens ({@link ClientShaders}).
  */
 @EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
 public final class CollectorClient {
-    private static final RenderPipeline LENS_PIPELINE = RenderPipeline.builder(RenderPipelines.MATRICES_PROJECTION_SNIPPET,
-                    RenderPipelines.GLOBALS_SNIPPET)
-            .withLocation(Identifier.fromNamespaceAndPath(AE2GravityTech.MODID, "pipeline/collector_lens"))
-            .withVertexShader(Identifier.fromNamespaceAndPath(AE2GravityTech.MODID, "core/collector_lens"))
-            .withFragmentShader(Identifier.fromNamespaceAndPath(AE2GravityTech.MODID, "core/collector_lens"))
-            .withVertexFormat(DefaultVertexFormat.ENTITY, VertexFormat.Mode.QUADS)
-            .withSampler("Sampler0")
-            .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
-            .withCull(false)
-            .build();
-    private static final RenderType LENS = RenderType.create("ae2_gvt_collector_lens", RenderSetup.builder(LENS_PIPELINE)
-            .withTexture("Sampler0", SceneSnapshot.ID, () -> RenderSystem.getSamplerCache().getClampToEdge(FilterMode.LINEAR))
-            .createRenderSetup());
+    private static final RenderType LENS = RenderType.create("ae2_gvt_collector_lens", DefaultVertexFormat.NEW_ENTITY,
+            VertexFormat.Mode.QUADS, 256, false, false, RenderType.CompositeState.builder()
+                    .setShaderState(new RenderStateShard.ShaderStateShard(() -> ClientShaders.collectorLens))
+                    .setTextureState(SceneSnapshot.TEXTURE)
+                    .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
+                    .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                    .setCullState(RenderStateShard.NO_CULL)
+                    .createCompositeState(false));
 
     /** The two distortion regions, from the base block's corner: centre y, half width, half height (blocks). */
     private static final float[][] REGIONS = {{15.5f / 16, 0.45f, 0.75f}, {57f / 16, 0.3f, 0.32f}};
@@ -67,18 +53,16 @@ public final class CollectorClient {
     }
 
     @SubscribeEvent
-    static void registerPipelines(RegisterRenderPipelinesEvent event) {
-        event.registerPipeline(LENS_PIPELINE);
-    }
-
-    @SubscribeEvent
-    static void afterWorld(RenderLevelStageEvent.AfterTranslucentParticles event) {
+    static void afterParticles(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
+            return;
+        }
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) {
             return;
         }
-        Camera camera = mc.gameRenderer.getMainCamera();
-        Vec3 cam = camera.position();
+        Camera camera = event.getCamera();
+        Vec3 cam = camera.getPosition();
         List<GravitonCollector> towers = new ArrayList<>();
         for (GravitonCollector be : GravitonCollector.loadedOnClient()) {
             if (be.getLevel() == mc.level && !be.isRemoved() && be.getBlockPos().getCenter().distanceToSqr(cam) < RANGE * RANGE) {
@@ -95,8 +79,8 @@ public final class CollectorClient {
         }
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         PoseStack.Pose pose = new PoseStack().last();
-        Vector3f right = new Vector3f(camera.leftVector()).negate();
-        Vector3f up = new Vector3f(camera.upVector());
+        Vector3f right = new Vector3f(camera.getLeftVector()).negate();
+        Vector3f up = new Vector3f(camera.getUpVector());
         for (GravitonCollector be : towers) {
             SceneSnapshot.capture(mc.getMainRenderTarget());
             VertexConsumer vc = buffers.getBuffer(LENS);
@@ -109,7 +93,7 @@ public final class CollectorClient {
                             .setColor(255, 255, 255, 255)
                             .setUv(k[0], k[1])
                             .setOverlay(OverlayTexture.NO_OVERLAY)
-                            .setLight(LightCoordsUtil.FULL_BRIGHT)
+                            .setLight(LightTexture.FULL_BRIGHT)
                             .setNormal(0, 0, 1);
                 }
             }

@@ -52,7 +52,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
         if (machine.isEmpty()) {
             pattern.remove(TwinStarTerminal.PATTERN_MACHINE.get());
         } else {
-            pattern.set(TwinStarTerminal.PATTERN_MACHINE.get(), machine.typeHolder());
+            pattern.set(TwinStarTerminal.PATTERN_MACHINE.get(), machine.getItemHolder());
         }
         encoded.set(pattern);
     }

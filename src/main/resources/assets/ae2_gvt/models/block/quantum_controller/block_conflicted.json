@@ -1,5 +1,6 @@
 {
-  "parent": "ae2:block/controller_block_lights",
+  "parent": "ae2:block/controller/controller_block_lights",
+  "render_type": "minecraft:cutout",
   "textures": {
     "block": "ae2_gvt:block/quantum_controller/controller_powered",
     "lights": "ae2_gvt:block/quantum_controller/controller_conflict",

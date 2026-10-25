@@ -2,8 +2,12 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    "ae2_gvt:graviton_cell_housing",
-    "ae2_gvt:graviton_cell_component_4k"
+    {
+      "item": "ae2_gvt:graviton_cell_housing"
+    },
+    {
+      "item": "ae2_gvt:graviton_cell_component_4k"
+    }
   ],
   "result": {
     "id": "ae2_gvt:graviton_storage_cell_4k"

@@ -171,5 +171,10 @@
   "item.ae2_gvt.graviton_cell_component_16k": "16k ME Graviton Storage Component",
   "item.ae2_gvt.graviton_cell_component_64k": "64k ME Graviton Storage Component",
   "item.ae2_gvt.graviton_cell_component_256k": "256k ME Graviton Storage Component",
-  "block.ae2_gvt.graviton_collector": "Graviton Collector"
+  "block.ae2_gvt.graviton_collector": "Graviton Collector",
+  "block.ae2_gvt.dummy_twinstar_cpu": "Dummy Twin-Star CPU",
+  "gui.ae2_gvt.dummy_cpu.capacity": "Capacity",
+  "gui.ae2_gvt.dummy_cpu.parallel": "Parallel",
+  "gui.ae2_gvt.dummy_cpu.patterns": "Patterns",
+  "gui.ae2_gvt.dummy_cpu.unlimited_hint": "Empty or 0 = unlimited"
 }

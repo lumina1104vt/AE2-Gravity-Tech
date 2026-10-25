@@ -3,7 +3,7 @@ package com.lumina.ae2_gvt.prototype.hole;
 import com.lumina.ae2_gvt.AE2GravityTech;
 
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -29,9 +29,8 @@ public final class GravityHole {
     }
 
     private static DeferredHolder<EntityType<?>, EntityType<GravityHoleEntity>> hole(String id) {
-        ResourceKey<EntityType<?>> key = ResourceKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(AE2GravityTech.MODID, id));
         return ENTITY_TYPES.register(id, () -> EntityType.Builder.<GravityHoleEntity>of(GravityHoleEntity::new, MobCategory.MISC)
-                .sized(RADIUS * 2, RADIUS * 2).fireImmune().clientTrackingRange(10).build(key));
+                .sized(RADIUS * 2, RADIUS * 2).fireImmune().clientTrackingRange(10).build(id));
     }
 
     public static void register(IEventBus modEventBus) {

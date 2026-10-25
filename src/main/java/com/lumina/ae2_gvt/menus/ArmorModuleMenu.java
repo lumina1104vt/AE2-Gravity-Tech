@@ -10,8 +10,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.equipment.ArmorType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +34,7 @@ public class ArmorModuleMenu extends AEBaseMenu {
         super(menuType, id, inventory, host);
         this.player = inventory.player;
 
-        List<ArmorType> worn = worn();
+        List<ArmorItem.Type> worn = worn();
         this.selected = ArmorModules.PIECES.indexOf(worn.getFirst());
         this.installSlot = addSlot(new Slot(install, 0, 0, 0) {
             @Override
@@ -49,7 +49,7 @@ public class ArmorModuleMenu extends AEBaseMenu {
         }, ArmorModules.INSTALL_SLOT);
 
         createPlayerInventorySlots(inventory);
-        for (ArmorType piece : ArmorModules.PIECES) {
+        for (ArmorItem.Type piece : ArmorModules.PIECES) {
             addSlot(new Slot(inventory, piece.getSlot().getIndex(36), -10000, -10000) {
                 @Override
                 public boolean isActive() {
@@ -69,16 +69,16 @@ public class ArmorModuleMenu extends AEBaseMenu {
         }
     }
 
-    public List<ArmorType> worn() {
-        List<ArmorType> worn = new ArrayList<>();
-        for (ArmorType type : ArmorModules.PIECES)
+    public List<ArmorItem.Type> worn() {
+        List<ArmorItem.Type> worn = new ArrayList<>();
+        for (ArmorItem.Type type : ArmorModules.PIECES)
             if (ArmorModules.isPiece(player.getItemBySlot(type.getSlot()), type))
                 worn.add(type);
 
         return worn;
     }
 
-    public ArmorType selected() {
+    public ArmorItem.Type selected() {
         return ArmorModules.PIECES.get(selected);
     }
 
@@ -103,7 +103,7 @@ public class ArmorModuleMenu extends AEBaseMenu {
         ItemStack module = install.getItem(0);
         if (!player.level().isClientSide() && !module.isEmpty() && canInstall(module)) {
             Set<InstalledModule> set = new TreeSet<>(installed());
-            set.add(new InstalledModule(module.typeHolder(), true));
+            set.add(new InstalledModule(module.getItemHolder(), true));
             ArmorModules.setInstalled(selectedStack(), set);
             install.setItem(0, ItemStack.EMPTY);
         }

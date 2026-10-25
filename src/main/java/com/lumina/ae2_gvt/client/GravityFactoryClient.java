@@ -2,9 +2,9 @@ package com.lumina.ae2_gvt.client;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.client.screen.GravityFactoryScreen;
-import com.lumina.ae2_gvt.prototype.factory.GravityFactory;
 
-import appeng.client.InitScreens;
+import appeng.init.client.InitScreens;
+import com.lumina.ae2_gvt.menus.Menus;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -17,6 +17,6 @@ public final class GravityFactoryClient {
 
     @SubscribeEvent
     static void registerScreens(RegisterMenuScreensEvent event) {
-        InitScreens.register(event, GravityFactory.MENU.get(), GravityFactoryScreen::new, "/screens/gravity_processing_factory.json");
+        InitScreens.register(event, Menus.GRAVITY_FACTORY.get(), GravityFactoryScreen::new, "/screens/gravity_processing_factory.json");
     }
 }

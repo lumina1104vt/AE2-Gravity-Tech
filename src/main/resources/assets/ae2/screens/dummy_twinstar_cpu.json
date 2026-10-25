@@ -1,0 +1,63 @@
+{
+  "includes": [
+    "common/common.json",
+    "common/player_inventory.json"
+  ],
+  "background": {
+    "texture": "ae2_gvt:textures/gui/dummy_twinstar_cpu.png",
+    "textureWidth": 256,
+    "textureHeight": 256,
+    "srcRect": [
+      0,
+      0,
+      195,
+      233
+    ]
+  },
+  "slots": {
+    "ENCODED_PATTERN": {
+      "left": 8,
+      "top": 62,
+      "grid": "BREAK_AFTER_9COLS"
+    }
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "block.ae2_gvt.dummy_twinstar_cpu"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    },
+    "patterns_title": {
+      "text": {
+        "translate": "gui.ae2_gvt.dummy_cpu.patterns"
+      },
+      "position": {
+        "left": 8,
+        "top": 51
+      }
+    }
+  },
+  "widgets": {
+    "capacity": {
+      "left": 67,
+      "top": 21,
+      "width": 114,
+      "height": 10
+    },
+    "parallel": {
+      "left": 67,
+      "top": 35,
+      "width": 114,
+      "height": 10
+    },
+    "scrollbar": {
+      "left": 175,
+      "top": 62,
+      "height": 70
+    }
+  }
+}

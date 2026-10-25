@@ -1,4 +1,4 @@
-#version 330
+#version 150
 
 // PROTOTYPE - Twin-Star Hub twin holes (see TwinHoleRenderTypes).
 // Vertex data is packed into the vanilla ENTITY format:
@@ -7,8 +7,8 @@
 //   UV1.y    = proximity of the pair * 1000 (0 far apart .. 1000 touching / merged)
 //   Normal   = surface normal (for the rim)
 
-#moj_import <minecraft:dynamictransforms.glsl>
-#moj_import <minecraft:projection.glsl>
+uniform mat4 ModelViewMat;
+uniform mat4 ProjMat;
 
 in vec3 Position;
 in vec4 Color;

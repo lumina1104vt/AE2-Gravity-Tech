@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.jspecify.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.prototype.terminal.TwinStarPatternTermMenu;
@@ -24,12 +24,12 @@ import mezz.jei.api.recipe.category.IRecipeCategory;
 import mezz.jei.api.recipe.transfer.IRecipeTransferError;
 import mezz.jei.api.recipe.transfer.IRecipeTransferHandlerHelper;
 import mezz.jei.api.recipe.transfer.IUniversalRecipeTransferHandler;
-import mezz.jei.api.recipe.types.IRecipeType;
+import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.registration.IRecipeTransferRegistration;
 import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
@@ -45,8 +45,8 @@ public class TwinStarJeiPlugin implements IModPlugin {
     private static @Nullable IJeiRuntime runtime;
 
     @Override
-    public Identifier getPluginUid() {
-        return Identifier.fromNamespaceAndPath(AE2GravityTech.MODID, "jei");
+    public ResourceLocation getPluginUid() {
+        return ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "jei");
     }
 
     @Override
@@ -124,7 +124,7 @@ public class TwinStarJeiPlugin implements IModPlugin {
             if (recipe instanceof RecipeHolder<?> holder) {
                 // every vanilla-style category shares the RecipeHolder class; JEI names their type
                 // after the recipe type, so match on that
-                Identifier typeId = BuiltInRegistries.RECIPE_TYPE.getKey(holder.value().getType());
+                ResourceLocation typeId = BuiltInRegistries.RECIPE_TYPE.getKey(holder.value().getType());
                 match = candidates.stream().filter(category -> category.getRecipeType().getUid().equals(typeId)).findFirst().orElse(null);
             }
             if (match == null) {
@@ -135,11 +135,11 @@ public class TwinStarJeiPlugin implements IModPlugin {
             if (match == null) {
                 return ItemStack.EMPTY;
             }
-            return recipes.createCraftingStationLookup(match.getRecipeType()).getItemStack().findFirst()
+            return recipes.createRecipeCatalystLookup(match.getRecipeType()).getItemStack().findFirst()
                     .map(stack -> stack.copyWithCount(1)).orElse(ItemStack.EMPTY);
         }
 
-        private static boolean lists(IRecipeManager recipes, IRecipeType<?> type, Object recipe) {
+        private static boolean lists(IRecipeManager recipes, RecipeType<?> type, Object recipe) {
             return recipes.createRecipeLookup(type).includeHidden().get().anyMatch(r -> r == recipe);
         }
     }

@@ -12,8 +12,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.nbt.CompoundTag;
 
 /**
  * A black hole or a white hole (one class, two entity types). It never moves, can't be picked up,
@@ -50,11 +49,11 @@ public class GravityHoleEntity extends Entity {
     }
 
     @Override
-    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
-        if (source.is(DamageTypeTags.IS_EXPLOSION)) {
+    public boolean hurt(DamageSource source, float amount) {
+        if (!level().isClientSide() && source.is(DamageTypeTags.IS_EXPLOSION)) {
             // both kinds leave the same thing; TODO also release gravitons once their AEKey exists
             discard();
-            spawnAtLocation(level, new ItemStack(Items.CHAOS_MATTER.get()));
+            spawnAtLocation(new ItemStack(Items.CHAOS_MATTER.get()));
             return true;
         }
         return false;
@@ -65,12 +64,12 @@ public class GravityHoleEntity extends Entity {
     }
 
     @Override
-    protected void readAdditionalSaveData(ValueInput input) {
-        nutrients = input.getLongOr("nutrients", 0);
+    protected void readAdditionalSaveData(CompoundTag tag) {
+        nutrients = tag.getLong("nutrients");
     }
 
     @Override
-    protected void addAdditionalSaveData(ValueOutput output) {
-        output.putLong("nutrients", nutrients);
+    protected void addAdditionalSaveData(CompoundTag tag) {
+        tag.putLong("nutrients", nutrients);
     }
 }

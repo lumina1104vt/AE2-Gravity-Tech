@@ -1,4 +1,4 @@
-#version 330
+#version 150
 
 // Hole body and accretion disc.
 //  - body: the twin-star hub's hole look - stars fixed to the screen inside the sphere (dark
@@ -6,7 +6,7 @@
 //  - disc: black hole - violet-white matter glowing as it spirals in; white hole - dark matter
 //    thrown out, turning the other way
 
-#moj_import <minecraft:globals.glsl>
+uniform float GameTime;
 
 in vec4 flags;
 in vec2 local;

@@ -1,8 +1,11 @@
 package com.lumina.ae2_gvt.prototype.quantum;
 
+import net.minecraft.world.level.block.state.BlockBehaviour;
+
 import com.lumina.ae2_gvt.AE2GravityTech;
 
 import appeng.api.AECapabilities;
+import appeng.blockentity.AEBaseBlockEntity;
 import appeng.blockentity.networking.ControllerBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.BlockItem;
@@ -23,15 +26,17 @@ public final class QuantumController {
             AE2GravityTech.MODID);
 
     public static final DeferredBlock<QuantumControllerBlock> BLOCK = AE2GravityTech.BLOCKS.registerBlock("quantum_controller",
-            QuantumControllerBlock::new, p -> p.mapColor(MapColor.METAL).strength(6f).sound(SoundType.METAL));
+            QuantumControllerBlock::new, BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(6f).sound(SoundType.METAL));
     public static final DeferredItem<BlockItem> ITEM = AE2GravityTech.ITEMS.registerSimpleBlockItem("quantum_controller", BLOCK);
 
     /** AE2's own controller block entity, under our block (that is what makes it a real controller). */
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ControllerBlockEntity>> ENTITY = BLOCK_ENTITIES.register(
             "quantum_controller", () -> {
                 BlockEntityType<ControllerBlockEntity>[] type = new BlockEntityType[1];
-                type[0] = new BlockEntityType<>((pos, state) -> new ControllerBlockEntity(type[0], pos, state), BLOCK.get());
+                type[0] = BlockEntityType.Builder.of((pos, state) -> new ControllerBlockEntity(type[0], pos, state), BLOCK.get()).build(null);
                 BLOCK.get().setBlockEntity(ControllerBlockEntity.class, type[0], null, null);
+                // The node's look in AE2's network status; without it the node shows as air and is left out
+                AEBaseBlockEntity.registerBlockEntityItem(type[0], BLOCK.get().asItem());
                 return type[0];
             });
 
@@ -52,6 +57,6 @@ public final class QuantumController {
      */
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, ENTITY.get(), (be, ctx) -> be);
-        event.registerBlockEntity(Capabilities.Energy.BLOCK, ENTITY.get(), ControllerBlockEntity::getEnergyStorage);
+        event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ENTITY.get(), ControllerBlockEntity::getEnergyStorage);
     }
 }

@@ -21,8 +21,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
 
 /**
  * PROTOTYPE - one of the eight blocks of the 2x2x2 controller. Only the controller's min corner
@@ -69,15 +67,33 @@ public class TwinStarPreviewBlockEntity extends BlockEntity implements TwinStarH
     static void serverTick(Level level, BlockPos pos, BlockState state, TwinStarPreviewBlockEntity be) {
         if (--be.checkCooldown <= 0) {
             be.checkCooldown = 40;
-            be.recheck((ServerLevel) level);
+            be.periodicCheck((ServerLevel) level);
         }
     }
 
+    /** The automatic check: only the master cell checks the structure; the other seven just stay unformed. */
+    private void periodicCheck(ServerLevel level) {
+        BlockPos min = TwinStarBlueprint.findControllerMin(level, worldPosition);
+        if (!worldPosition.equals(min)) {
+            setFormed(level, false);
+            return;
+        }
+        recheck(level, false);
+    }
+
     /**
-     * Re-check from this block. Non-master cells (and cells of an incomplete controller) are never
-     * formed themselves; the result still reports on the whole controller / structure.
+     * Re-check from this block (a right-click), re-reading the saved structure first. Non-master
+     * cells (and cells of an incomplete controller) are never formed themselves; the result still
+     * reports on the whole controller / structure.
      */
     TwinStarBlueprint.Result recheck(ServerLevel level) {
+        return recheck(level, true);
+    }
+
+    private TwinStarBlueprint.Result recheck(ServerLevel level, boolean reread) {
+        if (reread) {
+            TwinStarBlueprint.refresh(level);
+        }
         BlockPos min = TwinStarBlueprint.findControllerMin(level, worldPosition);
         TwinStarBlueprint.Result result = min == null ? TwinStarBlueprint.Result.NO_CONTROLLER : TwinStarBlueprint.check(level, min);
         setFormed(level, worldPosition.equals(min) && result.formed());
@@ -136,8 +152,8 @@ public class TwinStarPreviewBlockEntity extends BlockEntity implements TwinStarH
         return level != null && level.isClientSide();
     }
 
-    @Override
-    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+    /** Called by the block when this master cell is removed (1.21.1 has no block entity removal hook). */
+    void onRemoved(BlockPos pos) {
         // master broken while formed: put the placeholder frame back before we disappear
         if (formed && level instanceof ServerLevel server) {
             TwinStarBlueprint.setFrameHidden(server, worldPosition, false);
@@ -151,7 +167,6 @@ public class TwinStarPreviewBlockEntity extends BlockEntity implements TwinStarH
             }
             patterns.clear();
         }
-        super.preRemoveSideEffects(pos, state);
     }
 
     /**
@@ -180,29 +195,29 @@ public class TwinStarPreviewBlockEntity extends BlockEntity implements TwinStarH
     }
 
     @Override
-    protected void saveAdditional(ValueOutput output) {
-        super.saveAdditional(output);
-        output.putBoolean("formed", formed);
-        output.putFloat("sphereX", sphereX);
-        output.putFloat("sphereY", sphereY);
-        output.putFloat("sphereZ", sphereZ);
-        output.putFloat("shellRadius", shellRadius);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        tag.putBoolean("formed", formed);
+        tag.putFloat("sphereX", sphereX);
+        tag.putFloat("sphereY", sphereY);
+        tag.putFloat("sphereZ", sphereZ);
+        tag.putFloat("shellRadius", shellRadius);
         if (!savingForSync) {
-            patterns.writeToNBT(output, "patterns");
+            patterns.writeToNBT(tag, "patterns", registries);
         }
     }
 
     @Override
-    protected void loadAdditional(ValueInput input) {
-        super.loadAdditional(input);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
         boolean wasFormed = formed;
-        formed = input.getBooleanOr("formed", false);
-        sphereX = input.getFloatOr("sphereX", 1);
-        sphereY = input.getFloatOr("sphereY", 24);
-        sphereZ = input.getFloatOr("sphereZ", 1);
-        shellRadius = input.getFloatOr("shellRadius", 11.9f);
+        formed = tag.getBoolean("formed");
+        sphereX = tag.contains("sphereX") ? tag.getFloat("sphereX") : 1;
+        sphereY = tag.contains("sphereY") ? tag.getFloat("sphereY") : 24;
+        sphereZ = tag.contains("sphereZ") ? tag.getFloat("sphereZ") : 1;
+        shellRadius = tag.contains("shellRadius") ? tag.getFloat("shellRadius") : 11.9f;
         if (level == null || !level.isClientSide()) {
-            patterns.readFromNBT(input, "patterns");
+            patterns.readFromNBT(tag, "patterns", registries);
         }
         // client: the structure just became complete -> play the formation sequence
         // (on chunk load level is still null, so an already-formed hub just shows its steady state)

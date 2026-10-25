@@ -7,9 +7,9 @@ import com.lumina.ae2_gvt.items.armor.AntigravityArmor;
 import com.lumina.ae2_gvt.items.armor.AntigravityArmorItem;
 import com.lumina.ae2_gvt.items.armor.ArmorModules;
 import com.lumina.ae2_gvt.items.parts.MachineAccessInterface;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.equipment.ArmorType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -29,7 +29,7 @@ public class Items {
 
     public static final DeferredItem<Item> PARADOX_CRYSTAL_SEED = ITEMS.registerSimpleItem("paradox_crystal_seed");
 
-    public static final DeferredItem<Item> GRAVITY_WAVE_DETECTOR = ITEMS.registerSimpleItem("gravity_wave_detector", p -> p.stacksTo(1));
+    public static final DeferredItem<Item> GRAVITY_WAVE_DETECTOR = ITEMS.registerSimpleItem("gravity_wave_detector", new Item.Properties().stacksTo(1));
 
     // block item
     public static final DeferredItem<BlockItem> GRAVITY_CONSTRAINER = ITEMS.registerSimpleBlockItem("gravity_constrainer", Blocks.GRAVITY_CONSTRAINER);
@@ -43,10 +43,10 @@ public class Items {
             "machine_access_interface", p -> new PartItem<>(p, MachineAccessInterface.class, MachineAccessInterface::new));
 
     // Armor
-    public static final DeferredItem<AntigravityArmorItem> ANTIGRAVITY_ARMOR_HELMET = AntigravityArmor.register("antigravity_helmet", ArmorType.HELMET);
-    public static final DeferredItem<AntigravityArmorItem> ANTIGRAVITY_ARMOR_CHESTPLATE = AntigravityArmor.register("antigravity_chestplate", ArmorType.CHESTPLATE);
-    public static final DeferredItem<AntigravityArmorItem> ANTIGRAVITY_ARMOR_LEGGINGS = AntigravityArmor.register("antigravity_leggings", ArmorType.LEGGINGS);
-    public static final DeferredItem<AntigravityArmorItem> ANTIGRAVITY_ARMOR_BOOTS = AntigravityArmor.register("antigravity_boots", ArmorType.BOOTS);
+    public static final DeferredItem<AntigravityArmorItem> ANTIGRAVITY_ARMOR_HELMET = AntigravityArmor.register("antigravity_helmet", ArmorItem.Type.HELMET);
+    public static final DeferredItem<AntigravityArmorItem> ANTIGRAVITY_ARMOR_CHESTPLATE = AntigravityArmor.register("antigravity_chestplate", ArmorItem.Type.CHESTPLATE);
+    public static final DeferredItem<AntigravityArmorItem> ANTIGRAVITY_ARMOR_LEGGINGS = AntigravityArmor.register("antigravity_leggings", ArmorItem.Type.LEGGINGS);
+    public static final DeferredItem<AntigravityArmorItem> ANTIGRAVITY_ARMOR_BOOTS = AntigravityArmor.register("antigravity_boots", ArmorItem.Type.BOOTS);
 
     public static final DeferredItem<Item> BASE_MODULE = ITEMS.registerSimpleItem("armor_module_base");
 
@@ -91,8 +91,16 @@ public class Items {
     public static final DeferredItem<BlockItem> CHIPPED_BUDDING_PARADOX = ITEMS.registerSimpleBlockItem("chipped_budding_paradox", Blocks.CHIPPED_BUDDING_PARADOX);
     public static final DeferredItem<BlockItem> DAMAGED_BUDDING_PARADOX = ITEMS.registerSimpleBlockItem("damaged_budding_paradox", Blocks.DAMAGED_BUDDING_PARADOX);
 
-    // block what has block_entity
+    // machine blocks
     public static final DeferredItem<BlockItem> GRAVITON_COLLECTOR = ITEMS.registerSimpleBlockItem("graviton_collector", Blocks.GRAVITON_COLLECTOR);
+    public static final DeferredItem<BlockItem> GRAVITY_FACTORY = ITEMS.registerSimpleBlockItem("gravity_processing_factory", Blocks.GRAVITY_FACTORY);
+    public static final DeferredItem<BlockItem> FUSION_CONTROLLER = ITEMS.registerSimpleBlockItem("fusion_controller", Blocks.FUSION_CONTROLLER);
+    public static final DeferredItem<BlockItem> CONTAINMENT_GLASS = ITEMS.registerSimpleBlockItem("containment_glass", Blocks.CONTAINMENT_GLASS);
+    public static final DeferredItem<BlockItem> MATTER_PORT = ITEMS.registerSimpleBlockItem("matter_port", Blocks.MATTER_PORT);
+    public static final DeferredItem<BlockItem> ENERGY_PORT = ITEMS.registerSimpleBlockItem("energy_port", Blocks.ENERGY_PORT);
+
+    // dummy
+    public static final DeferredItem<BlockItem> TWINSTAR_CPU = ITEMS.registerSimpleBlockItem("dummy_twinstar_cpu", Blocks.TWINSTAR_CPU);
 
     public static void register(IEventBus bus) {
         ITEMS.register(bus);

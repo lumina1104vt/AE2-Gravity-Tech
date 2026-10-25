@@ -8,11 +8,21 @@
   "type": "minecraft:crafting_shaped",
   "category": "redstone",
   "key": {
-    "W": "ae2_gvt:antigravity_dust",
-    "B": "ae2_gvt:gravity_dust",
-    "P": "ae2_gvt:paradox_dust",
-    "S": "ae2:singularity",
-    "A": "ae2_gvt:antisingularity"
+    "W": {
+      "item": "ae2_gvt:antigravity_dust"
+    },
+    "B": {
+      "item": "ae2_gvt:gravity_dust"
+    },
+    "P": {
+      "item": "ae2_gvt:paradox_dust"
+    },
+    "S": {
+      "item": "ae2:singularity"
+    },
+    "A": {
+      "item": "ae2_gvt:anti_singularity"
+    }
   },
   "pattern": [
     "WSB",

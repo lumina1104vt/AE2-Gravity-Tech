@@ -11,10 +11,10 @@ import appeng.client.gui.me.items.PatternEncodingTermScreen;
 import appeng.client.gui.style.Blitter;
 import appeng.client.gui.style.ScreenStyle;
 import appeng.client.gui.widgets.TabButton;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
@@ -24,7 +24,7 @@ import net.minecraft.world.entity.player.Inventory;
  */
 public class TwinStarPatternTermScreen extends PatternEncodingTermScreen<TwinStarPatternTermMenu> {
     private static final Blitter PANEL = Blitter
-            .texture(Identifier.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/twin_star_pattern_panel.png"))
+            .texture(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/twin_star_pattern_panel.png"))
             .src(0, 0, 124, 66);
 
     public TwinStarPatternTermScreen(TwinStarPatternTermMenu menu, Inventory playerInventory, Component title, ScreenStyle style) {
@@ -72,7 +72,7 @@ public class TwinStarPatternTermScreen extends PatternEncodingTermScreen<TwinSta
         }
 
         @Override
-        public void drawBackgroundLayer(GuiGraphicsExtractor guiGraphics, Rect2i bounds, Point mouse) {
+        public void drawBackgroundLayer(GuiGraphics guiGraphics, Rect2i bounds, Point mouse) {
             // same spot AE2's ProcessingEncodingPanel draws its background
             PANEL.dest(bounds.getX() + 8, bounds.getY() + bounds.getHeight() - 165).blit(guiGraphics);
         }

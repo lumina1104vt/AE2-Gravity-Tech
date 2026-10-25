@@ -1,0 +1,708 @@
+package com.lumina.twinstar.algorithm.planning;
+
+import com.lumina.twinstar.algorithm.allocation.RouteCeiling;
+import com.lumina.twinstar.algorithm.cache.Scc;
+import com.lumina.twinstar.algorithm.cache.Snapshot;
+import com.lumina.twinstar.algorithm.model.Amount;
+import com.lumina.twinstar.algorithm.model.AmountArray;
+import com.lumina.twinstar.algorithm.model.AmountMap;
+import com.lumina.twinstar.algorithm.model.Deadline;
+import com.lumina.twinstar.algorithm.model.InputKind;
+import com.lumina.twinstar.algorithm.model.LogMath;
+import com.lumina.twinstar.algorithm.model.Overlay;
+import com.lumina.twinstar.algorithm.model.Pattern;
+import com.lumina.twinstar.algorithm.model.StockSnapshot;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Set;
+
+/**
+ * B — one demand pass. Top level first: an item is handled only after every consumer has added its
+ * demand, so a shared intermediate is counted (and taken from stock) once, and the work does not
+ * depend on the order amount. An item can be reopened; only the new difference is handled (that is
+ * how demand coming back over a back edge is caught).
+ * <p>
+ * The fields are the working area of one order; C (allocation) reads them, and C1 runs throw-away
+ * copies in {@code policyOnly} mode.
+ */
+public final class DemandPass {
+    final Snapshot snap;
+    final StockSnapshot stock;
+    final Overlay overlay;
+    final Deadline dl;
+    /** C1 trial runs: always the first route (the policy), no splitting, no repair. */
+    final boolean policyOnly;
+    /** C2 repair results: item → fixed allocation over routes. */
+    final Map<Integer, List<Split>> forced;
+    /** C1 trial runs: the route the trial starts with for its target. */
+    final int forcedFirstItem;
+    final int forcedFirstPattern;
+    /**
+     * The trial's route is for its first demand only. Demand that comes back to the item (a loop
+     * through it) follows the normal rules - loop solving and the back-edge forbidden list - as the
+     * design has it; forcing it again bypassed that list (white dye + any wool → white wool lists
+     * white wool first: each forced run asked for one more white wool, until the safety net).
+     */
+    private boolean forcedUsed;
+
+    public final AmountArray avail;     // network stock still free in this plan
+    public final AmountArray ledger;    // made but not yet used: ceil rounding and extra outputs
+    public final AmountArray need;
+    public final AmountArray done;
+    final AmountArray hold;             // catalysts / containers: max over all uses
+    final AmountArray substNeed;        // part of need[y] coming from slots that allow substitution
+    final Map<Integer, LinkedHashSet<Integer>> substAlternatives = new HashMap<>();
+    final BitSet[] ctx;                 // per item: back-edge forbidden list (union of all sources)
+
+    public final AmountMap patternTimes = new AmountMap();
+    public final AmountMap pulled = new AmountMap();
+    /** part of {@link #pulled} from infinite sources (drawn while the job runs) */
+    final AmountMap drawLater = new AmountMap();
+    public final AmountMap missing = new AmountMap();
+    final AmountMap returned = new AmountMap();     // seeds pulled for loops, given back at the end
+    final AmountMap seedHeld = new AmountMap();
+    /** routes chosen per item (C2 reads them) */
+    public final Map<Integer, List<Split>> chosen = new HashMap<>();
+    /** demand an item had when its routes were split (C2 reads it) */
+    public final AmountMap splitDemand = new AmountMap();
+    final Map<Integer, CycleContract> contracts = new HashMap<>();
+    /** the seed rotation chosen per loop (kept when the loop is reopened) */
+    final Map<Integer, AmountMap> loopSeeds = new HashMap<>();
+
+    private final PriorityQueue<Integer> queue;
+    private final BitSet inQueue = new BitSet();
+    private final Map<Long, Boolean> closureMemo = new HashMap<>();
+    /** The ordered item: the order itself is always crafted, never taken from storage (as in AE2). */
+    private int rootItem = -1;
+    private Amount rootLeft = Amount.ZERO;
+    private int pops;
+    private final int popLimit;
+
+    DemandPass(Snapshot snap, StockSnapshot stock, AmountArray avail, AmountArray ledger, Overlay overlay, Deadline dl,
+               boolean policyOnly, Map<Integer, List<Split>> forced, int forcedFirstItem, int forcedFirstPattern) {
+        this.snap = snap;
+        this.stock = stock;
+        this.overlay = overlay;
+        this.dl = dl;
+        this.policyOnly = policyOnly;
+        this.forced = forced;
+        this.forcedFirstItem = forcedFirstItem;
+        this.forcedFirstPattern = forcedFirstPattern;
+        int n = Math.max(snap.itemCount(), stock.size());
+        this.avail = avail.size() >= n ? avail : avail.resized(n);
+        this.ledger = ledger.size() >= n ? ledger : ledger.resized(n);
+        this.need = new AmountArray(n);
+        this.done = new AmountArray(n);
+        this.hold = new AmountArray(n);
+        this.substNeed = new AmountArray(n);
+        this.ctx = new BitSet[n];
+        // max-heap by level; same level by id so equal inputs always give equal plans
+        this.queue = new PriorityQueue<>(Comparator.<Integer>comparingInt(i -> -snap.level(i)).thenComparingInt(i -> i));
+        this.popLimit = 64 * (n + snap.patternCount() + 16);
+    }
+
+    /** A fresh pass over the whole order. */
+    static DemandPass start(Snapshot snap, StockSnapshot stock, Overlay overlay, Deadline dl, Map<Integer, List<Split>> forced) {
+        int n = Math.max(snap.itemCount(), stock.size());
+        return new DemandPass(snap, stock, stock.copyStock(n), new AmountArray(n), overlay, dl, false, forced, -1, -1);
+    }
+
+    /**
+     * C1: a throw-away pass on copies of this pass's stock and ledger, making {@code n} of {@code x}
+     * with {@code p} first and the policy below. True if nothing is missing.
+     */
+    public boolean trial(int x, Amount n, int p) {
+        DemandPass t = new DemandPass(snap, stock, avail.copy(), ledger.copy(), overlay, dl, true, Map.of(), x, p);
+        t.push(x, n, ctx[x]);
+        try {
+            t.run();
+        } catch (TrialStopped e) {
+            return false;       // out of time for improving: this route proves nothing
+        }
+        return t.missing.isEmpty();
+    }
+
+    /**
+     * Trials only improve the split, so they stop at the soft limit like every improvement: one
+     * trial on a deep tree can outlast it (a real pack: trial runs alone hit the 1 s hard limit).
+     */
+    private static final class TrialStopped extends RuntimeException {
+        static final TrialStopped INSTANCE = new TrialStopped();
+
+        private TrialStopped() {
+            super("trial past the soft limit", null, false, false);
+        }
+    }
+
+    public Snapshot snapshot() {
+        return snap;
+    }
+
+    public Deadline deadline() {
+        return dl;
+    }
+
+    public boolean isInfinite(int k) {
+        return stock.isInfinite(k);
+    }
+
+    /** Free network stock left for {@code k} (infinite sources never run out). */
+    public Amount available(int k) {
+        if (stock.isInfinite(k))
+            return Amount.of(Long.MAX_VALUE).mul(Amount.of(Long.MAX_VALUE));
+        return avail.get(k).add(ledger.get(k).clampNonNegative());
+    }
+
+    /** The order: the amount asked for is crafted even when storage already has some. */
+    void pushOrder(int target, Amount amount) {
+        rootItem = target;
+        rootLeft = amount;
+        push(target, amount, null);
+    }
+
+    /** Part of {@code d} that must be crafted, not taken from storage (the order's own amount). */
+    private Amount mustMake(int x, Amount d) {
+        if (x != rootItem || rootLeft.signum() <= 0)
+            return Amount.ZERO;
+        Amount m = rootLeft.min(d);
+        rootLeft = rootLeft.sub(m);
+        return m;
+    }
+
+    void push(int y, Amount q, @Nullable BitSet ctx2) {
+        if (q.signum() <= 0)
+            return;
+        need.add(y, q);
+        if (ctx2 != null && !ctx2.isEmpty()) {
+            if (ctx[y] == null)
+                ctx[y] = (BitSet) ctx2.clone();
+            else
+                ctx[y].or(ctx2);    // the union only gets stricter, still never loops back
+        }
+        if (!inQueue.get(y)) {
+            inQueue.set(y);
+            queue.add(y);
+        }
+    }
+
+    void run() {
+        while (!queue.isEmpty()) {
+            dl.checkHard();
+            if (policyOnly && dl.softPassed())
+                throw TrialStopped.INSTANCE;
+            int x = queue.poll();
+            inQueue.clear(x);
+            if (++pops > popLimit) {
+                // safety net; should never trigger: report what is left as missing instead of hanging
+                Amount left = need.get(x).sub(done.get(x));
+                if (left.signum() > 0) {
+                    done.set(x, need.get(x));
+                    missing.add(x, left);
+                }
+                continue;
+            }
+            int s = snap.scc(x);
+            if (s != -1 && !(policyOnly && x == forcedFirstItem && !forcedUsed)) {
+                runMacro(snap.sccAt(s));
+                continue;
+            }
+            Amount d = need.get(x).sub(done.get(x));
+            if (d.signum() <= 0)
+                continue;
+            done.set(x, need.get(x));
+
+            Amount fromStorage = d.sub(mustMake(x, d));
+            Amount took = takeStock(x, fromStorage);
+            if (took.compareTo(fromStorage) < 0)
+                took = took.add(takeSubstitutes(x, fromStorage.sub(took)));
+            d = d.sub(took);
+            if (d.signum() > 0)
+                d = d.sub(takeLedger(x, d));
+            if (d.signum() <= 0)
+                continue;
+
+            int[] routes = routes(x);
+            if (routes.length == 0) {
+                missing.add(x, d);
+                continue;
+            }
+            List<Split> splits = split(x, d, routes);
+            chosen.computeIfAbsent(x, k -> new ArrayList<>()).addAll(splits);
+            splitDemand.add(x, d);
+            for (Split sp : splits)
+                fire(sp.pattern(), sp.runs(), x, sp.used());
+        }
+    }
+
+    private List<Split> split(int x, Amount d, int[] routes) {
+        if (policyOnly && x == forcedFirstItem && forcedFirstPattern >= 0 && !forcedUsed) {
+            forcedUsed = true;
+            return List.of(whole(forcedFirstPattern, x, d));
+        }
+        List<Split> f = forced.get(x);
+        if (f != null)
+            return applyForced(f, x, d);
+        if (!policyOnly && snap.isMined(x)) {
+            // mined (raw iron): stock is taken already; convert what the recipes can cover (take
+            // raw iron blocks apart) and the rest is missing as the item itself, not as a block
+            List<Split> conv = RouteCeiling.greedySplit(this, x, d, routes, false);
+            Amount covered = Amount.ZERO;
+            for (Split sp : conv)
+                covered = covered.add(sp.used());
+            if (covered.compareTo(d) < 0)
+                missing.add(x, d.sub(covered));
+            return conv;
+        }
+        if (policyOnly || routes.length == 1)
+            return List.of(whole(routes[0], x, d));
+        return RouteCeiling.greedySplit(this, x, d, routes);
+    }
+
+    Split whole(int p, int x, Amount d) {
+        return new Split(p, d.ceilDiv(snap.pattern(p).outputAmountOf(x)), d);
+    }
+
+    /** C2's fixed allocation, cut or topped up to the demand this pass actually has. */
+    private List<Split> applyForced(List<Split> f, int x, Amount d) {
+        List<Split> out = new ArrayList<>();
+        Amount left = d;
+        for (Split sp : f) {
+            if (left.signum() <= 0)
+                break;
+            Amount use = sp.used().min(left);
+            if (use.signum() <= 0)
+                continue;
+            out.add(whole(sp.pattern(), x, use));
+            left = left.sub(use);
+        }
+        if (left.signum() > 0) {
+            int p = f.isEmpty() ? routes(x)[0] : f.get(0).pattern();
+            out = mergeInto(out, p, x, left);
+        }
+        return out;
+    }
+
+    /** Adds {@code extra} demand to route {@code p} (merging with an existing split of p). */
+    public List<Split> mergeInto(List<Split> splits, int p, int x, Amount extra) {
+        List<Split> out = new ArrayList<>(splits);
+        for (int i = 0; i < out.size(); i++)
+            if (out.get(i).pattern() == p) {
+                out.set(i, whole(p, x, out.get(i).used().add(extra)));
+                return out;
+            }
+        out.add(0, whole(p, x, extra));
+        return out;
+    }
+
+    private Amount takeStock(int x, Amount d) {
+        if (stock.isInfinite(x)) {
+            pulled.add(x, d);
+            drawLater.add(x, d);
+            return d;
+        }
+        Amount t = avail.get(x).min(d).clampNonNegative();
+        if (t.signum() > 0) {
+            avail.sub(x, t);
+            pulled.add(x, t);
+        }
+        return t;
+    }
+
+    /** Slots that allow substitution: other accepted items, most stocked first. */
+    private Amount takeSubstitutes(int x, Amount d) {
+        LinkedHashSet<Integer> alts = substAlternatives.get(x);
+        Amount allowed = substNeed.get(x).min(d);
+        if (alts == null || allowed.signum() <= 0)
+            return Amount.ZERO;
+        List<Integer> order = new ArrayList<>(alts);
+        order.sort(Comparator.<Integer, Amount>comparing(this::available).reversed().thenComparingInt(i -> i));
+        Amount taken = Amount.ZERO;
+        for (int alt : order) {
+            Amount want = allowed.sub(taken);
+            if (want.signum() <= 0)
+                break;
+            taken = taken.add(takeStock(alt, want));
+        }
+        substNeed.sub(x, taken);
+        return taken;
+    }
+
+    private Amount takeLedger(int x, Amount d) {
+        Amount t = ledger.get(x).min(d).clampNonNegative();
+        if (t.signum() > 0)
+            ledger.sub(x, t);
+        return t;
+    }
+
+    /**
+     * Patterns for x in route order (with this order's overlay applied). With a forbidden list,
+     * only routes that never touch it: first those whose whole policy subtree is clear (the "safe"
+     * patterns of the design), falling back to a direct check of their inputs.
+     */
+    int[] routes(int x) {
+        return routes(x, ctx[x]);
+    }
+
+    private int[] routes(int x, @Nullable BitSet forbid) {
+        int[] base = snap.producers(x);
+        if (base.length == 0)
+            return base;
+        int[] routes = overlay.isEmpty() ? base : sortWithOverlay(x, base);
+        if (forbid == null || forbid.isEmpty())
+            return routes;
+        List<Integer> direct = new ArrayList<>();
+        List<Integer> safe = new ArrayList<>();
+        for (int q : routes) {
+            Pattern p = snap.pattern(q);
+            boolean ok = true;
+            for (int s = 0; s < p.inputCount() && ok; s++)
+                if (forbid.get(p.inputItem(s)))
+                    ok = false;
+            if (!ok)
+                continue;
+            direct.add(q);
+            if (!touches(q, forbid))
+                safe.add(q);
+        }
+        List<Integer> use = safe.isEmpty() ? direct : safe;
+        return use.stream().mapToInt(Integer::intValue).toArray();
+    }
+
+    /** Does the policy subtree under pattern q reach any forbidden item? */
+    private boolean touches(int q, BitSet forbid) {
+        long key = ((long) q << 32) | forbid.hashCode();
+        Boolean memo = closureMemo.get(key);
+        if (memo != null)
+            return memo;
+        ArrayList<Integer> stack = new ArrayList<>();
+        Set<Integer> seen = new HashSet<>();
+        Pattern root = snap.pattern(q);
+        for (int s = 0; s < root.inputCount(); s++)
+            stack.add(root.inputItem(s));
+        boolean hit = false;
+        while (!stack.isEmpty() && !hit) {
+            int y = stack.remove(stack.size() - 1);
+            if (!seen.add(y))
+                continue;
+            if (forbid.get(y)) {
+                hit = true;
+                break;
+            }
+            int b = snap.best(y);
+            if (b < 0)
+                continue;
+            Pattern p = snap.pattern(b);
+            for (int s = 0; s < p.inputCount(); s++)
+                stack.add(p.inputItem(s));
+        }
+        closureMemo.put(key, hit);
+        return hit;
+    }
+
+    /** Route key with this order's prices: cost = BOM × overlay price; "保留" materials sort after the rest. */
+    private int[] sortWithOverlay(int x, int[] base) {
+        Integer[] boxed = Arrays.stream(base).boxed().toArray(Integer[]::new);
+        Map<Integer, Double> cost = new HashMap<>();
+        Map<Integer, Integer> reserved = new HashMap<>();
+        for (int q : base) {
+            cost.put(q, overlayUnitCost(q, x));
+            reserved.put(q, usesReserved(q) ? 1 : 0);
+        }
+        Arrays.sort(boxed, (a, b) -> {
+            double ca = cost.get(a);
+            double cb = cost.get(b);
+            boolean fa = ca != LogMath.INF;
+            boolean fb = cb != LogMath.INF;
+            if (fa != fb)
+                return fa ? -1 : 1;
+            Pattern pa = snap.pattern(a);
+            Pattern pb = snap.pattern(b);
+            if (pa.priority != pb.priority)
+                return pa.priority > pb.priority ? -1 : 1;
+            int c = Integer.compare(reserved.get(a), reserved.get(b));
+            if (c != 0)
+                return c;
+            c = Double.compare(ca, cb);
+            if (c != 0)
+                return c;
+            if (a == snap.best(x) || b == snap.best(x))
+                return a == snap.best(x) ? -1 : 1;     // ties keep the policy first (as the theory layer does)
+            c = Integer.compare(pa.where.ordinal(), pb.where.ordinal());
+            return c != 0 ? c : Integer.compare(a, b);
+        });
+        return Arrays.stream(boxed).mapToInt(Integer::intValue).toArray();
+    }
+
+    /** log10 cost of one x through q at this order's prices (raws from the BOM). */
+    public double overlayUnitCost(int q, int x) {
+        if (snap.unitLogCost(q, x) == LogMath.INF)
+            return LogMath.INF;
+        int[] ks = snap.patBomItems(q);
+        double[] vs = snap.patBomLog(q);
+        double sum = LogMath.ZERO;
+        for (int i = 0; i < ks.length; i++) {
+            Double o = overlay.logPrice.get(ks[i]);
+            double price = o != null ? o : snap.logRawPrice(ks[i]);
+            sum = LogMath.add(sum, LogMath.mul(vs[i], price));
+        }
+        if (sum == LogMath.ZERO || sum == LogMath.INF)
+            return sum;
+        return sum - snap.pattern(q).outputAmountOf(x).log10();
+    }
+
+    private boolean usesReserved(int q) {
+        if (overlay.reserved.isEmpty())
+            return false;
+        Pattern p = snap.pattern(q);
+        for (int s = 0; s < p.inputCount(); s++)
+            if (overlay.reserved.get(p.inputItem(s)))
+                return true;
+        for (int k : snap.patBomItems(q))
+            if (overlay.reserved.get(k))
+                return true;
+        return false;
+    }
+
+    /** Runs pattern p {@code runs} times for x; {@code used} of the outputs serves x, the rest goes to the ledger. */
+    void fire(int p, Amount runs, int x, Amount used) {
+        fire(p, runs, x, used, ctx[x]);
+    }
+
+    private void fire(int p, Amount runs, int x, Amount used, @Nullable BitSet cx) {
+        Pattern pat = snap.pattern(p);
+        patternTimes.add(p, runs);
+        for (int o = 0; o < pat.outputCount(); o++)
+            ledger.add(pat.outputItem(o), pat.outputAmount(o).mul(runs));   // every output is a main output
+        ledger.sub(x, used);
+        for (int s = 0; s < pat.inputCount(); s++) {
+            int y = pat.inputItem(s);
+            Amount q = inputDemand(pat, s, runs, y);
+            if (q.signum() <= 0)
+                continue;
+            if (pat.inputKind(s) == InputKind.CONSUME && pat.allowSubst && pat.alternativeCount(s) > 0) {
+                substNeed.add(y, q);
+                LinkedHashSet<Integer> alts = substAlternatives.computeIfAbsent(y, k -> new LinkedHashSet<>());
+                for (int j = 0; j < pat.alternativeCount(s); j++)
+                    alts.add(pat.alternative(s, j));
+            }
+            BitSet ctx2 = cx;
+            if (snap.level(y) >= snap.level(x)) {
+                // back edge: the forbidden list grows downwards
+                ctx2 = cx == null ? new BitSet() : (BitSet) cx.clone();
+                ctx2.set(x);
+            }
+            push(y, q, ctx2);
+        }
+    }
+
+    /** Demand one slot adds. Catalysts and containers are holdings: one copy, max over all uses. */
+    private Amount inputDemand(Pattern pat, int s, Amount runs, int y) {
+        switch (pat.inputKind(s)) {
+            case CONSUME:
+                return pat.inputAmount(s).mul(runs);
+            case TOOL:
+                return pat.inputDurability(s) > 0 ? runs.ceilDiv(pat.inputDurability(s)) : pat.inputAmount(s).mul(runs);
+            default:
+                Amount want = pat.inputAmount(s);
+                Amount had = hold.get(y);
+                if (want.compareTo(had) <= 0)
+                    return Amount.ZERO;
+                hold.set(y, want);
+                return want.sub(had);
+        }
+    }
+
+    // ───────────────────────────── D: policy cycles ─────────────────────────────
+
+    /**
+     * The whole cycle as one node: gather every member's demand, solve the runs, push the external
+     * inputs, hold the seeds, and check the loop can really be run.
+     */
+    private void runMacro(Scc s) {
+        int k = s.memberCount();
+        Amount[] demand = new Amount[k];
+        Amount[] fromStock = new Amount[k];
+        boolean any = false;
+        BitSet cx = null;
+        for (int i = 0; i < k; i++) {
+            int m = s.member(i);
+            Amount d = need.get(m).sub(done.get(m));
+            demand[i] = Amount.ZERO;
+            fromStock[i] = Amount.ZERO;
+            if (d.signum() <= 0)
+                continue;
+            done.set(m, need.get(m));
+            fromStock[i] = takeStock(m, d.sub(mustMake(m, d)));
+            d = d.sub(fromStock[i]);
+            if (d.signum() > 0)
+                d = d.sub(takeLedger(m, d));
+            demand[i] = d.clampNonNegative();
+            if (demand[i].signum() > 0)
+                any = true;
+            if (ctx[m] != null) {
+                if (cx == null)
+                    cx = new BitSet();
+                cx.or(ctx[m]);
+            }
+        }
+        if (!any)
+            return;
+
+        // seeds are a holding: independent of the amount, given back at the end. The loop can start
+        // at any of its patterns; the rotation the stock covers best is taken
+        AmountMap pick = pickSeeds(s, fromStock);
+        AmountMap seeds = new AmountMap();
+        AmountMap shortBy = new AmountMap();
+        for (int y : pick.keys()) {
+            Amount want = pick.get(y);
+            Amount have = seedHeld.get(y);
+            if (want.compareTo(have) > 0) {
+                Amount delta = want.sub(have);
+                Amount got = takeStock(y, delta);
+                if (got.compareTo(delta) < 0)
+                    got = got.add(takeLedger(y, delta.sub(got)));
+                // a member taken from stock for the demand serves better as a seed: the loop makes its replacement
+                int mi = s.memberIndex(y);
+                if (got.compareTo(delta) < 0 && mi >= 0 && fromStock[mi].signum() > 0) {
+                    Amount reclaim = fromStock[mi].min(delta.sub(got));
+                    fromStock[mi] = fromStock[mi].sub(reclaim);
+                    demand[mi] = demand[mi].add(reclaim);
+                    got = got.add(reclaim);
+                }
+                if (got.compareTo(delta) < 0)
+                    got = got.add(craftSeed(s, y, delta.sub(got)));
+                seedHeld.add(y, got);
+                returned.add(y, got);
+                if (got.compareTo(delta) < 0)
+                    shortBy.add(y, delta.sub(got));
+            }
+            seeds.set(y, seedHeld.get(y));
+        }
+
+        Amount[] runs = CycleSolver.runs(s, demand);
+        if (runs == null) {
+            for (int i = 0; i < k; i++)
+                missing.add(s.member(i), demand[i]);
+            return;
+        }
+        Set<Integer> members = new HashSet<>();
+        for (int i = 0; i < k; i++)
+            members.add(s.member(i));
+        int anchor = s.member(0);
+        for (int j = 0; j < s.patternCount(); j++) {
+            if (runs[j].signum() <= 0)
+                continue;
+            int p = s.pattern(j);
+            Pattern pat = snap.pattern(p);
+            patternTimes.add(p, runs[j]);
+            for (int o = 0; o < pat.outputCount(); o++)
+                ledger.add(pat.outputItem(o), pat.outputAmount(o).mul(runs[j]));
+            for (int slot = 0; slot < pat.inputCount(); slot++) {
+                int y = pat.inputItem(slot);
+                if (members.contains(y)) {
+                    // used inside the loop: the solve already counted it
+                    if (pat.inputKind(slot) == InputKind.CONSUME)
+                        ledger.sub(y, pat.inputAmount(slot).mul(runs[j]));
+                    else if (pat.inputKind(slot) == InputKind.TOOL)
+                        ledger.sub(y, pat.inputDurability(slot) > 0 ? runs[j].ceilDiv(pat.inputDurability(slot))
+                                : pat.inputAmount(slot).mul(runs[j]));
+                    continue;
+                }
+                Amount q = inputDemand(pat, slot, runs[j], y);
+                BitSet ctx2 = cx;
+                if (snap.level(y) >= snap.level(anchor)) {
+                    ctx2 = cx == null ? new BitSet() : (BitSet) cx.clone();
+                    for (int m : members)
+                        ctx2.set(m);
+                }
+                push(y, q, ctx2);
+            }
+        }
+        for (int i = 0; i < k; i++)
+            ledger.sub(s.member(i), demand[i]);
+
+        if (policyOnly && shortBy.isEmpty())
+            return;
+        CycleSolver.Check check = CycleSolver.verify(snap, s, runs, seeds, demand, dl);
+        if (check instanceof CycleSolver.Check.Contract c)
+            contracts.put(s.index, c.contract());
+        else if (check instanceof CycleSolver.Check.Impossible)
+            shortBy.forEach(missing::add);
+    }
+
+    /** The seed rotation with the smallest shortfall against what this plan can still take; kept once chosen. */
+    private AmountMap pickSeeds(Scc s, Amount[] fromStock) {
+        AmountMap chosenSeeds = loopSeeds.get(s.index);
+        if (chosenSeeds != null)
+            return chosenSeeds;
+        AmountMap best = null;
+        Amount bestShort = null;
+        for (int o = 0; o < s.seedOptionCount(); o++) {
+            AmountMap opt = s.seedOption(o);
+            Amount shortBy = Amount.ZERO;
+            for (int y : opt.keys()) {
+                Amount have = seedHeld.get(y).add(available(y));
+                int mi = s.memberIndex(y);
+                if (mi >= 0)
+                    have = have.add(fromStock[mi]);
+                shortBy = shortBy.add(opt.get(y).sub(have).clampNonNegative());
+            }
+            if (bestShort == null || shortBy.compareTo(bestShort) < 0) {
+                best = opt;
+                bestShort = shortBy;
+            }
+        }
+        loopSeeds.put(s.index, best);
+        return best;
+    }
+
+    /**
+     * A loop cannot start itself: a seed the stock does not have is made by a route outside the
+     * loop (a pattern that takes no loop member), and what comes out is held as the seed. Returns
+     * the amount planned (0 when there is no such route; then it stays a shortage).
+     */
+    private Amount craftSeed(Scc s, int y, Amount d) {
+        BitSet forbid = ctx[y] == null ? new BitSet() : (BitSet) ctx[y].clone();
+        for (int i = 0; i < s.memberCount(); i++)
+            forbid.set(s.member(i));
+        int[] outside = routes(y, forbid);
+        if (outside.length == 0)
+            return Amount.ZERO;
+        Split sp = whole(outside[0], y, d);
+        fire(sp.pattern(), sp.runs(), y, d, forbid);
+        return d;
+    }
+
+    // ───────────────────────────── result ─────────────────────────────
+
+    Plan toPlan(int target, Amount amount) {
+        AmountMap leftover = new AmountMap();
+        for (int i = 0; i < ledger.size(); i++)
+            if (ledger.signum(i) > 0)
+                leftover.add(i, ledger.get(i));
+        for (int i = 0; i < hold.size(); i++)
+            if (hold.signum(i) > 0)
+                leftover.add(i, hold.get(i));
+        returned.forEach(leftover::add);
+        Amount usage = pulled.total();
+        for (var e : patternTimes.entries()) {
+            Pattern p = snap.pattern(e.getKey());
+            Amount perRun = Amount.ZERO;
+            for (int o = 0; o < p.outputCount(); o++)
+                perRun = perRun.add(p.outputAmount(o));
+            usage = usage.add(perRun.mul(e.getValue()));
+        }
+        return new Plan(snap.version(), target, amount, patternTimes.copy(), pulled.copy(), drawLater.copy(), missing.copy(),
+                leftover, usage, contracts, loopSeeds);
+    }
+}

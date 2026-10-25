@@ -3,7 +3,7 @@ package com.lumina.ae2_gvt.prototype.twinstar;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -50,14 +50,14 @@ public class PrototypeHubFrameBlock extends Block {
         PLANCK_CRAFTING_UNIT("ae2_gvt", "planck_crafting_unit"),
         PLANCK_COMPUTING_UNIT("ae2_gvt", "planck_computing_unit");
 
-        final Identifier id;
+        final ResourceLocation id;
 
         Kind(String namespace, String path) {
-            this.id = Identifier.fromNamespaceAndPath(namespace, path);
+            this.id = ResourceLocation.fromNamespaceAndPath(namespace, path);
         }
 
         Block block() {
-            return BuiltInRegistries.BLOCK.getValue(id);
+            return BuiltInRegistries.BLOCK.get(id);
         }
 
         @Override
@@ -66,7 +66,7 @@ public class PrototypeHubFrameBlock extends Block {
         }
 
         static Kind of(Block block) {
-            Identifier id = BuiltInRegistries.BLOCK.getKey(block);
+            ResourceLocation id = BuiltInRegistries.BLOCK.getKey(block);
             for (Kind k : values()) {
                 if (k.id.equals(id)) {
                     return k;

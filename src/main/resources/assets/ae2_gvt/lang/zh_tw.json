@@ -133,5 +133,10 @@
   "item.ae2_gvt.graviton_cell_component_16k": "16k ME引力子儲存組件",
   "item.ae2_gvt.graviton_cell_component_64k": "64k ME引力子儲存組件",
   "item.ae2_gvt.graviton_cell_component_256k": "256k ME引力子儲存組件",
-  "block.ae2_gvt.graviton_collector": "引力子收集器"
+  "block.ae2_gvt.graviton_collector": "引力子收集器",
+  "block.ae2_gvt.dummy_twinstar_cpu": "測試用雙星 CPU",
+  "gui.ae2_gvt.dummy_cpu.capacity": "容量",
+  "gui.ae2_gvt.dummy_cpu.parallel": "並行數",
+  "gui.ae2_gvt.dummy_cpu.patterns": "樣板",
+  "gui.ae2_gvt.dummy_cpu.unlimited_hint": "留空或 0 = 無限"
 }

@@ -1,0 +1,184 @@
+package com.lumina.twinstar.algorithm.execution;
+
+import appeng.api.stacks.AEKey;
+import com.lumina.twinstar.algorithm.cache.Scc;
+import com.lumina.twinstar.algorithm.cache.Snapshot;
+import com.lumina.twinstar.algorithm.model.Amount;
+import com.lumina.twinstar.algorithm.model.AmountMap;
+import com.lumina.twinstar.algorithm.model.Pattern;
+import com.lumina.twinstar.algorithm.planning.CycleContract;
+import com.lumina.twinstar.algorithm.planning.Plan;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.TreeMap;
+
+/**
+ * One running job. Everything it needs was pulled into its own isolated inventory at submit, so
+ * jobs never fight over network stock and never re-plan. Progress is a set of tasks peeled off when
+ * their runs reach zero; readiness is driven by inventory changes.
+ */
+public final class Job {
+    public final long id;
+    public final Plan plan;
+    final Snapshot snap;
+    final long startNanos;
+
+    final AmountMap inventory = new AmountMap();
+    final List<Task> tasks = new ArrayList<>();
+    /** ready tasks, low level first so hub-internal chains finish within one tick */
+    final PriorityQueue<Task> ready = new PriorityQueue<>(
+            Comparator.<Task>comparingInt(t -> t.level).thenComparingInt(t -> t.pattern));
+    final Map<Integer, List<Task>> waitingOn = new HashMap<>();
+    /** tasks with materials but no free machine (or no power): tried again next tick */
+    final List<Task> retry = new ArrayList<>();
+    /** expected returns: pushed to machines, not yet taken from the return pool */
+    final AmountMap outstanding = new AmountMap();
+    /** last time each expected item decreased (or was first expected): stuck detection */
+    final Map<Integer, Long> outstandingSince = new HashMap<>();
+    final Map<Integer, StuckMark> stuck = new TreeMap<>();
+    /** black-hole capacity still held; released as items leave the job */
+    Amount occupancy;
+    Amount delivered = Amount.ZERO;
+
+    /** seeds of loops still running: other tasks may not eat them */
+    final AmountMap protectedSeeds = new AmountMap();
+    final Map<Integer, AmountMap> sccSeeds = new HashMap<>();
+    final Map<Integer, Integer> contractStep = new HashMap<>();
+    final Map<Integer, Amount> contractLeft = new HashMap<>();
+    /** durability tools: runs used so far per tool item */
+    final AmountMap toolUses = new AmountMap();
+    /** infinite-source items still to be drawn from the network as the job needs them */
+    final AmountMap drawLater = new AmountMap();
+
+    boolean suspended;
+    boolean unloaded;
+    boolean cancelled;
+    boolean finished;
+    /** Where finished products go first (the requester behind AE2's crafting link); the rest goes to storage. */
+    @Nullable FinalSink sink;
+
+    /** Takes up to {@code amount} of a finished product; returns how much it took. */
+    @FunctionalInterface
+    public interface FinalSink {
+        long insert(AEKey key, long amount);
+    }
+
+    public void setFinalSink(@Nullable FinalSink sink) {
+        this.sink = sink;
+    }
+
+    Job(long id, Plan plan, Snapshot snap, long nowNanos) {
+        this.id = id;
+        this.plan = plan;
+        this.snap = snap;
+        this.startNanos = nowNanos;
+        this.occupancy = plan.usage;
+        plan.pulled.forEach(inventory::add);
+        plan.drawLater.forEach((item, a) -> {
+            inventory.sub(item, a);     // not pulled at submit: drawn while running
+            drawLater.add(item, a);
+        });
+        plan.patternTimes.forEach((p, runs) -> {
+            Pattern pat = snap.pattern(p);
+            int level = 0;
+            int s = -1;
+            for (int o = 0; o < pat.outputCount(); o++) {
+                level = Math.max(level, snap.level(pat.outputItem(o)));
+                int so = snap.scc(pat.outputItem(o));
+                if (so != -1 && inLoop(snap.sccAt(so), p))
+                    s = so;
+            }
+            tasks.add(new Task(p, level, s, runs));
+        });
+        for (Task t : tasks)
+            if (t.scc != -1 && !sccSeeds.containsKey(t.scc)) {
+                Scc scc = snap.sccAt(t.scc);
+                AmountMap planned = plan.loopSeeds.get(t.scc);
+                AmountMap seeds = planned != null ? planned.copy() : new AmountMap();
+                if (planned == null)
+                    for (int i = 0; i < scc.seedCount(); i++)
+                        seeds.add(scc.seedItem(i), scc.seedAmount(i));
+                sccSeeds.put(t.scc, seeds);
+                seeds.forEach(protectedSeeds::add);
+            }
+        for (Map.Entry<Integer, CycleContract> e : plan.contracts.entrySet()) {
+            contractStep.put(e.getKey(), 0);
+            contractLeft.put(e.getKey(), e.getValue().batches()[0]);
+        }
+    }
+
+    private static boolean inLoop(Scc s, int p) {
+        for (int j = 0; j < s.patternCount(); j++)
+            if (s.pattern(j) == p)
+                return true;
+        return false;
+    }
+
+    // ── read access for the CPU screen ──
+
+    public Snapshot snapshot() {
+        return snap;
+    }
+
+    public AmountMap inventory() {
+        return inventory.copy();
+    }
+
+    public AmountMap outstanding() {
+        return outstanding.copy();
+    }
+
+    /** Infinite-source items still to be drawn as the job runs. */
+    public AmountMap drawLater() {
+        return drawLater.copy();
+    }
+
+    public List<Task> tasks() {
+        return Collections.unmodifiableList(tasks);
+    }
+
+    public List<StuckMark> stuckMarks() {
+        return List.copyOf(stuck.values());
+    }
+
+    public Amount occupancy() {
+        return occupancy;
+    }
+
+    public Amount delivered() {
+        return delivered;
+    }
+
+    public long startNanos() {
+        return startNanos;
+    }
+
+    public boolean isSuspended() {
+        return suspended;
+    }
+
+    /** Pause: capacity stays held, returns still go to the pool, nothing runs, the stuck timer stops. */
+    public void setSuspended(boolean suspended) {
+        this.suspended = suspended;
+    }
+
+    /** The hub stopped while things were out: some returns may have gone into network storage. */
+    public boolean wasUnloaded() {
+        return unloaded;
+    }
+
+    public boolean isFinished() {
+        return finished;
+    }
+
+    public boolean isCancelled() {
+        return cancelled;
+    }
+}

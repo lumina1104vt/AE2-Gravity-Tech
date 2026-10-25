@@ -1,6 +1,6 @@
 package com.lumina.ae2_gvt.prototype.twinstar;
 
-import org.jspecify.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.lumina.ae2_gvt.prototype.twinstar.gui.TwinStarHub;
 
@@ -52,6 +52,15 @@ public class TwinStarPreviewBlock extends Block implements EntityBlock {
         return new TwinStarPreviewBlockEntity(pos, state);
     }
 
+    /** The master cell going away: put the hidden structure back and drop its patterns. */
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof TwinStarPreviewBlockEntity be) {
+            be.onRemoved(pos);
+        }
+        super.onRemove(state, level, pos, newState, movedByPiston);
+    }
+
     @Override
     public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         if (level.isClientSide() || type != TwinStarPreview.BLOCK_ENTITY.get()) {
@@ -74,14 +83,14 @@ public class TwinStarPreviewBlock extends Block implements EntityBlock {
                 MenuOpener.open(TwinStarHub.MENU.get(), player, MenuLocators.forBlockEntity(master));
                 return InteractionResult.SUCCESS;
             }
-            player.sendOverlayMessage(!r.controllerComplete()
+            player.displayClientMessage(!r.controllerComplete()
                     ? Component.literal("[PROTOTYPE] 控制器未完成：需要 2x2x2 共 8 個預覽方塊")
                     : r.wrongCores()
                     ? Component.translatable("gui.ae2_gvt.prototype.cores", r.blackCores(), r.whiteCores())
                     : r.formed()
                     ? Component.literal("[PROTOTYPE] 結構完整 (" + r.total() + ")")
                     : Component.literal("[PROTOTYPE] 結構不完整：" + r.mismatches() + " / " + r.total() + " 格不符，例如 "
-                            + r.firstBad().toShortString() + " 應為 " + r.expected().getName().getString()));
+                            + r.firstBad().toShortString() + " 應為 " + r.expected().getName().getString()), true);
         }
         if (level.isClientSide()) {
             // animation controls are purely visual, so only the client copy needs them

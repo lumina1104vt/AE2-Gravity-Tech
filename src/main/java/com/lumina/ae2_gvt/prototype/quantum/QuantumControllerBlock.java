@@ -7,7 +7,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
@@ -20,8 +20,9 @@ import net.minecraft.world.level.block.state.BlockState;
  * it only; this does the same counting ours and AE2's alike, so mixed structures join up.
  */
 public class QuantumControllerBlock extends ControllerBlock {
+    /** AE2 19's controller sets its own properties; the registration's are ignored. */
     public QuantumControllerBlock(Properties properties) {
-        super(properties);
+        super();
     }
 
     @Override
@@ -31,9 +32,9 @@ public class QuantumControllerBlock extends ControllerBlock {
     }
 
     @Override
-    protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess ticks, BlockPos pos, Direction dir,
-                                     BlockPos neighbourPos, BlockState neighbour, RandomSource random) {
-        return withType(super.updateShape(state, level, ticks, pos, dir, neighbourPos, neighbour, random), level, pos);
+    public BlockState updateShape(BlockState state, Direction dir, BlockState neighbour, LevelAccessor level, BlockPos pos,
+                                  BlockPos neighbourPos) {
+        return withType(super.updateShape(state, dir, neighbour, level, pos, neighbourPos), level, pos);
     }
 
     /** AE2's rule: a line through it on one axis = column, on two or more = inside (a / b checkered). */

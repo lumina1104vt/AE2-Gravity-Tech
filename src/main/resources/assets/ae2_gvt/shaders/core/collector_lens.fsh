@@ -1,11 +1,11 @@
-#version 330
+#version 150
 
 // Space distortion inside the graviton collector (the gravitons are invisible; only space bends):
 // the world behind the panel swirls toward the core and is magnified near it, with rings running
 // inward. Strongest at the core, nothing at the panel's edge. Sampler0 is a copy of the frame so
 // far (SceneSnapshot). The panel's size on screen comes from the UV derivatives.
 
-#moj_import <minecraft:globals.glsl>
+uniform float GameTime;
 
 uniform sampler2D Sampler0;
 

@@ -9,14 +9,15 @@ import com.mojang.serialization.MapCodec;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.AEKeyType;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentType;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.storage.ValueOutput;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
 
@@ -43,11 +44,11 @@ public final class GravitonKey extends AEKey {
     public static final MapCodec<GravitonKey> MAP_CODEC = Kind.CODEC.fieldOf("id").xmap(GravitonKey::of, GravitonKey::kind);
 
     private final Kind kind;
-    private final Identifier id;
+    private final ResourceLocation id;
 
     private GravitonKey(Kind kind) {
         this.kind = kind;
-        this.id = Identifier.fromNamespaceAndPath(AE2GravityTech.MODID, kind.getSerializedName());
+        this.id = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, kind.getSerializedName());
     }
 
     public static GravitonKey of(Kind kind) {
@@ -73,9 +74,12 @@ public final class GravitonKey extends AEKey {
         return this;
     }
 
+    /** The same shape {@link #MAP_CODEC} reads back (AE2 loads keys through the type's codec). */
     @Override
-    public void toTag(ValueOutput output) {
-        output.store(MAP_CODEC, this);
+    public CompoundTag toTag(HolderLookup.Provider registries) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString("id", kind.getSerializedName());
+        return tag;
     }
 
     @Override
@@ -84,7 +88,7 @@ public final class GravitonKey extends AEKey {
     }
 
     @Override
-    public Identifier getId() {
+    public ResourceLocation getId() {
         return id;
     }
 

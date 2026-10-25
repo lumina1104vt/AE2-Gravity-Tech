@@ -7,6 +7,7 @@ import com.lumina.ae2_gvt.blocks.Blocks;
 import com.lumina.ae2_gvt.components.DataComponents;
 import com.lumina.ae2_gvt.config.Config;
 import com.lumina.ae2_gvt.items.Items;
+import com.lumina.ae2_gvt.items.armor.AntigravityArmor;
 import com.lumina.ae2_gvt.items.armor.ArmorModules;
 import com.lumina.ae2_gvt.menus.Menus;
 import com.lumina.ae2_gvt.payload.OpenArmorModulesPayload;
@@ -46,7 +47,6 @@ public class AE2GravityTech {
 
     static {
         com.lumina.ae2_gvt.prototype.hub.HubUnits.init();   // registers the hub units with BLOCKS / ITEMS
-        com.lumina.ae2_gvt.prototype.fusion.FusionGenerator.init();   // the fusion generator's blocks
         com.lumina.ae2_gvt.prototype.quantum.QuantumController.init();   // quantum controller
         com.lumina.ae2_gvt.prototype.graviton.Gravitons.init();   // graviton storage type and cells
     }
@@ -61,10 +61,13 @@ public class AE2GravityTech {
                 output.accept(Items.PARADOX_QUANTUM_ENTANGLED_SINGULARITY);
                 output.accept(Items.GRAVITY_WAVE_DETECTOR);
                 output.accept(Items.ANNIHILATION_TNT);
-                output.accept(com.lumina.ae2_gvt.prototype.factory.GravityFactory.ITEM.get());
+                output.accept(Items.GRAVITY_FACTORY);
                 output.accept(Items.GRAVITY_CONSTRAINER);
                 output.accept(Items.ACCELERATION_DEVICE);
-                com.lumina.ae2_gvt.prototype.fusion.FusionGenerator.all().forEach(item -> output.accept(item.get()));
+                output.accept(Items.FUSION_CONTROLLER);
+                output.accept(Items.CONTAINMENT_GLASS);
+                output.accept(Items.MATTER_PORT);
+                output.accept(Items.ENERGY_PORT);
                 output.accept(Items.MACHINE_FRAME);
                 output.accept(Items.STRUCTURE_FRAME);
                 com.lumina.ae2_gvt.prototype.hub.HubUnits.all().forEach(item -> output.accept(item.get()));
@@ -101,16 +104,13 @@ public class AE2GravityTech {
         DataComponents.register(modEventBus);
         Menus.register(modEventBus);
         BlockEntities.register(modEventBus);
+        AntigravityArmor.register(modEventBus);
         com.lumina.ae2_gvt.prototype.terminal.TwinStarTerminal.register(modEventBus);
-        com.lumina.ae2_gvt.prototype.factory.GravityFactory.register(modEventBus);
-        com.lumina.ae2_gvt.prototype.fusion.FusionGenerator.register(modEventBus);
         com.lumina.ae2_gvt.prototype.hole.GravityHole.register(modEventBus);
         com.lumina.ae2_gvt.prototype.quantum.QuantumController.register(modEventBus);
         com.lumina.ae2_gvt.prototype.graviton.Gravitons.register(modEventBus);
-        // PROTOTYPE: Twin-Star Hub animation preview - remove with the prototype package
         com.lumina.ae2_gvt.prototype.twinstar.TwinStarPreview.register(modEventBus);
 
-//        NeoForge.EVENT_BUS.register(this);
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
 

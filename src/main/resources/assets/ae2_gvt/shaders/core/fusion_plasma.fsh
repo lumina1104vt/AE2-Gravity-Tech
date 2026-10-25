@@ -1,4 +1,4 @@
-#version 330
+#version 150
 
 // Fusion plasma: a small star, coloured by its temperature (exaggerated blackbody path, picked on
 // the CPU and passed in as the vertex colour).
@@ -14,7 +14,7 @@
 //  - eruption clumps and flash (layer 4, added light): round soft spots; the corner position
 //    (-1..1) comes in the normal
 
-#moj_import <minecraft:globals.glsl>
+uniform float GameTime;
 
 in vec3 dir;
 in vec4 starColour;

@@ -1,12 +1,12 @@
-#version 330
+#version 150
 
 // Hole body and accretion disc (see HoleRenderTypes / HoleRenderer). ENTITY format:
 //   Color.r  = 1 for a white hole, Color.g = 1 for the disc
 //   UV0      = disc: position in the disc's plane, in hole radii
 //   Normal   = sphere: the point's direction from the centre (raw, the pose only translates)
 
-#moj_import <minecraft:dynamictransforms.glsl>
-#moj_import <minecraft:projection.glsl>
+uniform mat4 ModelViewMat;
+uniform mat4 ProjMat;
 
 in vec3 Position;
 in vec4 Color;

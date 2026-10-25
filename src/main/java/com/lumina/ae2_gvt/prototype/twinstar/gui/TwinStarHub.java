@@ -7,7 +7,7 @@ import com.lumina.ae2_gvt.AE2GravityTech;
 
 import appeng.menu.implementations.MenuTypeBuilder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -21,7 +21,7 @@ public final class TwinStarHub {
 
     public static final DeferredHolder<MenuType<?>, MenuType<TwinStarHubMenu>> MENU = MENUS.register(ID,
             () -> MenuTypeBuilder.<TwinStarHubMenu, TwinStarHubHost>create(TwinStarHubMenu::new, TwinStarHubHost.class)
-                    .buildUnregistered(Identifier.fromNamespaceAndPath(AE2GravityTech.MODID, ID)));
+                    .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, ID)));
 
     private TwinStarHub() {
     }

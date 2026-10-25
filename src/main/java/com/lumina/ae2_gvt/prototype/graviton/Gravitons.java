@@ -33,8 +33,11 @@ public final class Gravitons {
 
     /** Tiers as {name, idle drain, kilobytes, bytes per type} - AE2's item cells. */
     public enum Tier {
-        T1K("1k", 0.5, 1, 8), T4K("4k", 1.0, 4, 32), T16K("16k", 1.5, 16, 128),
-        T64K("64k", 2.0, 64, 512), T256K("256k", 2.5, 256, 2048);
+        T1K("1k", 0.5, 1, 8),
+        T4K("4k", 1.0, 4, 32),
+        T16K("16k", 1.5, 16, 128),
+        T64K("64k", 2.0, 64, 512),
+        T256K("256k", 2.5, 256, 2048);
 
         public final String size;
         final double idleDrain;

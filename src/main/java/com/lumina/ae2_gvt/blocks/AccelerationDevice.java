@@ -7,7 +7,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
-import org.jspecify.annotations.Nullable;
 
 public class AccelerationDevice extends Block {
     public static final EnumProperty<Direction> FACING = BlockStateProperties.FACING;
@@ -22,7 +21,7 @@ public class AccelerationDevice extends Block {
     }
 
     @Override
-    public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
         return defaultBlockState().setValue(FACING, context.getNearestLookingDirection().getOpposite());
     }
 }

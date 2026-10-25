@@ -1,4 +1,4 @@
-#version 330
+#version 150
 
 // PROTOTYPE - Twin-Star Hub twin holes. Port of hole_shader / starfield from the offline mock.
 //  - inside: black hole = screen-space starfield (stars live in screen pixels like the End portal,
@@ -7,7 +7,7 @@
 //    each colour reaching into the other, twisted in opposite directions on the two sides
 //  - rim: bright edge on black, dark edge on white, so the spheres still read as spheres
 
-#moj_import <minecraft:globals.glsl>
+uniform float GameTime;
 
 in vec3 pairPos;
 in float proximity;

@@ -1,0 +1,65 @@
+{
+  "$schema": "schema.json",
+  "includes": [
+    "common/common.json"
+  ],
+  "background": {
+    "texture": "twinstar:textures/gui/plan.png",
+    "textureWidth": 512,
+    "textureHeight": 256,
+    "srcRect": [
+      0,
+      0,
+      262,
+      214
+    ]
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.twinstar.plan.title",
+        "color": "#d6ccff",
+        "bold": true
+      },
+      "position": {
+        "left": 38,
+        "top": 12
+      }
+    }
+  },
+  "widgets": {
+    "close": {
+      "left": 240,
+      "top": 4,
+      "width": 16,
+      "height": 16
+    },
+    "scrollbar": {
+      "left": 147,
+      "top": 34,
+      "height": 147
+    },
+    "back": {
+      "left": 7,
+      "top": 188,
+      "width": 64,
+      "height": 20
+    },
+    "replan": {
+      "left": 75,
+      "top": 188,
+      "width": 74,
+      "height": 20
+    },
+    "start": {
+      "left": 165,
+      "top": 188,
+      "width": 90,
+      "height": 20
+    }
+  },
+  "palette": {
+    "DEFAULT_TEXT_COLOR": "#dedeea",
+    "MUTED_TEXT_COLOR": "#8c8ca2"
+  }
+}

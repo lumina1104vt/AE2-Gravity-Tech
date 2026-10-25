@@ -1,45 +1,47 @@
 package com.lumina.ae2_gvt.items.armor;
 
 import appeng.api.implementations.menuobjects.IMenuItem;
-import com.geckolib.animatable.GeoItem;
-import com.geckolib.animatable.client.GeoRenderProvider;
-import com.geckolib.animatable.instance.AnimatableInstanceCache;
-import com.geckolib.animatable.manager.AnimatableManager;
-import com.geckolib.renderer.GeoArmorRenderer;
-import com.geckolib.util.GeckoLibUtil;
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.world.entity.LivingEntity;
+import org.jetbrains.annotations.Nullable;
+import software.bernie.geckolib.animatable.GeoItem;
+import software.bernie.geckolib.animatable.client.GeoRenderProvider;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.renderer.GeoArmorRenderer;
+import software.bernie.geckolib.util.GeckoLibUtil;
 import com.lumina.ae2_gvt.client.renderer.AntigravityArmorRenderer;
+import net.minecraft.core.Holder;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.equipment.ArmorType;
 
 import java.util.function.Consumer;
 
-public class AntigravityArmorItem extends Item implements GeoItem, IMenuItem, IArmorItem {
+public class AntigravityArmorItem extends ArmorItem implements GeoItem, IMenuItem, IArmorItem {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-    private final ArmorType type;
 
-    public AntigravityArmorItem(Properties properties, ArmorType type) {
-        super(properties);
-        this.type = type;
+    public AntigravityArmorItem(Holder<ArmorMaterial> material, ArmorItem.Type type, Properties properties) {
+        super(material, type, properties);
     }
 
     @Override
     public void createGeoRenderer(Consumer<GeoRenderProvider> consumer) {
         consumer.accept(new GeoRenderProvider() {
-            private GeoArmorRenderer<?, ?> renderer;
+            private GeoArmorRenderer<?> renderer;
 
             @Override
-            public GeoArmorRenderer<?, ?> getGeoArmorRenderer(ItemStack stack, EquipmentSlot slot) {
+            public <T extends LivingEntity> HumanoidModel<?> getGeoArmorRenderer(T livingEntity, ItemStack itemStack, @Nullable EquipmentSlot equipmentSlot, @Nullable HumanoidModel<T> original) {
                 if (renderer == null)
-                    renderer = new AntigravityArmorRenderer<>();
+                    renderer = new AntigravityArmorRenderer();
                 return renderer;
             }
         });
     }
 
     @Override
-    public ArmorType armorType() {
+    public ArmorItem.Type armorType() {
         return type;
     }
 

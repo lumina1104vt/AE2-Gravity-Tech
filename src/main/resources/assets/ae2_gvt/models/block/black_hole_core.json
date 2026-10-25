@@ -1,5 +1,6 @@
 {
   "parent": "ae2_gvt:block/lit_unit",
+  "render_type": "minecraft:cutout",
   "textures": {
     "all": "ae2_gvt:block/black_hole_core",
     "lights": "ae2_gvt:block/black_hole_core_light"

@@ -1,5 +1,6 @@
 {
   "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
   "textures": {
     "0": "ae2_gvt:item/gravity_wave_detector",
     "particle": "ae2_gvt:item/gravity_wave_detector"

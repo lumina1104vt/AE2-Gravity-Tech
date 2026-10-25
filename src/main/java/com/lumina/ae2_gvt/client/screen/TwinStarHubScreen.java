@@ -12,7 +12,7 @@ import appeng.client.gui.style.ScreenStyle;
 import appeng.client.gui.widgets.Scrollbar;
 import appeng.menu.SlotSemantics;
 import appeng.menu.slot.AppEngSlot;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
@@ -57,13 +57,13 @@ public class TwinStarHubScreen extends AEBaseScreen<TwinStarHubMenu> {
     }
 
     @Override
-    public void drawBG(GuiGraphicsExtractor guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+    public void drawBG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
         super.drawBG(guiGraphics, offsetX, offsetY, mouseX, mouseY, partialTicks);
         drawBridgePulse(guiGraphics, offsetX, offsetY);
     }
 
     // same idea as the controller block: a white pulse runs black -> white, then a black one runs back
-    private static void drawBridgePulse(GuiGraphicsExtractor guiGraphics, int offsetX, int offsetY) {
+    private static void drawBridgePulse(GuiGraphics guiGraphics, int offsetX, int offsetY) {
         double phase = (System.currentTimeMillis() % 4800L) / 4800.0;
         boolean whiteRun = phase < 0.5;
         double along = (phase * 2) % 1;
@@ -77,7 +77,7 @@ public class TwinStarHubScreen extends AEBaseScreen<TwinStarHubMenu> {
     }
 
     @Override
-    public void drawFG(GuiGraphicsExtractor guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY) {
+    public void drawFG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY) {
         right(guiGraphics, Component.translatable("gui.ae2_gvt.twin_star_hub.status.running"), 187, 6, STATUS_OK);
 
         // black hole = crafting side
@@ -109,20 +109,20 @@ public class TwinStarHubScreen extends AEBaseScreen<TwinStarHubMenu> {
         text(guiGraphics, Component.translatable("gui.ae2_gvt.twin_star_hub.units.white"), 11, 102, ON_TABLE);
     }
 
-    private void row(GuiGraphicsExtractor guiGraphics, String key, Component value, int left, int right, int y, int labelColour, int valueColour) {
+    private void row(GuiGraphics guiGraphics, String key, Component value, int left, int right, int y, int labelColour, int valueColour) {
         text(guiGraphics, Component.translatable("gui.ae2_gvt.twin_star_hub." + key), left, y, labelColour);
         right(guiGraphics, value, right, y, valueColour);
     }
 
-    private void text(GuiGraphicsExtractor guiGraphics, Component text, int x, int y, int colour) {
-        guiGraphics.text(this.font, text, x, y, colour, false);
+    private void text(GuiGraphics guiGraphics, Component text, int x, int y, int colour) {
+        guiGraphics.drawString(this.font, text, x, y, colour, false);
     }
 
-    private void right(GuiGraphicsExtractor guiGraphics, Component text, int rightX, int y, int colour) {
-        guiGraphics.text(this.font, text, rightX - this.font.width(text), y, colour, false);
+    private void right(GuiGraphics guiGraphics, Component text, int rightX, int y, int colour) {
+        guiGraphics.drawString(this.font, text, rightX - this.font.width(text), y, colour, false);
     }
 
-    private void centred(GuiGraphicsExtractor guiGraphics, Component text, int centreX, int y, int colour) {
-        guiGraphics.text(this.font, text, centreX - this.font.width(text) / 2, y, colour, false);
+    private void centred(GuiGraphics guiGraphics, Component text, int centreX, int y, int colour) {
+        guiGraphics.drawString(this.font, text, centreX - this.font.width(text) / 2, y, colour, false);
     }
 }

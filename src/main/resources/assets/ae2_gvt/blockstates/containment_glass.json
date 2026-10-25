@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "type": "ae2_gvt:containment_glass"
+      "model": "ae2_gvt:block/containment_glass_connected"
     }
   }
 }

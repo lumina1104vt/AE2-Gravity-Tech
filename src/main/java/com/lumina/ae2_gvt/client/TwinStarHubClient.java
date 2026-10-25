@@ -7,7 +7,7 @@ import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.client.screen.TwinStarHubScreen;
 import com.lumina.ae2_gvt.prototype.twinstar.gui.TwinStarHub;
 
-import appeng.client.InitScreens;
+import appeng.init.client.InitScreens;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;

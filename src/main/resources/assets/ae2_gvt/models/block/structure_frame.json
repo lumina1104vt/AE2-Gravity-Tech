@@ -21,8 +21,8 @@
           "uv": [
             0,
             0,
-            4,
-            16
+            16,
+            4
           ],
           "texture": "#all",
           "cullface": "down"
@@ -31,8 +31,8 @@
           "uv": [
             0,
             0,
-            4,
-            16
+            16,
+            4
           ],
           "texture": "#all",
           "cullface": "up"
@@ -41,8 +41,8 @@
           "uv": [
             0,
             0,
-            4,
-            16
+            16,
+            4
           ],
           "texture": "#all",
           "cullface": "north"
@@ -51,8 +51,8 @@
           "uv": [
             0,
             0,
-            4,
-            16
+            16,
+            4
           ],
           "texture": "#all",
           "cullface": "south"
@@ -61,8 +61,8 @@
           "uv": [
             0,
             0,
-            4,
-            16
+            16,
+            4
           ],
           "texture": "#all",
           "cullface": "west"
@@ -71,8 +71,8 @@
           "uv": [
             0,
             0,
-            4,
-            16
+            16,
+            4
           ],
           "texture": "#all",
           "cullface": "east"

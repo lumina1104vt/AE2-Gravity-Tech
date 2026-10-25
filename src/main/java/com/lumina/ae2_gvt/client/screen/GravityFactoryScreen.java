@@ -2,11 +2,10 @@ package com.lumina.ae2_gvt.client.screen;
 
 import java.util.List;
 
-import com.lumina.ae2_gvt.prototype.factory.GravityFactoryMenu;
-
 import appeng.client.gui.AEBaseScreen;
 import appeng.client.gui.style.ScreenStyle;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import com.lumina.ae2_gvt.menus.GravityFactoryMenu;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
@@ -67,7 +66,7 @@ public class GravityFactoryScreen extends AEBaseScreen<GravityFactoryMenu> {
     }
 
     @Override
-    public void drawBG(GuiGraphicsExtractor g, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+    public void drawBG(GuiGraphics g, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
         super.drawBG(g, offsetX, offsetY, mouseX, mouseY, partialTicks);
         // arrows: lit from the outside in
         float progress = menu.progress / 1000f;
@@ -83,12 +82,12 @@ public class GravityFactoryScreen extends AEBaseScreen<GravityFactoryMenu> {
     }
 
     @Override
-    protected void extractTooltip(GuiGraphicsExtractor g, int x, int y) {
+    protected void renderTooltip(GuiGraphics g, int x, int y) {
         int mx = x - leftPos, my = y - topPos;
         if (hoveredSlot == null && Math.abs(mx - WELL_X) <= 13 && Math.abs(my - WELL_Y) <= 13) {
             drawTooltip(g, x, y, List.of(Component.translatable("gui.ae2_gvt.factory.progress", menu.progress / 10)));
         } else {
-            super.extractTooltip(g, x, y);
+            super.renderTooltip(g, x, y);
         }
     }
 }

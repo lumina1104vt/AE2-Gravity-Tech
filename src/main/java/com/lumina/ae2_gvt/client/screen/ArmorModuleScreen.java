@@ -12,14 +12,13 @@ import appeng.client.gui.AEBaseScreen;
 import appeng.client.gui.style.Blitter;
 import appeng.client.gui.style.ScreenStyle;
 import appeng.client.gui.widgets.Scrollbar;
-import appeng.util.Icon;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.input.MouseButtonEvent;
+import appeng.client.gui.Icon;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.equipment.ArmorType;
+import net.minecraft.world.item.ArmorItem;
 
 /**
  * The armor module screen, on AE2's framework and made of AE2's own GUI art
@@ -36,14 +35,14 @@ public class ArmorModuleScreen extends AEBaseScreen<ArmorModuleMenu> {
     private static final int SWITCH_X = ROW_X + 86, COG_X = ROW_X + 108, CLEAR_X = ROW_X + 125;
     private static final int TEXT = 0xFF404040, FRAME_OUT = 0xFF14141A, FRAME_IN = 0xFFF4F4FA;
 
-    private static final Blitter SHEET = Blitter.texture(Identifier.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/armor_modules.png"));
+    private static final Blitter SHEET = Blitter.texture(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/armor_modules.png"));
     private static final Blitter ROW = SHEET.copy().src(0, 234, ROW_W, ROW_H);
     private static final Blitter SWITCH_ON = SHEET.copy().src(204, 0, 22, 12);
     private static final Blitter SWITCH_OFF = SHEET.copy().src(204, 12, 22, 12);
-    private static final Blitter TAB_BG = Blitter.icon(Icon.TAB_BUTTON_BACKGROUND);
-    private static final Blitter TAB_BG_SELECTED = Blitter.icon(Icon.TAB_BUTTON_BACKGROUND_FOCUS);
-    private static final Blitter COG = Blitter.icon(Icon.COG);
-    private static final Blitter CLEAR = Blitter.icon(Icon.CLEAR);
+    private static final Blitter TAB_BG = Icon.TAB_BUTTON_BACKGROUND.getBlitter();
+    private static final Blitter TAB_BG_SELECTED = Icon.TAB_BUTTON_BACKGROUND_FOCUS.getBlitter();
+    private static final Blitter COG = Icon.COG.getBlitter();
+    private static final Blitter CLEAR = Icon.CLEAR.getBlitter();
 
     private final Scrollbar scrollbar;
 
@@ -63,9 +62,9 @@ public class ArmorModuleScreen extends AEBaseScreen<ArmorModuleMenu> {
     }
 
     @Override
-    public void drawBG(GuiGraphicsExtractor g, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
+    public void drawBG(GuiGraphics g, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
         super.drawBG(g, offsetX, offsetY, mouseX, mouseY, partialTicks);
-        List<ArmorType> worn = menu.worn();
+        List<ArmorItem.Type> worn = menu.worn();
         for (int i = 0; i < worn.size(); i++) {
             int x = offsetX + TAB_X, y = offsetY + TAB_Y + i * TAB_STEP;
             boolean selected = worn.get(i) == menu.selected();
@@ -74,7 +73,7 @@ public class ArmorModuleScreen extends AEBaseScreen<ArmorModuleMenu> {
                 g.fill(x - 1, y - 1, x + TAB + 1, y + TAB + 1, FRAME_IN);
             }
             (selected ? TAB_BG_SELECTED : TAB_BG).copy().dest(x, y).blit(g);
-            g.item(minecraft.player.getItemBySlot(worn.get(i).getSlot()), x + 2, y + 2);
+            g.renderItem(minecraft.player.getItemBySlot(worn.get(i).getSlot()), x + 2, y + 2);
         }
         List<InstalledModule> list = new ArrayList<>(menu.installed());
         int first = scrollbar.getCurrentScroll();
@@ -82,7 +81,7 @@ public class ArmorModuleScreen extends AEBaseScreen<ArmorModuleMenu> {
             InstalledModule m = list.get(first + r);
             int y = offsetY + ROW_Y + r * ROW_STEP;
             ROW.copy().dest(offsetX + ROW_X, y).blit(g);
-            g.item(new ItemStack(m.module()), offsetX + ROW_X + 3, y + 3);
+            g.renderItem(new ItemStack(m.module()), offsetX + ROW_X + 3, y + 3);
             (m.enabled() ? SWITCH_ON : SWITCH_OFF).copy().dest(offsetX + SWITCH_X, y + 5).blit(g);
             COG.copy().dest(offsetX + COG_X, y + 3).blit(g);
             CLEAR.copy().dest(offsetX + CLEAR_X, y + 3).blit(g);
@@ -90,19 +89,19 @@ public class ArmorModuleScreen extends AEBaseScreen<ArmorModuleMenu> {
     }
 
     @Override
-    public void drawFG(GuiGraphicsExtractor g, int offsetX, int offsetY, int mouseX, int mouseY) {
+    public void drawFG(GuiGraphics g, int offsetX, int offsetY, int mouseX, int mouseY) {
         super.drawFG(g, offsetX, offsetY, mouseX, mouseY);
         List<InstalledModule> list = new ArrayList<>(menu.installed());
         int first = scrollbar.getCurrentScroll();
         for (int r = 0; r < ROWS && first + r < list.size(); r++) {
-            g.text(font, font.plainSubstrByWidth(shortName(list.get(first + r)), SWITCH_X - ROW_X - 24), ROW_X + 22,
+            g.drawString(font, font.plainSubstrByWidth(shortName(list.get(first + r)), SWITCH_X - ROW_X - 24), ROW_X + 22,
                     ROW_Y + r * ROW_STEP + 7, TEXT, false);
         }
-        List<ArmorType> worn = menu.worn();
+        List<ArmorItem.Type> worn = menu.worn();
         for (int i = 0; i < worn.size(); i++) {
             int x = leftPos + TAB_X, y = topPos + TAB_Y + i * TAB_STEP;
             if (mouseX >= x && mouseX < x + TAB && mouseY >= y && mouseY < y + TAB) {
-                g.setTooltipForNextFrame(font, minecraft.player.getItemBySlot(worn.get(i).getSlot()).getHoverName(), mouseX, mouseY);
+                setTooltipForNextRenderPass(minecraft.player.getItemBySlot(worn.get(i).getSlot()).getHoverName());
             }
         }
         int row = row(mouseY);
@@ -115,9 +114,9 @@ public class ArmorModuleScreen extends AEBaseScreen<ArmorModuleMenu> {
                 default -> null;
             };
             if (key != null) {
-                g.setTooltipForNextFrame(font, Component.translatable("gui.ae2_gvt.armor_modules." + key), mouseX, mouseY);
+                setTooltipForNextRenderPass(Component.translatable("gui.ae2_gvt.armor_modules." + key));
             } else {
-                g.setTooltipForNextFrame(font, new ItemStack(m.module()), mouseX, mouseY);
+                setTooltipForNextRenderPass(getTooltipFromItem(minecraft, new ItemStack(m.module())).stream().map(Component::getVisualOrderText).toList());
             }
         }
     }
@@ -152,19 +151,19 @@ public class ArmorModuleScreen extends AEBaseScreen<ArmorModuleMenu> {
     }
 
     @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (event.button() == 0) {
-            List<ArmorType> worn = menu.worn();
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0) {
+            List<ArmorItem.Type> worn = menu.worn();
             for (int i = 0; i < worn.size(); i++) {
-                double x = event.x() - leftPos - TAB_X, y = event.y() - topPos - TAB_Y - i * TAB_STEP;
+                double x = mouseX - leftPos - TAB_X, y = mouseY - topPos - TAB_Y - i * TAB_STEP;
                 if (x >= 0 && x < TAB && y >= 0 && y < TAB) {
                     button(ArmorModuleMenu.Action.SELECT.ordinal() * 100 + ArmorModules.PIECES.indexOf(worn.get(i)), true);
                     return true;
                 }
             }
-            int row = row(event.y());
+            int row = row(mouseY);
             if (row >= 0) {
-                int part = part(event.x(), event.y(), row);
+                int part = part(mouseX, mouseY, row);
                 int index = scrollbar.getCurrentScroll() + row;
                 if (part == 1) {
                     button(ArmorModuleMenu.Action.TOGGLE.ordinal() * 100 + index, false);
@@ -176,7 +175,7 @@ public class ArmorModuleScreen extends AEBaseScreen<ArmorModuleMenu> {
                 }
             }
         }
-        return super.mouseClicked(event, doubleClick);
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     private void button(int id, boolean predict) {

@@ -13,7 +13,7 @@ import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
@@ -51,7 +51,8 @@ public final class TwinStarTerminal {
     public static final DeferredItem<Item> PATTERN = AE2GravityTech.ITEMS.registerItem("synthesis_pattern",
             props -> PatternDetailsHelper.encodedPatternItemBuilder(AEProcessingPattern::new)
                     .invalidPatternTooltip(AEProcessingPattern::getInvalidPatternTooltip)
-                    .build(props));
+                    .itemProperties(props)
+                    .build());
 
     private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, AE2GravityTech.MODID);
 
@@ -61,7 +62,7 @@ public final class TwinStarTerminal {
     public static final DeferredHolder<MenuType<?>, MenuType<TwinStarPatternTermMenu>> MENU = MENUS.register(ID,
             () -> MenuTypeBuilder.<TwinStarPatternTermMenu, TwinStarPatternTerminalPart>create(TwinStarPatternTermMenu::new,
                     TwinStarPatternTerminalPart.class)
-                    .buildUnregistered(Identifier.fromNamespaceAndPath(AE2GravityTech.MODID, ID)));
+                    .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, ID)));
 
     private TwinStarTerminal() {
     }

@@ -6,13 +6,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import net.minecraft.world.item.BlockItem;
-import net.neoforged.neoforge.registries.DeferredBlock;
-import net.neoforged.neoforge.registries.DeferredItem;
 import org.joml.Vector3f;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
-import com.lumina.ae2_gvt.prototype.frame.StructureFrameBlock;
+import com.lumina.ae2_gvt.blocks.StructureFrameBlock;
 import com.lumina.ae2_gvt.prototype.hub.HubUnits;
 
 import net.minecraft.core.BlockPos;
@@ -21,7 +18,8 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
-import net.minecraft.resources.Identifier;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -30,10 +28,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
 /**
- * PROTOTYPE - the Twin-Star Hub layout, read straight from the structure saved with a structure
- * block as {@code gravity_tech:calculator} (the world's {@code generated/gravity_tech/structure}
- * folder), falling back to the copy bundled with the mod. Re-saving the structure takes effect on
- * the next check; nothing about the layout is hard-coded:
+ * PROTOTYPE - the Twin-Star Hub layout, read straight from the structure {@code ae2_gvt:calculator}:
+ * the mod's data/ae2_gvt/structure/calculator.nbt, or - if a structure block saved one under the
+ * same name in the world (generated/ae2_gvt/structure) - that copy, which the structure manager
+ * prefers. Re-saving the structure takes effect on the next check; nothing about the layout is
+ * hard-coded:
  * <ul>
  *   <li>controller: the template's own preview blocks if it contains them, otherwise the lowest
  *       empty 2x2x2 on the template's vertical centre axis</li>
@@ -51,10 +50,8 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
  * "don't care". The layout is 4-fold symmetric about that centre, so it can face any direction.
  */
 final class TwinStarBlueprint {
-    /** The structure as saved in the world (structure block name). */
-    static final Identifier SAVED_ID = Identifier.fromNamespaceAndPath("gravity_tech", "calculator");
-    /** Bundled fallback, for worlds that don't have the saved structure. */
-    static final Identifier BUNDLED_ID = Identifier.fromNamespaceAndPath(AE2GravityTech.MODID, "prototype_twin_star_hub");
+    /** The hub structure (structure block name); a copy saved in the world overrides the bundled one. */
+    static final ResourceLocation STRUCTURE_ID = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "calculator");
 
     /**
      * {@code offset} is relative to the controller centre; {@code state} is the template's block
@@ -86,25 +83,42 @@ final class TwinStarBlueprint {
 
     /** Content of the template the cached layout was built from (re-saving updates the same object in place). */
     private static CompoundTag cachedTag;
+    private static StructureTemplate cachedTemplate;
     private static Layout cachedLayout = Layout.EMPTY;
 
     private TwinStarBlueprint() {
     }
 
-    /** The current layout; rebuilt whenever the saved structure's content changes. */
+    /**
+     * The current layout. Reading the template's content back (save + compare, ~120 KB of NBT) is
+     * far too slow for every check, so it only happens on {@link #refresh} - a right-click on the
+     * controller, which is what you do after re-saving the structure - or when the structure
+     * manager hands out a different template object (a resource reload).
+     */
     static Layout layout(ServerLevel level) {
-        Optional<StructureTemplate> template = level.getStructureManager().get(SAVED_ID);
-        if (template.isEmpty()) {
-            template = level.getStructureManager().get(BUNDLED_ID);
-        }
+        return layout(level, false);
+    }
+
+    /** Like {@link #layout(ServerLevel)}, re-reading the template's content to pick up a re-save. */
+    static Layout refresh(ServerLevel level) {
+        return layout(level, true);
+    }
+
+    private static Layout layout(ServerLevel level, boolean reread) {
+        Optional<StructureTemplate> template = level.getStructureManager().get(STRUCTURE_ID);
         if (template.isEmpty()) {
             if (cachedTag != null) {
-                AE2GravityTech.LOGGER.error("[PROTOTYPE] neither {} nor {} found", SAVED_ID, BUNDLED_ID);
+                AE2GravityTech.LOGGER.error("[PROTOTYPE] structure {} not found", STRUCTURE_ID);
             }
             cachedTag = null;
+            cachedTemplate = null;
             cachedLayout = Layout.EMPTY;
             return cachedLayout;
         }
+        if (!reread && template.get() == cachedTemplate) {
+            return cachedLayout;
+        }
+        cachedTemplate = template.get();
         // StructureTemplate has no "all blocks" accessor, so read its own saved form
         CompoundTag tag = template.get().save(new CompoundTag());
         if (!tag.equals(cachedTag)) {
@@ -115,15 +129,15 @@ final class TwinStarBlueprint {
     }
 
     private static Layout derive(CompoundTag tag, Vec3i size) {
-        ListTag palette = tag.getListOrEmpty("palette");
-        ListTag blocks = tag.getListOrEmpty("blocks");
+        ListTag palette = tag.getList("palette", Tag.TAG_COMPOUND);
+        ListTag blocks = tag.getList("blocks", Tag.TAG_COMPOUND);
         Map<BlockPos, BlockState> states = new HashMap<>();
         for (int i = 0; i < blocks.size(); i++) {
-            CompoundTag info = blocks.getCompoundOrEmpty(i);
-            BlockState state = NbtUtils.readBlockState(BuiltInRegistries.BLOCK, palette.getCompoundOrEmpty(info.getIntOr("state", 0)));
+            CompoundTag info = blocks.getCompound(i);
+            BlockState state = NbtUtils.readBlockState(BuiltInRegistries.BLOCK.asLookup(), palette.getCompound(info.getInt("state")));
             if (!state.isAir() && !state.is(Blocks.STRUCTURE_VOID)) {
-                ListTag pos = info.getListOrEmpty("pos");
-                states.put(new BlockPos(pos.getIntOr(0, 0), pos.getIntOr(1, 0), pos.getIntOr(2, 0)), state);
+                ListTag pos = info.getList("pos", Tag.TAG_INT);
+                states.put(new BlockPos(pos.getInt(0), pos.getInt(1), pos.getInt(2)), state);
             }
         }
         Map<BlockPos, Block> solid = new HashMap<>();
@@ -153,7 +167,7 @@ final class TwinStarBlueprint {
         int[] max = {Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE};
         int grow = units.isEmpty() ? 0 : 1;
         solid.forEach((p, b) -> {
-            if (units.isEmpty() ? b == Blocks.TINTED_GLASS || b == com.lumina.ae2_gvt.prototype.fusion.FusionGenerator.GLASS.get()
+            if (units.isEmpty() ? b == Blocks.TINTED_GLASS || b == com.lumina.ae2_gvt.blocks.Blocks.CONTAINMENT_GLASS.get()
                     : units.contains(p)) {
                 int[] c = {p.getX(), p.getY(), p.getZ()};
                 for (int k = 0; k < 3; k++) {

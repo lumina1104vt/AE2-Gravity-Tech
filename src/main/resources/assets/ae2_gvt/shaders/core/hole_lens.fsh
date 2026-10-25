@@ -1,4 +1,4 @@
-#version 330
+#version 150
 
 // Gravitational lensing round a hole: redraw the world behind the panel bent. Sampler0 is a copy
 // of the frame so far (SceneSnapshot).

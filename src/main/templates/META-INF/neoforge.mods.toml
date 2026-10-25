@@ -4,6 +4,13 @@
 # Note that there are a couple of TOML lists in this file.
 # Find more information on toml format here:  https://github.com/toml-lang/toml
 
+# The name of the mod loader type to load - for regular FML @Mod mods it should be javafml
+# (required by 1.21.1's FML 4; newer FML dropped these two fields)
+modLoader="javafml" #mandatory
+
+# A version range to match for said mod loader - for regular FML @Mod it will be the FML version
+loaderVersion="[4,)" #mandatory
+
 # The license for you mod. This is mandatory metadata and allows for easier comprehension of your redistributive properties.
 # Review your options at https://choosealicense.com/. All rights reserved is the default copyright stance, and is thus the default here.
 license="${mod_license}"
@@ -44,8 +51,8 @@ Example mod description.
 '''
 
 # The [[mixins]] block allows you to declare your mixin config to FML so that it gets loaded.
-#[[mixins]]
-#config="${mod_id}.mixins.json"
+[[mixins]]
+config="${mod_id}.mixins.json"
 
 # The [[accessTransformers]] block allows you to declare where your AT file is.
 # If this block is omitted, a fallback attempt will be made to load an AT from META-INF/accesstransformer.cfg
@@ -92,6 +99,21 @@ Example mod description.
     modId="geckolib"
     type="required"
     versionRange="*"
+    ordering="AFTER"
+    side="BOTH"
+
+# The twin-star crafting engine lives in its own lib mod (separate download)
+[[dependencies.${mod_id}]]
+    modId="twinstar"
+    type="required"
+    versionRange="[1.0.0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="lumina_multiblock"
+    type="required"
+    versionRange="[1.0.0,)"
     ordering="AFTER"
     side="BOTH"
 

@@ -1,0 +1,74 @@
+package com.lumina.ae2_gvt.blocks;
+
+import com.lumina.ae2_gvt.blockentities.BlockEntities;
+import com.lumina.ae2_gvt.blockentities.FusionControllerBlockEntity;
+import com.lumina.ae2_gvt.menus.Menus;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import org.jetbrains.annotations.Nullable;
+
+import appeng.menu.MenuOpener;
+import appeng.menu.locator.MenuLocators;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.BlockHitResult;
+
+
+public class FusionController extends Block implements EntityBlock {
+    public static final BooleanProperty FORMED = BooleanProperty.create("formed");
+
+    public FusionController(Properties properties) {
+        super(properties);
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FORMED);
+    }
+
+    @Override
+    public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
+        return defaultBlockState().setValue(FORMED, false);
+    }
+
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new FusionControllerBlockEntity(pos, state);
+    }
+
+    @Override
+    public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return type == BlockEntities.FUSION_CONTROLLER.get()
+                ? (l, p, s, be) -> FusionControllerBlockEntity.tick(l, p, s, (FusionControllerBlockEntity) be) : null;
+    }
+
+    @Override
+    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        super.onRemove(state, level, pos, newState, movedByPiston);
+        // the controller is gone: the chamber's frames lose their formed look
+        if (!state.is(newState.getBlock()) && level instanceof ServerLevel server) {
+            FusionControllerBlockEntity.unformOnRemoval(server, pos);
+        }
+    }
+
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (level.isClientSide()) {
+            return InteractionResult.SUCCESS;
+        }
+        if (level.getBlockEntity(pos) instanceof FusionControllerBlockEntity be) {
+            MenuOpener.open(Menus.FUSION_CONTROLLER.get(), player, MenuLocators.forBlockEntity(be));
+        }
+        return InteractionResult.SUCCESS;
+    }
+}

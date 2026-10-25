@@ -1,4 +1,4 @@
-#version 330
+#version 150
 
 // Fusion plasma (see FusionPlasmaRenderTypes). Vanilla ENTITY vertex format:
 //   Color    = the star's colour for its temperature
@@ -10,8 +10,8 @@
 //              hit; ribbon: position across it (-1..1)
 //   Color.a  = containment shell: the hit's age (0 = none); ribbon: its fade
 
-#moj_import <minecraft:dynamictransforms.glsl>
-#moj_import <minecraft:projection.glsl>
+uniform mat4 ModelViewMat;
+uniform mat4 ProjMat;
 
 in vec3 Position;
 in vec4 Color;

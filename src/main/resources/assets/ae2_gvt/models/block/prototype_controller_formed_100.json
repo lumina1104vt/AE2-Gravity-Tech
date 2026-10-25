@@ -1,4 +1,5 @@
 {
+  "render_type": "minecraft:cutout",
   "textures": {
     "face": "ae2_gvt:block/prototype_controller_formed",
     "particle": "ae2_gvt:block/prototype_controller_unformed",
@@ -140,8 +141,11 @@
           "texture": "#lights"
         }
       },
-      "light_emission": 15,
-      "shade": false
+      "shade": false,
+      "neoforge_data": {
+        "block_light": 15,
+        "sky_light": 15
+      }
     }
   ]
 }

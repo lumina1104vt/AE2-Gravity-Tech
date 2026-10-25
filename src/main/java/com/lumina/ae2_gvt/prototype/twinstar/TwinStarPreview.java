@@ -1,5 +1,7 @@
 package com.lumina.ae2_gvt.prototype.twinstar;
 
+import net.minecraft.world.level.block.state.BlockBehaviour;
+
 import com.lumina.ae2_gvt.AE2GravityTech;
 
 import net.minecraft.core.registries.Registries;
@@ -23,14 +25,14 @@ public final class TwinStarPreview {
     private static final String NAME = "prototype_twin_star_preview";
 
     public static final DeferredBlock<TwinStarPreviewBlock> BLOCK = BLOCKS.registerBlock(NAME, TwinStarPreviewBlock::new,
-            p -> p.mapColor(MapColor.COLOR_GRAY).strength(1.0f));
+            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY).strength(1.0f));
     public static final DeferredItem<BlockItem> ITEM = ITEMS.registerSimpleBlockItem(NAME, BLOCK);
     /** Invisible stand-in for the placeholder frame while formed; never obtainable as an item. */
     public static final DeferredBlock<PrototypeHubFrameBlock> FRAME = BLOCKS.registerBlock("prototype_hub_frame",
-            PrototypeHubFrameBlock::new, p -> p.mapColor(MapColor.COLOR_BLACK).strength(1.5f).noOcclusion().noLootTable()
+            PrototypeHubFrameBlock::new, BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).strength(1.5f).noOcclusion().noLootTable()
                     .isViewBlocking((s, l, pos) -> false).isSuffocating((s, l, pos) -> false));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<TwinStarPreviewBlockEntity>> BLOCK_ENTITY =
-            BLOCK_ENTITY_TYPES.register(NAME, () -> new BlockEntityType<>(TwinStarPreviewBlockEntity::new, BLOCK.get()));
+            BLOCK_ENTITY_TYPES.register(NAME, () -> BlockEntityType.Builder.of(TwinStarPreviewBlockEntity::new, BLOCK.get()).build(null));
 
     private TwinStarPreview() {
     }

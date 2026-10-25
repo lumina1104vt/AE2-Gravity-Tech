@@ -8,7 +8,7 @@
  * complete hub, but no AE2 network node and no real behaviour.
  * <p>
  * The layout is read straight from the structure saved with a structure block as
- * {@code gravity_tech:calculator}: re-save it and the next check (every 2 s, or a right-click)
+ * {@code ae2_gvt:calculator} (bundled in data/ae2_gvt/structure; a copy saved in the world wins): re-save it and the next check (every 2 s, or a right-click)
  * uses it - controller spot, sphere size and what gets hidden are all worked out from it (see
  * {@code TwinStarBlueprint}).
  * <p>

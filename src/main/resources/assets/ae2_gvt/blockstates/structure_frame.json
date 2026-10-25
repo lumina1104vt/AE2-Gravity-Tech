@@ -15,7 +15,7 @@
       }
     ],
     "formed=true": {
-      "type": "ae2_gvt:structure_frame_formed"
+      "model": "ae2_gvt:block/structure_frame_formed"
     }
   }
 }

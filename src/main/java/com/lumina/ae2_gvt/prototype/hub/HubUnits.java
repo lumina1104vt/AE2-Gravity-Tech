@@ -8,6 +8,7 @@ import com.lumina.ae2_gvt.AE2GravityTech;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -39,7 +40,7 @@ public final class HubUnits {
 
     private static DeferredItem<BlockItem> unit(String name) {
         DeferredBlock<Block> block = AE2GravityTech.BLOCKS.registerSimpleBlock(name,
-                p -> p.mapColor(MapColor.METAL).strength(2.2f, 11f).sound(SoundType.METAL));
+                BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.2f, 11f).sound(SoundType.METAL));
         return AE2GravityTech.ITEMS.registerSimpleBlockItem(name, block);
     }
 

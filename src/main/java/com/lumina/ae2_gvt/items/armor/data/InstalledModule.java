@@ -32,8 +32,8 @@ public record InstalledModule(Holder<Item> module, boolean enabled) implements C
     }
 
     @Override
-    public int compareTo(@NotNull InstalledModule o) {
-        return Objects.requireNonNull(module.value().builtInRegistryHolder().getKey())
-                .compareTo(Objects.requireNonNull(o.module.value().builtInRegistryHolder().getKey()));
+    public int compareTo(InstalledModule o) {
+        return Objects.requireNonNull(module.unwrapKey().orElseThrow().location())
+                .compareTo(Objects.requireNonNull(o.module.unwrapKey().orElseThrow().location()));
     }
 }

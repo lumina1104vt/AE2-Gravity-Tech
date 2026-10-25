@@ -11,7 +11,6 @@ import appeng.core.definitions.AEItems;
 import com.lumina.ae2_gvt.items.Items;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
@@ -76,7 +75,7 @@ public final class HoleCollapse {
         take(near, white ? anti : singularity, 1);
         take(near, dust, DUST);
         EntityType<GravityHoleEntity> type = (white ? GravityHole.WHITE_HOLE : GravityHole.BLACK_HOLE).get();
-        GravityHoleEntity hole = type.create(level, EntitySpawnReason.TRIGGERED);
+        GravityHoleEntity hole = type.create(level);
         if (hole != null) {
             // centred in the block the chaos matter lies in (the entity's position is its bottom)
             BlockPos at = core.blockPosition();
