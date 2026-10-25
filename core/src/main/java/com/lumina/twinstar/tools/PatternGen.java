@@ -53,7 +53,9 @@ import java.util.Map;
  *   allowed (tag recipes take any matching item);</li>
  *   <li>stonecutter recipes → stonecutting patterns;</li>
  *   <li>everything else (furnaces, smithing, mod machines) → processing patterns: inputs as the
- *   recipe lists them, the result plus container items left behind (bucket) as outputs.</li>
+ *   recipe lists them, the result as the only output. Items left behind (the bucket of a water
+ *   bucket, a damaged tool) are not written: an output written in a pattern is a main product to
+ *   the engine, and a remainder is not one.</li>
  * </ul>
  * Every pattern is decoded once; one AE2 does not accept as crafting/stonecutting is made as a
  * processing pattern instead. Special recipes (fireworks, map cloning) and pure A → A recipes
@@ -304,7 +306,7 @@ public final class PatternGen {
      * generated. Template duplication (template + diamonds → 2 templates) and upgrades (terminal +
      * another terminal → terminal) need other inputs and stay.
      */
-    private static boolean pureSelfRecipe(Recipe<?> r, RegistryAccess registries) {
+    static boolean pureSelfRecipe(Recipe<?> r, RegistryAccess registries) {
         ItemStack result = r.getResultItem(registries);
         if (result.isEmpty())
             return false;
@@ -389,9 +391,6 @@ public final class PatternGen {
                 return null;
             long count = Math.max(1, options[0].getCount());
             in.merge(AEItemKey.of(options[0]), count, Long::sum);
-            ItemStack rest = options[0].getCraftingRemainingItem();
-            if (!rest.isEmpty())
-                out.merge(AEItemKey.of(rest), (long) rest.getCount() * count, Long::sum);
         }
         if (in.isEmpty())
             return null;

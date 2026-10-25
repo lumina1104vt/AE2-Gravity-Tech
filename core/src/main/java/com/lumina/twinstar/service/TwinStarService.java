@@ -589,6 +589,16 @@ public final class TwinStarService implements ITwinStarService, IGridServiceProv
         return index;
     }
 
+    /** The last version of the theory layer the engine published (immutable); null before the first update. */
+    public @Nullable Snapshot getLastSnapshot() {
+        return lastSnapshot;
+    }
+
+    /** Server thread: the network's stock exactly as the engine reads it before planning. */
+    public StockSnapshot takeStock() {
+        return StockSnapshotter.take(store(), index);
+    }
+
     public IGrid getGrid() {
         return grid;
     }

@@ -6,6 +6,7 @@ import com.lumina.twinstar.order.PlanViewPacket;
 import com.lumina.twinstar.service.TwinStarService;
 import com.lumina.twinstar.storage.TwinstarContent;
 import com.lumina.twinstar.tools.EngineCommands;
+import com.lumina.twinstar.tools.NetworkDump;
 import com.lumina.twinstar.tools.PatternGen;
 import com.lumina.twinstar.tools.RecipeDump;
 import com.mojang.logging.LogUtils;
@@ -27,6 +28,7 @@ public class Twinstar {
         NeoForge.EVENT_BUS.addListener(RecipeDump::registerCommands);
         NeoForge.EVENT_BUS.addListener(PatternGen::registerCommands);
         NeoForge.EVENT_BUS.addListener(EngineCommands::registerCommands);
+        NeoForge.EVENT_BUS.addListener(NetworkDump::registerCommands);
         NeoForge.EVENT_BUS.addListener(PatternGen::onServerTick);
         NeoForge.EVENT_BUS.addListener(PatternGen::onServerStopping);
         NeoForge.EVENT_BUS.addListener(RecipeDump::onServerStarted);

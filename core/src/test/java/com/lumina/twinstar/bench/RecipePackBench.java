@@ -41,7 +41,9 @@ import java.util.Random;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Runs the engine on a real modpack's recipes, dumped in game with {@code /twinstar dump_recipes}.
+ * Runs the engine on a real modpack's recipes, dumped in game with {@code /twinstar dump_recipes}
+ * (every recipe the server knows), or on a network's own patterns and stock, dumped with
+ * {@code /twinstar dump_network} (what the engine works on in game; benched with its real stock too).
  * <pre>
  * gradlew :core:recipeBench -Drecipes=path/to/recipes.json [-Dorders=300] [-Dseed=1]
  * </pre>
@@ -61,6 +63,8 @@ class RecipePackBench {
     private final StringBuilder report = new StringBuilder();
     private final List<String> errors = new ArrayList<>();
     private List<String> items;
+    /** the network's own stock when the file is a network dump, else null */
+    private StockSnapshot networkStock;
     private boolean listedImpossible;
 
     /** Why the theory layer says x cannot be made: a growth loop needing a seed, or what its routes lack. */
@@ -121,12 +125,19 @@ class RecipePackBench {
         line("創造情境的無限來源：沒有配方的 %d 種 + 挖礦取得（只有無外部輸入的循環做得出來）的 %d 種",
                 raws.cardinality(), mined.cardinality() - raws.cardinality());
 
-        for (String scenario : new String[]{"creative", "survival"}) {
+        // a network dump also has the network's own stock: bench it as it is, too
+        String[] scenarios = networkStock != null
+                ? new String[]{"network", "creative", "survival"} : new String[]{"creative", "survival"};
+        for (String scenario : scenarios) {
             Random rnd = new Random(seed);
             StockSnapshot stock = stock(scenario, scenario.equals("creative") ? mined : raws, rnd);
             line("");
-            line("══ 庫存情境：%s ══", scenario.equals("creative") ? "創造（所有原料無限）" : "生存（隨機有限庫存）");
-            if (scenario.equals("survival"))
+            line("══ 庫存情境：%s ══", switch (scenario) {
+                case "network" -> "網路的實際庫存";
+                case "creative" -> "創造（所有原料無限）";
+                default -> "生存（隨機有限庫存）";
+            });
+            if (!scenario.equals(scenarios[0]))
                 line("（策略環同上）");
             TheoryLayer theory = new TheoryLayer();
             Snapshot snap = theoryBench(theory, patterns, stock, rnd);
@@ -157,6 +168,8 @@ class RecipePackBench {
         items = new ArrayList<>();
         for (JsonElement e : root.getAsJsonArray("items"))
             items.add(e.getAsString());
+        if (root.has("patterns"))
+            return loadNetwork(root);
         List<Pattern> out = new ArrayList<>();
         for (JsonElement e : root.getAsJsonArray("recipes")) {
             JsonObject r = e.getAsJsonObject();
@@ -170,7 +183,9 @@ class RecipePackBench {
                 for (int i = 1; i < opts.size(); i++)
                     alts[i - 1] = opts.get(i).getAsInt();
                 subst |= alts.length > 0;
-                b.input(opts.get(0).getAsInt(), Amount.of(count), InputKind.CONSUME, 0, alts);
+                // format 2 marks an item that comes back unchanged (format 1 has no third element)
+                boolean container = slot.size() > 2 && slot.get(2).getAsString().equals("container");
+                b.input(opts.get(0).getAsInt(), Amount.of(count), container ? InputKind.CONTAINER : InputKind.CONSUME, 0, alts);
             }
             Map<Integer, Long> outs = new LinkedHashMap<>();
             for (String key : new String[]{"out", "rem"})
@@ -183,7 +198,45 @@ class RecipePackBench {
         return out;
     }
 
+    /** {@code /twinstar dump_network}: the engine's own patterns (ids as in game) and the network's stock. */
+    private List<Pattern> loadNetwork(JsonObject root) {
+        List<Pattern> out = new ArrayList<>();
+        for (JsonElement e : root.getAsJsonArray("patterns")) {
+            JsonObject p = e.getAsJsonObject();
+            int id = p.get("id").getAsInt();
+            JsonArray outs = p.getAsJsonArray("out");
+            String first = outs.isEmpty() ? "?" : items.get(outs.get(0).getAsJsonArray().get(0).getAsInt());
+            Pattern.Builder b = new Pattern.Builder()
+                    .where(PatternLocation.valueOf(p.get("where").getAsString()))
+                    .priority(p.get("priority").getAsInt())
+                    .allowSubst(p.get("subst").getAsBoolean())
+                    .source("樣板 #" + id + " → " + first);
+            for (JsonElement s : p.getAsJsonArray("in")) {
+                JsonArray slot = s.getAsJsonArray();
+                JsonArray opts = slot.get(4).getAsJsonArray();
+                int[] alts = new int[opts.size()];
+                for (int i = 0; i < opts.size(); i++)
+                    alts[i] = opts.get(i).getAsInt();
+                b.input(slot.get(0).getAsInt(), Amount.of(new BigInteger(slot.get(1).getAsString())),
+                        InputKind.valueOf(slot.get(2).getAsString()), slot.get(3).getAsInt(), alts);
+            }
+            for (JsonElement o : outs)
+                b.output(o.getAsJsonArray().get(0).getAsInt(), Amount.of(new BigInteger(o.getAsJsonArray().get(1).getAsString())));
+            out.add(b.build(id));
+        }
+        AmountArray stock = new AmountArray(items.size());
+        for (JsonElement e : root.getAsJsonArray("stock"))
+            stock.set(e.getAsJsonArray().get(0).getAsInt(), Amount.of(new BigInteger(e.getAsJsonArray().get(1).getAsString())));
+        BitSet infinite = new BitSet();
+        for (JsonElement e : root.getAsJsonArray("infinite"))
+            infinite.set(e.getAsInt());
+        networkStock = new StockSnapshot(stock, infinite);
+        return out;
+    }
+
     private StockSnapshot stock(String scenario, BitSet raws, Random rnd) {
+        if (scenario.equals("network"))
+            return networkStock;
         AmountArray stock = new AmountArray(items.size());
         BitSet infinite = new BitSet();
         for (int i = 0; i < items.size(); i++) {

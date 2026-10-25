@@ -1,5 +1,6 @@
 package com.lumina.twinstar.tools;
 
+import appeng.api.stacks.AEItemKey;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -27,9 +28,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Writes every recipe the server has loaded (all mods, datapacks and KubeJS changes of a modpack)
@@ -42,11 +45,14 @@ import java.util.Map;
  *   console after start ({@code @n}: n ticks later); with stopAfterDump the server stops once they
  *   and any pattern generation are done</li>
  * </ul>
- * Format: {@code items} = item ids (index = id in the file); each recipe has {@code in} =
- * [count, [item, alternatives…]] per distinct ingredient, {@code out} and {@code rem} (container
- * items left behind, e.g. the bucket of a water bucket) = [item, count]. Only what the vanilla
- * recipe interface exposes is seen: item ingredients and the main result. Fluids, chances and
- * extra outputs of mod machines are not; data components (potion type, …) are dropped.
+ * Format 2: {@code items} = item names (index = id in the file), keys compared like the engine's
+ * {@code ItemIndex} (item + data components; see {@link KeyNames}); each recipe has {@code in} =
+ * [count, [item, alternatives…]] per distinct ingredient, with a third element {@code "container"}
+ * when the item comes back unchanged, {@code out} and {@code rem} (other items left behind, e.g. the
+ * bucket of a water bucket, a damaged tool) = [item, count]. Remainders are classified like
+ * {@code PatternCompiler} does for AE2's crafting patterns. Pure A → A recipes are left out, like
+ * {@code gen_patterns} does. Only what the vanilla recipe interface exposes is seen: item
+ * ingredients and the main result; fluids, chances and extra outputs of mod machines are not.
  */
 public final class RecipeDump {
     /** alternatives kept per ingredient (big tags such as "any planks" are cut) */
@@ -87,7 +93,8 @@ public final class RecipeDump {
             return;
         try {
             Result r = write(server, Path.of(file));
-            Twinstar.LOGGER.info("[雙星] 合成表已匯出：{} 條（略過 {} 條）→ {}", r.written, r.skipped, r.file.toAbsolutePath());
+            Twinstar.LOGGER.info("[雙星] 合成表已匯出：{} 條（略過 {} 條、純粹 A 變 A {} 條）→ {}", r.written, r.skipped,
+                    r.selfRecipes, r.file.toAbsolutePath());
         } catch (IOException e) {
             Twinstar.LOGGER.error("[雙星] 合成表匯出失敗", e);
         }
@@ -122,7 +129,7 @@ public final class RecipeDump {
         try {
             Result r = write(server, path);
             source.sendSuccess(() -> Component.literal("[雙星] 合成表已匯出：" + r.written + " 條（略過 " + r.skipped
-                    + " 條特殊或無法讀取的配方）→ " + r.file.toAbsolutePath()), true);
+                    + " 條特殊或無法讀取的配方、" + r.selfRecipes + " 條純粹 A 變 A 的配方）→ " + r.file.toAbsolutePath()), true);
             return r.written;
         } catch (IOException e) {
             source.sendFailure(Component.literal("[雙星] 匯出失敗：" + e.getMessage()));
@@ -130,17 +137,22 @@ public final class RecipeDump {
         }
     }
 
-    private record Result(int written, int skipped, Path file) {
+    private record Result(int written, int skipped, int selfRecipes, Path file) {
     }
 
     private static Result write(MinecraftServer server, Path path) throws IOException {
         RegistryAccess registries = server.registryAccess();
-        Map<ResourceLocation, Integer> ids = new LinkedHashMap<>();
+        Map<AEItemKey, Integer> ids = new LinkedHashMap<>();
         JsonArray recipes = new JsonArray();
         int skipped = 0;
+        int selfRecipes = 0;
         for (RecipeHolder<?> holder : server.getRecipeManager().getRecipes()) {
             JsonObject json;
             try {
+                if (PatternGen.pureSelfRecipe(holder.value(), registries)) {
+                    selfRecipes++;      // gen_patterns does not make these either
+                    continue;
+                }
                 json = recipe(holder, registries, ids);
             } catch (RuntimeException e) {
                 json = null;    // a mod's recipe that cannot answer outside its machine
@@ -152,10 +164,10 @@ public final class RecipeDump {
             recipes.add(json);
         }
         JsonArray items = new JsonArray();
-        for (ResourceLocation id : ids.keySet())
-            items.add(id.toString());
+        for (AEItemKey key : ids.keySet())
+            items.add(KeyNames.of(key, registries));
         JsonObject root = new JsonObject();
-        root.addProperty("format", 1);
+        root.addProperty("format", 2);
         root.add("items", items);
         root.add("recipes", recipes);
 
@@ -163,10 +175,10 @@ public final class RecipeDump {
         if (parent != null)
             Files.createDirectories(parent);
         Files.writeString(path, new GsonBuilder().create().toJson(root), StandardCharsets.UTF_8);
-        return new Result(recipes.size(), skipped, path);
+        return new Result(recipes.size(), skipped, selfRecipes, path);
     }
 
-    private static JsonObject recipe(RecipeHolder<?> holder, RegistryAccess registries, Map<ResourceLocation, Integer> ids) {
+    private static JsonObject recipe(RecipeHolder<?> holder, RegistryAccess registries, Map<AEItemKey, Integer> ids) {
         Recipe<?> r = holder.value();
         if (r.isSpecial())
             return null;    // fireworks, map cloning, …: the result depends on the actual items
@@ -177,6 +189,7 @@ public final class RecipeDump {
 
         // identical ingredients (the same option list) are one input with a count
         Map<List<Integer>, Integer> inputs = new LinkedHashMap<>();
+        Set<List<Integer>> containers = new HashSet<>();
         Map<Integer, Integer> remainders = new HashMap<>();
         for (Ingredient ing : ingredients) {
             if (ing.isEmpty())
@@ -194,8 +207,13 @@ public final class RecipeDump {
             }
             int count = Math.max(1, options[0].getCount());
             inputs.merge(key, count, Integer::sum);
+            // like PatternCompiler: the same key back makes a container, anything else is a remainder
             ItemStack rest = options[0].getCraftingRemainingItem();
-            if (!rest.isEmpty())
+            if (rest.isEmpty())
+                continue;
+            if (AEItemKey.of(rest).equals(AEItemKey.of(options[0])))
+                containers.add(key);
+            else
                 remainders.merge(id(rest, ids), rest.getCount() * count, Integer::sum);
         }
         if (inputs.isEmpty())
@@ -212,6 +230,8 @@ public final class RecipeDump {
             JsonArray opts = new JsonArray();
             options.forEach(opts::add);
             slot.add(opts);
+            if (containers.contains(options))
+                slot.add("container");
             in.add(slot);
         });
         json.add("in", in);
@@ -233,7 +253,7 @@ public final class RecipeDump {
         return a;
     }
 
-    private static int id(ItemStack stack, Map<ResourceLocation, Integer> ids) {
-        return ids.computeIfAbsent(BuiltInRegistries.ITEM.getKey(stack.getItem()), k -> ids.size());
+    private static int id(ItemStack stack, Map<AEItemKey, Integer> ids) {
+        return ids.computeIfAbsent(AEItemKey.of(stack), k -> ids.size());
     }
 }
