@@ -56,7 +56,7 @@ public final class Repair {
                     double useK = snap.patBomUnitLog(sp.pattern(), x, k);
                     if (useK == LogMath.ZERO)
                         continue;
-                    for (int p2 : snap.producers(x)) {
+                    for (int p2 : pass.usableProducers(x)) {
                         if (p2 == sp.pattern())
                             continue;
                         if (snap.patBomUnitLog(p2, x, k) >= useK)
@@ -91,7 +91,7 @@ public final class Repair {
         List<Integer> region = new ArrayList<>();
         for (Map.Entry<Integer, List<Split>> e : new TreeMap<>(pass.chosen).entrySet()) {
             int x = e.getKey();
-            if (snap.producers(x).length < 2)
+            if (pass.usableProducers(x).length < 2)
                 continue;
             boolean uses = false;
             for (Split sp : e.getValue())
@@ -113,7 +113,7 @@ public final class Repair {
         Map<Integer, Double> stockOf = new HashMap<>();
         Map<Integer, Double> price = new HashMap<>();
         for (int x : region)
-            for (int p : snap.producers(x))
+            for (int p : pass.usableProducers(x))
                 for (int k : snap.patBomItems(p)) {
                     if (left.containsKey(k))
                         continue;
@@ -143,7 +143,7 @@ public final class Repair {
         PriorityQueue<Cand> heap = new PriorityQueue<>((a, b) -> a.cost != b.cost ? Double.compare(a.cost, b.cost)
                 : a.x != b.x ? Integer.compare(a.x, b.x) : Integer.compare(a.p, b.p));
         for (int x : region)
-            for (int p : snap.producers(x))
+            for (int p : pass.usableProducers(x))
                 if (snap.unitLogCost(p, x) != LogMath.INF)
                     heap.add(new Cand(routeCost(snap, p, x, price), x, p));
 
@@ -195,8 +195,9 @@ public final class Repair {
             for (Map.Entry<Integer, Amount> e : a.entrySet())
                 list.add(pass.mergeInto(List.of(), e.getKey(), x, e.getValue()).get(0));
             Amount rem = remaining.get(x);
-            if (rem.signum() > 0)
-                list = pass.mergeInto(list, snap.producers(x)[0], x, rem);
+            int[] usable = pass.usableProducers(x);
+            if (rem.signum() > 0 && usable.length > 0)
+                list = pass.mergeInto(list, usable[0], x, rem);
             forced.put(x, list);
         }
         return forced;

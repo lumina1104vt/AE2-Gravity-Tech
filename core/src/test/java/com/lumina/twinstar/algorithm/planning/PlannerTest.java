@@ -125,6 +125,27 @@ class PlannerTest {
         assertEquals(Amount.ZERO, p.patternTimes.get(0));
     }
 
+    /** A machine pattern whose machine is not on the grid is no route: the other one is used, or it is missing. */
+    @Test
+    void patternWithoutItsMachineIsNoRoute() {
+        final int FURNACE = 20;
+        TestGraphs g = new TestGraphs();
+        g.pattern(b -> b.input(ORE, 1).output(INGOT, 2).machine(FURNACE));    // P0, cheaper, in a furnace
+        g.pattern(b -> b.input(ORE, 1).output(INGOT, 1));                     // P1
+        g.stock(ORE, 100);
+        Snapshot s = g.flush();
+        Overlay noFurnace = new Overlay();
+        noFurnace.disabled.set(0);
+        Plan p = Planner.plan(s, g.stockSnapshot(), INGOT, Amount.of(4), noFurnace, Deadline.NONE);
+        assertTrue(p.isComplete(), p.toString());
+        assertEquals(Amount.ZERO, p.patternTimes.get(0));
+        assertEquals(Amount.of(4), p.patternTimes.get(1));
+
+        noFurnace.disabled.set(1);
+        Plan none = Planner.plan(s, g.stockSnapshot(), INGOT, Amount.of(4), noFurnace, Deadline.NONE);
+        assertEquals(Amount.of(4), none.missing.get(INGOT), none.toString());
+    }
+
     /** water bucket → (cake + bucket back): only one bucket is made, the cake's buckets carry the rest. */
     @Test
     void itemGivenBackIsSeededNotMadeAgain() {

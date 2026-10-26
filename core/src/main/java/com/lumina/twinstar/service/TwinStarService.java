@@ -36,6 +36,7 @@ import com.lumina.twinstar.algorithm.model.Deadline;
 import com.lumina.twinstar.algorithm.model.OrderMode;
 import com.lumina.twinstar.algorithm.model.Overlay;
 import com.lumina.twinstar.algorithm.model.Pattern;
+import com.lumina.twinstar.algorithm.model.PatternLocation;
 import com.lumina.twinstar.algorithm.model.StockSnapshot;
 import com.lumina.twinstar.algorithm.planning.OrderResult;
 import com.lumina.twinstar.algorithm.planning.Planner;
@@ -300,6 +301,7 @@ public final class TwinStarService implements ITwinStarService, IGridServiceProv
         int target = index.idOf(what);
         Amount free = freeCapacity();
         OrderMode mode = strategy == CalculationStrategy.CRAFT_LESS ? OrderMode.BEST_EFFORT : OrderMode.EXACT;
+        Set<Integer> machinesHere = machinesOnGrid();
         return ENGINE.submit(() -> {
             applyPatternChanges();
             theory.applyStock(stock);
@@ -308,7 +310,8 @@ public final class TwinStarService implements ITwinStarService, IGridServiceProv
             // after many pattern changes) can take longer than that on a big pack and is not planning
             Deadline deadline = Deadline.startingNow();
             long t0 = System.nanoTime();
-            OrderResult r = Planner.order(snap, stock, target, amount, mode, free, new Overlay(), deadline);
+            OrderResult r = Planner.order(snap, stock, target, amount, mode, free, withoutMissingMachines(snap, machinesHere),
+                    deadline);
             long took = System.nanoTime() - t0;
             if (r instanceof OrderResult.Accepted a) {
                 EngineLog.planned(a.plan(), snap, index, mode, a.plan().isComplete() ? "可以完成" : "缺料", took);
@@ -540,6 +543,36 @@ public final class TwinStarService implements ITwinStarService, IGridServiceProv
         Amount parallelism = p == null ? null : Amount.of(p.max(BigInteger.ONE));
         return new ExecutionEnv(index, store(), energy, host != null ? host.getHostEnergySource() : null,
                 crafting::getProviders, List.copyOf(machineAccess.values()), parallelism, System.nanoTime(), TICK_BUDGET_NANOS);
+    }
+
+    /**
+     * The machines (item ids) the grid's working machine access interfaces stand for: the block each
+     * sits on and its ghost slot. Server thread.
+     */
+    private Set<Integer> machinesOnGrid() {
+        Set<Integer> out = new HashSet<>();
+        for (IMachineAccess a : machineAccess.values()) {
+            var level = a.getMachineLevel();
+            if (level == null || !a.isAccessActive() || !level.isLoaded(a.getMachinePos()))
+                continue;
+            net.minecraft.world.item.Item block = level.getBlockState(a.getMachinePos()).getBlock().asItem();
+            if (block != net.minecraft.world.item.Items.AIR)
+                out.add(index.idOf(appeng.api.stacks.AEItemKey.of(block)));
+            if (a.getMachine() != null)
+                out.add(index.idOf(appeng.api.stacks.AEItemKey.of(a.getMachine())));
+        }
+        return out;
+    }
+
+    /** An order may not use a machine pattern whose machine has no interface on the grid. */
+    private static Overlay withoutMissingMachines(Snapshot snap, Set<Integer> machines) {
+        Overlay o = new Overlay();
+        for (int p = 0; p < snap.patternCount(); p++) {
+            Pattern pat = snap.pattern(p);
+            if (pat != null && pat.where == PatternLocation.HUB_MACHINE && !machines.contains(pat.machine))
+                o.disabled.set(p);
+        }
+        return o;
     }
 
     /**

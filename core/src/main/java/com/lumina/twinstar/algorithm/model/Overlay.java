@@ -13,6 +13,8 @@ public final class Overlay {
     public final Map<Integer, Double> logPrice = new HashMap<>();
     /** Confirm-screen "保留" marks: avoid routes that use these, but still use them when unavoidable. */
     public final BitSet reserved = new BitSet();
+    /** Patterns this order cannot use at all (a machine pattern whose machine is not on the grid). */
+    public final BitSet disabled = new BitSet();
 
     public boolean isEmpty() {
         return logPrice.isEmpty() && reserved.isEmpty();
@@ -40,6 +42,7 @@ public final class Overlay {
         Overlay o = new Overlay();
         o.logPrice.putAll(logPrice);
         o.reserved.or(reserved);
+        o.disabled.or(disabled);
         return o;
     }
 }

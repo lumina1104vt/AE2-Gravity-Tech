@@ -509,8 +509,16 @@ public final class DemandPass {
         return routes(x, ctx[x]);
     }
 
+    /** The producers of {@code x} this order may use (not {@link Overlay#disabled}). */
+    public int[] usableProducers(int x) {
+        int[] all = snap.producers(x);
+        if (overlay.disabled.isEmpty())
+            return all;
+        return java.util.Arrays.stream(all).filter(q -> !overlay.disabled.get(q)).toArray();
+    }
+
     private int[] routes(int x, @Nullable BitSet forbid) {
-        int[] base = snap.producers(x);
+        int[] base = usableProducers(x);
         if (base.length == 0)
             return base;
         int[] routes = overlay.isEmpty() ? base : sortWithOverlay(x, base);
