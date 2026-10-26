@@ -249,7 +249,6 @@ public class DummyTwinStarCPUBlockEntity extends AENetworkedBlockEntity
         if (compacting || isClientSide()) {
             return;
         }
-        patternsChanged();
         compacting = true;
         try {
             ItemStack stack = inv.getStackInSlot(slot);
@@ -270,6 +269,8 @@ public class DummyTwinStarCPUBlockEntity extends AENetworkedBlockEntity
         } finally {
             compacting = false;
         }
+        // only now: AE2 reads the patterns back at once, and only the first `stored` slots
+        patternsChanged();
         saveChanges();
     }
 
