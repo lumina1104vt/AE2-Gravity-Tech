@@ -12,11 +12,14 @@ import java.util.List;
  * anything larger in unit form): exact BigIntegers for a few hundred rows of 1e10000 orders would
  * be megabytes.
  *
+ * @param fits      the plan's usage fits the black hole's free capacity when it was made (the server
+ *                  compares: the client only has text)
  * @param rows      the crafting tree, depth first; an item already listed appears again as {@code shared}
  * @param truncated more rows than {@link PlanTree#MAX_ROWS}
  */
 public record PlanView(AEKey target, String amount, int patterns, long planNanos, String usage, String freeCapacity,
-                       String parallel, boolean complete, List<Row> rows, boolean truncated, List<Missing> missing) {
+                       String parallel, boolean complete, boolean fits, List<Row> rows, boolean truncated,
+                       List<Missing> missing) {
 
     /** {@code freeCapacity} / {@code parallel} for "no limit". */
     public static final String UNLIMITED = "";
@@ -41,6 +44,7 @@ public record PlanView(AEKey target, String amount, int patterns, long planNanos
         buf.writeUtf(freeCapacity);
         buf.writeUtf(parallel);
         buf.writeBoolean(complete);
+        buf.writeBoolean(fits);
         buf.writeVarInt(rows.size());
         for (Row r : rows) {
             buf.writeVarInt(r.depth());
@@ -69,6 +73,7 @@ public record PlanView(AEKey target, String amount, int patterns, long planNanos
         String free = buf.readUtf();
         String parallel = buf.readUtf();
         boolean complete = buf.readBoolean();
+        boolean fits = buf.readBoolean();
         int n = buf.readVarInt();
         List<Row> rows = new ArrayList<>(Math.min(n, PlanTree.MAX_ROWS));
         for (int i = 0; i < n; i++)
@@ -79,6 +84,6 @@ public record PlanView(AEKey target, String amount, int patterns, long planNanos
         List<Missing> missing = new ArrayList<>(Math.min(m, PlanTree.MAX_ROWS));
         for (int i = 0; i < m; i++)
             missing.add(new Missing(AEKey.readKey(buf), buf.readUtf()));
-        return new PlanView(target, amount, patterns, nanos, usage, free, parallel, complete, rows, truncated, missing);
+        return new PlanView(target, amount, patterns, nanos, usage, free, parallel, complete, fits, rows, truncated, missing);
     }
 }

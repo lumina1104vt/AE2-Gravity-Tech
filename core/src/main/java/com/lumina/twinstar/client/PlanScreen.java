@@ -73,7 +73,8 @@ public class PlanScreen extends AEBaseScreen<PlanMenu> {
         PlanView view = view();
         int rows = view != null ? view.rows().size() + (view.truncated() ? 1 : 0) : 0;
         scrollbar.setRange(0, Math.max(0, rows - ROWS), ROWS);
-        start.active = view != null && view.complete();
+        // too big for the black hole: starting would only fail
+        start.active = view != null && view.complete() && view.fits();
         replan.active = !menu.planning;
     }
 
@@ -162,10 +163,12 @@ public class PlanScreen extends AEBaseScreen<PlanMenu> {
         small(g, Component.translatable("gui.twinstar.plan.patterns", view.patterns()), SIDE_X, y, DIM, SIDE_W);
         small(g, Component.translatable("gui.twinstar.plan.time", millis(view.planNanos())), SIDE_X, y + 7, DIM, SIDE_W);
         small(g, Component.translatable("gui.twinstar.plan.capacity", shortText(view.usage(), null),
-                limit(view.freeCapacity())), SIDE_X, y + 14, TEXT, SIDE_W);
+                limit(view.freeCapacity())), SIDE_X, y + 14, view.fits() ? TEXT : BAD, SIDE_W);
         small(g, Component.translatable("gui.twinstar.plan.parallel", limit(view.parallel())), SIDE_X, y + 21, TEXT, SIDE_W);
         if (!menu.error.isEmpty())      // a start that failed
             small(g, errorText(menu.error), SIDE_X, y + 29, BAD, SIDE_W);
+        else if (!view.fits())          // said before the start is pressed
+            small(g, errorText("cpu_too_small"), SIDE_X, y + 29, BAD, SIDE_W);
     }
 
     private void drawMissing(GuiGraphics g, PlanView view) {

@@ -55,7 +55,8 @@ public final class PlanTree {
         AEKey target = index.keyOf(plan.target);
         return new PlanView(target, text(plan.amount.bigValue()), plan.patternTimes.size(), planNanos,
                 text(plan.usage.bigValue()), freeCapacity == null ? PlanView.UNLIMITED : text(freeCapacity),
-                parallel == null ? PlanView.UNLIMITED : text(parallel), plan.isComplete(), rows, truncated[0], missing);
+                parallel == null ? PlanView.UNLIMITED : text(parallel), plan.isComplete(),
+                freeCapacity == null || plan.usage.bigValue().compareTo(freeCapacity) <= 0, rows, truncated[0], missing);
     }
 
     private static void node(Plan plan, Snapshot snap, ItemIndex index, Map<Integer, List<Integer>> producedBy, int x,
