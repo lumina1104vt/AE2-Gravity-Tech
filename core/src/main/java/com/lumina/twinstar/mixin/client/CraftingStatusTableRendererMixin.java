@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.ArrayList;
 import java.util.List;
 
-/** CPU-status entries of hub jobs: exact amounts (beyond a long too) and a hint for infinite sources. */
+/** CPU-status entries of hub jobs: exact amounts (beyond a long too), a hint for infinite sources, 機率產物不足. */
 @Mixin(CraftingStatusTableRenderer.class)
 public abstract class CraftingStatusTableRendererMixin {
     @Inject(method = "getEntryDescription(Lappeng/menu/me/crafting/CraftingStatusEntry;)Ljava/util/List;",
@@ -53,6 +53,9 @@ public abstract class CraftingStatusTableRendererMixin {
             lines.add(GuiText.Crafting.text(AmountText.format(what, big.active(), full)));
         if (big.pending().signum() > 0)
             lines.add(GuiText.Scheduled.text(AmountText.format(what, big.pending(), full)));
+        if (big.chanceShort().signum() > 0)
+            lines.add(Component.translatable("gui.twinstar.chance_short", AmountText.format(what, big.chanceShort(), full))
+                    .withStyle(net.minecraft.ChatFormatting.RED));
         return lines;
     }
 }

@@ -121,6 +121,7 @@ public final class TwinStarCpu implements ICraftingCPU {
         AmountMap stored = job.inventory();
         AmountMap active = job.outstanding();
         AmountMap later = job.drawLater();
+        AmountMap chanceShort = job.chanceShortages();
         AmountMap pending = new AmountMap();
         Amount remaining = Amount.ZERO;
         for (Task t : job.tasks()) {
@@ -128,6 +129,8 @@ public final class TwinStarCpu implements ICraftingCPU {
                 continue;
             Pattern p = snap.pattern(t.pattern);
             for (int o = 0; o < p.outputCount(); o++) {
+                if (p.isChance(o))
+                    continue;   // comes with a probability: how much is not known before it runs
                 Amount a = p.outputAmount(o).mul(t.remaining());
                 pending.add(p.outputItem(o), a);
                 remaining = remaining.add(a);
@@ -137,7 +140,8 @@ public final class TwinStarCpu implements ICraftingCPU {
         for (var e : job.plan.patternTimes.entries()) {
             Pattern p = snap.pattern(e.getKey());
             for (int o = 0; o < p.outputCount(); o++)
-                start = start.add(p.outputAmount(o).mul(e.getValue()));
+                if (!p.isChance(o))
+                    start = start.add(p.outputAmount(o).mul(e.getValue()));
         }
 
         TreeSet<Integer> items = new TreeSet<>();
@@ -158,7 +162,8 @@ public final class TwinStarCpu implements ICraftingCPU {
                     stored.get(id).saturatedLong(), active.get(id).saturatedLong(), pending.get(id).saturatedLong());
             // exact values beside AE2's longs; infinite = more of it is still drawn from an infinite source
             ((BigStatusEntry) entry).twinstar$setBig(new BigStatusAmounts(stored.get(id).bigValue(),
-                    active.get(id).bigValue(), pending.get(id).bigValue(), later.get(id).signum() > 0));
+                    active.get(id).bigValue(), pending.get(id).bigValue(), later.get(id).signum() > 0,
+                    chanceShort.get(id).bigValue()));
             entries.add(entry);
         }
         return new CraftingStatus(true, System.nanoTime() - job.startNanos(), remaining.saturatedLong(),

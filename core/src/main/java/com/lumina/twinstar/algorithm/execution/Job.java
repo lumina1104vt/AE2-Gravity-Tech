@@ -58,6 +58,13 @@ public final class Job {
     final AmountMap toolUses = new AmountMap();
     /** infinite-source items still to be drawn from the network as the job needs them */
     final AmountMap drawLater = new AmountMap();
+    /** patterns run for outputs that come with a probability (Plan.chanceNeeds); key = pattern */
+    final Map<Integer, ChanceProgress> chances = new HashMap<>();
+    /**
+     * what such patterns did not give after all their planned runs: the job waits for it (expected
+     * like a machine's return, so a late arrival, a player's insertion or "pull from network" fills it)
+     */
+    final AmountMap chanceShort = new AmountMap();
 
     boolean suspended;
     boolean unloaded;
@@ -114,6 +121,7 @@ public final class Job {
             recycleGuards.add(r);
             protectedSeeds.add(r.item(), r.seed());
         }
+        plan.chanceNeeds.forEach((p, need) -> chances.put(p, new ChanceProgress(need)));
         for (Map.Entry<Integer, CycleContract> e : plan.contracts.entrySet()) {
             contractStep.put(e.getKey(), 0);
             contractLeft.put(e.getKey(), e.getValue().batches()[0]);
@@ -148,6 +156,11 @@ public final class Job {
 
     public List<Task> tasks() {
         return Collections.unmodifiableList(tasks);
+    }
+
+    /** 機率產物不足: per item, what the probable outputs did not give after all the planned runs. */
+    public AmountMap chanceShortages() {
+        return chanceShort.copy();
     }
 
     public List<StuckMark> stuckMarks() {

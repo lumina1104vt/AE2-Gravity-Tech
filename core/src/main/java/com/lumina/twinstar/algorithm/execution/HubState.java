@@ -9,6 +9,7 @@ import appeng.api.stacks.KeyCounter;
 import com.lumina.twinstar.algorithm.cache.Snapshot;
 import com.lumina.twinstar.algorithm.model.Amount;
 import com.lumina.twinstar.algorithm.model.AmountMap;
+import com.lumina.twinstar.algorithm.model.ChanceSampler;
 import com.lumina.twinstar.algorithm.model.InputKind;
 import com.lumina.twinstar.algorithm.model.Pattern;
 import com.lumina.twinstar.algorithm.model.PatternLocation;
@@ -25,6 +26,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SplittableRandom;
+import java.util.random.RandomGenerator;
 
 /**
  * F — the executor, one per network (held by TwinStarService). Runs every job each tick, round
@@ -44,6 +47,8 @@ public final class HubState {
     private final Map<WindowKey, Window> windows = new LinkedHashMap<>();
     private int rotate;
     private long nextJobId = 1;
+    /** draws of the hub's own runs for outputs that come with a probability */
+    private final RandomGenerator random = new SplittableRandom();
 
     record WindowKey(ICraftingProvider provider, int pattern) {
     }
@@ -160,6 +165,9 @@ public final class HubState {
                 continue;
             }
             Amount want = p == null ? t.remaining : t.remaining.min(p);
+            ChanceProgress chance = job.chances.get(t.pattern);
+            if (chance != null)
+                want = want.min(chance.nextBatch(pat));     // no more than the rest needs on average
             Amount n = contractCap(job, t, want.min(supported));
             if (n.signum() <= 0)
                 continue;                  // not this pattern's turn in the loop's contract; advancing it wakes it
@@ -178,7 +186,7 @@ public final class HubState {
             }
             if (pat.where == PatternLocation.HUB_INTERNAL) {
                 consume(job, pat, n);
-                produce(job, pat, n);   // later tasks may become ready within this tick
+                produce(job, pat, n, chance);   // later tasks may become ready within this tick
             } else {
                 n = dispatchEven(job, t, pat, n, env);
                 if (n.signum() <= 0) {
@@ -190,6 +198,8 @@ public final class HubState {
             }
             payEnergy(pat, n, env);
             t.remaining = t.remaining.sub(n);
+            if (chance != null)
+                chanceCheck(job, t, chance, env.nowNanos());
             if (p != null)
                 p = p.sub(n);
             advanceContract(job, t, n);
@@ -358,11 +368,40 @@ public final class HubState {
         used = used.sub(r).clampNonNegative();
     }
 
-    private void produce(Job job, Pattern pat, Amount n) {
+    /** Outputs that come with a probability are drawn: each run gives all of its amount or nothing. */
+    private void produce(Job job, Pattern pat, Amount n, @Nullable ChanceProgress chance) {
         for (int o = 0; o < pat.outputCount(); o++) {
-            job.inventory.add(pat.outputItem(o), pat.outputAmount(o).mul(n));
+            Amount runs = pat.isChance(o) ? ChanceSampler.successes(n, pat.outputChance(o), random) : n;
+            Amount made = pat.outputAmount(o).mul(runs);
+            if (chance != null)
+                chance.gave(pat.outputItem(o), made);
+            if (made.signum() <= 0)
+                continue;
+            job.inventory.add(pat.outputItem(o), made);
             notifyItem(job, pat.outputItem(o));
         }
+        if (chance != null)
+            chance.ran(n);
+    }
+
+    /**
+     * After runs of a pattern run for probable outputs: stop it once it has what the plan counts on
+     * (the materials of the runs left over go back at the end), or, when every planned run is done
+     * and it is still short, mark 機率產物不足 and wait for the gap like for a machine's return. No
+     * runs are added on top of the plan.
+     */
+    private void chanceCheck(Job job, Task t, ChanceProgress chance, long now) {
+        if (chance.satisfied()) {
+            t.remaining = Amount.ZERO;
+            return;
+        }
+        if (t.remaining.signum() > 0)
+            return;
+        AmountMap gap = chance.shortfall();
+        gap.forEach((item, a) -> {
+            job.chanceShort.add(item, a);
+            expect(job, item, a, now);
+        });
     }
 
     // ───────────────────────────── dispatch ─────────────────────────────
@@ -549,6 +588,7 @@ public final class HubState {
             pool.sub(item, got);
             job.outstanding.sub(item, got);
             job.inventory.add(item, got);
+            job.chanceShort.sub(item, got.min(job.chanceShort.get(item)));
             job.stuck.remove(item);
             if (job.outstanding.contains(item))
                 job.outstandingSince.put(item, env.nowNanos());
@@ -678,6 +718,7 @@ public final class HubState {
                 continue;
             job.outstanding.sub(item, a);
             job.inventory.add(item, a);
+            job.chanceShort.sub(item, a.min(job.chanceShort.get(item)));
             notifyItem(job, item);
         }
         if (job.outstanding.isEmpty())

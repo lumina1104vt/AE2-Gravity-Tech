@@ -10,6 +10,7 @@ import com.lumina.twinstar.algorithm.model.Pattern;
 import com.lumina.twinstar.algorithm.model.PatternLocation;
 import com.lumina.twinstar.algorithm.model.Rational;
 import com.lumina.twinstar.storage.TwinstarContent;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   but the ledger keeps it for the order's later steps;</li>
  *   <li>AE2 patterns carry no durability, so TOOL only comes from adapters;</li>
  *   <li>an output listed in the pattern's {@link PatternChances} (written by {@code gen_patterns}
- *   from the recipe) comes only with that probability.</li>
+ *   from the recipe) comes only with that probability. Such patterns only run in the hub: one in
+ *   an ordinary pattern provider is not used.</li>
  * </ul>
  */
 public final class PatternCompiler {
@@ -54,13 +56,16 @@ public final class PatternCompiler {
         PatternLocation where = hubInternal ? PatternLocation.HUB_INTERNAL
                 : details instanceof AEProcessingPattern ? PatternLocation.EXTERNAL_PROCESS
                 : PatternLocation.EXTERNAL_CRAFT;
+        PatternChances chances = details.getDefinition().get(TwinstarContent.PATTERN_CHANCES.get());
+        if (!hubInternal && chances != null && !chances.entries().isEmpty())
+            return List.of();   // a pattern with probable outputs only runs in the hub
         for (PatternAdapter a : adapters)
             if (a.handles(details))
                 return a.translate(details, index, where, priority, nextId::getAndIncrement);
-        return List.of(translateDeclared(details, where, priority));
+        return List.of(translateDeclared(details, where, priority, chances));
     }
 
-    private Pattern translateDeclared(IPatternDetails details, PatternLocation where, int priority) {
+    private Pattern translateDeclared(IPatternDetails details, PatternLocation where, int priority, @Nullable PatternChances chances) {
         Pattern.Builder b = new Pattern.Builder().where(where).priority(priority).source(details);
         boolean subst = false;
         Rational energy = Rational.ZERO;
@@ -82,7 +87,6 @@ public final class PatternCompiler {
             energy = energy.add(Rational.of(java.math.BigInteger.valueOf(amount),
                     java.math.BigInteger.valueOf(Math.max(1, key.getAmountPerOperation()))));
         }
-        PatternChances chances = details.getDefinition().get(TwinstarContent.PATTERN_CHANCES.get());
         for (GenericStack out : details.getOutputs()) {
             double chance = chances == null ? 1 : chances.chanceOf(out.what());
             b.output(index.idOf(out.what()), Amount.of(out.amount()), chance > 0 && chance < 1 ? chance : 1);
