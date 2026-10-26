@@ -596,23 +596,76 @@ public final class TwinStarService implements ITwinStarService, IGridServiceProv
         return o;
     }
 
-    /**
-     * What machine access interface {@code access} is feeding, for its screen: the output it is for,
-     * amounts in and to go in; null when idle.
-     */
-    public @Nullable FeedView feedView(IMachineAccess access) {
-        HubState.FeedStatus s = hub.feedStatus(access);
-        if (s == null)
-            return null;
-        Pattern p = s.job().snapshot().pattern(s.pattern());
-        AEKey out = null;
-        for (int o = 0; o < p.outputCount() && out == null; o++)
-            if (!p.isByproduct(o))
-                out = index.keyOf(p.outputItem(o));
-        return new FeedView(out, s.fed(), s.total());
+    /** What the screen of a machine access interface shows about its machine. */
+    public enum MachineState {
+        /** not powered or not on the grid */
+        INACTIVE,
+        /** no hub on the grid */
+        NO_HUB,
+        /** no pattern on the grid is for the block it sits on or the machine set on it */
+        NO_PATTERN,
+        IDLE,
+        /** materials of a run going in */
+        FEEDING,
+        /** runs in the machine whose products are not all back */
+        WORKING
     }
 
-    public record FeedView(@Nullable AEKey output, long fed, long total) {
+    /**
+     * {@code output}: the main output of the run fed (or the first run in it); {@code fed} /
+     * {@code total}: amounts of the run fed; {@code runsIn}: runs in the machine; {@code chance}:
+     * that run's pattern has outputs that come only with a probability.
+     */
+    public record MachineView(MachineState state, @Nullable AEKey output, long fed, long total, long runsIn, boolean chance) {
+        public static MachineView of(MachineState state) {
+            return new MachineView(state, null, 0, 0, 0, false);
+        }
+    }
+
+    /** The machine items the hub patterns on the grid are for, read once per change of the patterns. */
+    private Map<IPatternDetails, Compiled> machinesReadFrom = Map.of();
+    private Set<net.minecraft.world.item.Item> patternMachines = Set.of();
+
+    /** For the screen of machine access interface {@code access} (server thread). */
+    public MachineView machineView(IMachineAccess access) {
+        if (!access.isAccessActive())
+            return MachineView.of(MachineState.INACTIVE);
+        if (!hasHub())
+            return MachineView.of(MachineState.NO_HUB);
+        HubState.MachineStatus s = hub.machineStatus(access);
+        if (s == null)
+            return MachineView.of(isPatternMachine(access) ? MachineState.IDLE : MachineState.NO_PATTERN);
+        Pattern p = s.job().snapshot().pattern(s.pattern());
+        AEKey out = null;
+        boolean chance = false;
+        for (int o = 0; o < p.outputCount(); o++) {
+            if (out == null && !p.isByproduct(o))
+                out = index.keyOf(p.outputItem(o));
+            chance |= p.isChance(o);
+        }
+        return new MachineView(s.feeding() ? MachineState.FEEDING : MachineState.WORKING, out, s.fed(), s.total(),
+                s.runsIn().saturatedLong(), chance);
+    }
+
+    /** Some hub pattern on the grid is for the block {@code access} sits on or the machine set on it. */
+    private boolean isPatternMachine(IMachineAccess access) {
+        if (machinesReadFrom != compiled) {
+            Set<net.minecraft.world.item.Item> items = new HashSet<>();
+            compiled.forEach((details, c) -> {
+                if (c.hubInternal) {
+                    net.minecraft.world.item.Item m = com.lumina.twinstar.api.PatternMachines.of(details.getDefinition());
+                    if (m != null)
+                        items.add(m);
+                }
+            });
+            patternMachines = items;
+            machinesReadFrom = compiled;
+        }
+        if (access.getMachine() != null && patternMachines.contains(access.getMachine()))
+            return true;
+        net.minecraft.server.level.ServerLevel level = access.getMachineLevel();
+        return level != null && level.isLoaded(access.getMachinePos())
+                && patternMachines.contains(level.getBlockState(access.getMachinePos()).getBlock().asItem());
     }
 
     private IActionSource actionSource() {

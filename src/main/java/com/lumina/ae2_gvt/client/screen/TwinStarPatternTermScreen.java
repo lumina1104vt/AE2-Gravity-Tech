@@ -23,7 +23,8 @@ import net.minecraft.world.inventory.Slot;
  * AE2's pattern encoding screen with our processing panel drawn over AE2's (input grid moved right,
  * machine slot at its top-left) and the mode tabs hidden. Slot and widget positions come from
  * assets/ae2/screens/terminals/twin_star_pattern_terminal.json. The amount dialog of an output slot
- * also sets its probability ({@link SetOutputAmountScreen}); input slots keep AE2's.
+ * also sets its probability ({@link SetOutputAmountScreen}, shown in the slot's corner); the one of
+ * an input slot its faces ({@link SetInputAmountScreen}).
  */
 public class TwinStarPatternTermScreen extends PatternEncodingTermScreen<TwinStarPatternTermMenu> {
     private static final Blitter PANEL = Blitter
@@ -84,6 +85,29 @@ public class TwinStarPatternTermScreen extends PatternEncodingTermScreen<TwinSta
             }
         }
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    /** An output that comes only with a probability shows it in the slot's top-left corner. */
+    @Override
+    public void renderSlot(GuiGraphics guiGraphics, Slot slot) {
+        super.renderSlot(guiGraphics, slot);
+        Slot[] outputs = menu.getProcessingOutputSlots();
+        for (int i = 0; i < outputs.length; i++) {
+            if (outputs[i] != slot) {
+                continue;
+            }
+            double c = menu.getOutputChance(i);
+            if (c < 1 && slot.hasItem()) {
+                String text = SetOutputAmountScreen.percent(c) + "%";
+                var pose = guiGraphics.pose();
+                pose.pushPose();
+                pose.translate(slot.x, slot.y, 300);
+                pose.scale(0.5f, 0.5f, 1);
+                guiGraphics.drawString(font, text, 0, 0, 0xFFE070, true);
+                pose.popPose();
+            }
+            return;
+        }
     }
 
     @Override

@@ -1439,15 +1439,27 @@ public final class HubState {
         c.marked = true;
     }
 
-    /** What machine access interface {@code a} is feeding: the pattern's job, the pattern, amounts in and to go in. */
-    public record FeedStatus(Job job, int pattern, long fed, long total) {
+    /**
+     * What the machine of interface {@code a} is doing, for its screen: the run being fed (amounts in
+     * and to go in), else the runs in it whose products are not all back; null when it does neither.
+     * {@code job} and {@code pattern} are the run fed, else the first run in it.
+     */
+    public record MachineStatus(Job job, int pattern, boolean feeding, long fed, long total, Amount runsIn) {
     }
 
-    public @Nullable FeedStatus feedStatus(IMachineAccess a) {
+    public @Nullable MachineStatus machineStatus(IMachineAccess a) {
         MachineState m = machines.get(a);
-        if (m == null || m.feed == null)
+        if (m == null)
             return null;
-        return new FeedStatus(m.feed.job, m.feed.pattern, m.feed.fed, m.feed.total);
+        Amount runsIn = Amount.ZERO;
+        for (Amount r : m.inFlight.values())
+            runsIn = runsIn.add(r);
+        if (m.feed != null)
+            return new MachineStatus(m.feed.job, m.feed.pattern, true, m.feed.fed, m.feed.total, runsIn);
+        if (m.inFlight.isEmpty())
+            return null;
+        Flight first = m.inFlight.keySet().iterator().next();
+        return new MachineStatus(first.job(), first.pattern(), false, 0, 0, runsIn);
     }
 
     /** Snapshot of the window table, for debugging screens. */

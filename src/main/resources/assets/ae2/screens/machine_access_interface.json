@@ -2,13 +2,13 @@
   "$schema": "schema.json",
   "includes": ["common/common.json", "common/player_inventory.json"],
   "background": {
-    "texture": "guis/pattern_provider.png",
-    "srcRect": [0, 0, 176, 215]
+    "texture": "ae2_gvt:textures/gui/machine_access_interface.png",
+    "srcRect": [0, 0, 176, 223]
   },
   "slots": {
     "AE2GVT_ACCESS_MACHINE": {
       "left": 8,
-      "top": 45
+      "top": 60
     }
   },
   "text": {
@@ -21,28 +21,23 @@
         "top": 6
       }
     },
+    "attached_label": {
+      "text": {
+        "translate": "gui.ae2_gvt.machine_access.attached"
+      },
+      "position": {
+        "left": 8,
+        "top": 18
+      }
+    },
     "machine_label": {
       "text": {
         "translate": "gui.ae2_gvt.machine_access.machine"
       },
       "position": {
         "left": 8,
-        "top": 34
+        "top": 50
       }
-    }
-  },
-  "widgets": {
-    "blocking": {
-      "left": 8,
-      "top": 64,
-      "width": 78,
-      "height": 16
-    },
-    "insertMode": {
-      "left": 90,
-      "top": 64,
-      "width": 78,
-      "height": 16
     }
   }
 }

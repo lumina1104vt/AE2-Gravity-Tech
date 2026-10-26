@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.prototype.terminal.TwinStarPatternTermMenu;
 
 import appeng.api.stacks.GenericStack;
@@ -11,6 +12,7 @@ import appeng.client.gui.AESubScreen;
 import appeng.client.gui.Icon;
 import appeng.client.gui.NumberEntryType;
 import appeng.client.gui.me.common.ClientDisplaySlot;
+import appeng.client.gui.style.Blitter;
 import appeng.client.gui.widgets.NumberEntryWidget;
 import appeng.client.gui.widgets.TabButton;
 import appeng.core.localization.GuiText;
@@ -18,33 +20,41 @@ import appeng.core.network.serverbound.InventoryActionPacket;
 import appeng.helpers.InventoryAction;
 import appeng.menu.SlotSemantics;
 import com.google.common.primitives.Longs;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.narration.NarratedElementType;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * AE2's amount dialog of a processing input slot (same layout and behaviour as AE2's
- * {@code SetProcessingPatternAmountScreen}) with six face toggles in the strip under the title: the
- * machine faces this material goes in through when the machine access interface is set to
- * "specified" (any number; tried in this order; none = the interface's own face).
+ * {@code SetProcessingPatternAmountScreen}) with the machine faces this material goes in through
+ * under it, laid out as an unfolded cube around the north face: used when the machine access
+ * interface is set to "specified" (any number; tried down, up, north, south, west, east; none = the
+ * interface's own face). Positions from assets/ae2/screens/ae2_gvt_input_amount.json.
  */
 public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, TwinStarPatternTermScreen> {
-    private static final int FACES_X = 40, FACES_Y = 16, FACE_W = 20, FACE_H = 12;
+    private static final ResourceLocation TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/input_faces.png");
+    private static final Blitter OFF = Blitter.texture(TEXTURE).src(0, 176, 24, 14);
+    private static final Blitter ON = Blitter.texture(TEXTURE).src(24, 176, 24, 14);
+    private static final int NET_X = 52, NET_Y = 100, STEP_X = 26, STEP_Y = 15;
 
     private final NumberEntryWidget amount;
     private final GenericStack currentStack;
     private final Slot slot;
     private final int inputIndex;
     private int faces;
-    private final List<Button> faceButtons = new ArrayList<>();
+    private final List<FaceToggle> toggles = new ArrayList<>();
 
     public SetInputAmountScreen(TwinStarPatternTermScreen parent, GenericStack currentStack, Slot slot, int inputIndex) {
-        super(parent, "/screens/set_processing_pattern_amount.json");
+        super(parent, "/screens/ae2_gvt_input_amount.json");
         this.currentStack = currentStack;
         this.slot = slot;
         this.inputIndex = inputIndex;
@@ -66,31 +76,24 @@ public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, T
     protected void init() {
         super.init();
         setSlotsHidden(SlotSemantics.TOOLBOX, true);
-        faceButtons.clear();
-        Direction[] all = Direction.values();
-        for (int i = 0; i < all.length; i++) {
-            Direction d = all[i];
-            Button b = Button.builder(label(d), btn -> {
-                faces ^= 1 << d.get3DDataValue();
-                btn.setMessage(label(d));
-            }).bounds(leftPos + FACES_X + i * FACE_W, topPos + FACES_Y, FACE_W - 1, FACE_H)
-                    .tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("ae2_gvt.face." + d.getName())))
-                    .build();
-            faceButtons.add(b);
-            addRenderableWidget(b);
-        }
+        toggles.clear();
+        // unfolded cube: up over north, then west, north, east, south, then down under north
+        add(Direction.UP, 1, 0);
+        add(Direction.WEST, 0, 1);
+        add(Direction.NORTH, 1, 1);
+        add(Direction.EAST, 2, 1);
+        add(Direction.SOUTH, 3, 1);
+        add(Direction.DOWN, 1, 2);
     }
 
-    private Component label(Direction d) {
-        boolean on = (faces & (1 << d.get3DDataValue())) != 0;
-        return Component.translatable("ae2_gvt.face.short." + d.getName().toLowerCase(Locale.ROOT))
-                .withStyle(on ? ChatFormatting.GREEN : ChatFormatting.DARK_GRAY);
+    private void add(Direction d, int col, int row) {
+        FaceToggle t = new FaceToggle(leftPos + NET_X + col * STEP_X, topPos + NET_Y + row * STEP_Y, d);
+        toggles.add(t);
+        addRenderableWidget(t);
     }
 
-    @Override
-    public void drawFG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY) {
-        super.drawFG(guiGraphics, offsetX, offsetY, mouseX, mouseY);
-        guiGraphics.drawString(font, Component.translatable("ae2_gvt.pattern.faces"), 8, FACES_Y + 2, 0x404040, false);
+    private boolean isOn(Direction d) {
+        return (faces & (1 << d.get3DDataValue())) != 0;
     }
 
     private void confirm() {
@@ -108,5 +111,40 @@ public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, T
 
     private long getMaxAmount() {
         return 999999L * currentStack.what().getAmountPerUnit();
+    }
+
+    /** One face of the cube: click to toggle; green when the material goes in through it. */
+    private final class FaceToggle extends AbstractWidget {
+        private final Direction face;
+
+        FaceToggle(int x, int y, Direction face) {
+            super(x, y, 24, 14, Component.translatable("ae2_gvt.face." + face.getName()));
+            this.face = face;
+            setTooltip(Tooltip.create(Component.translatable("ae2_gvt.face." + face.getName())
+                    .append("\n").append(Component.translatable("ae2_gvt.pattern.faces.order"))));
+        }
+
+        @Override
+        protected void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+            boolean on = isOn(face);
+            (on ? ON : OFF).copy().dest(getX(), getY()).blit(guiGraphics);
+            if (isHovered()) {
+                guiGraphics.fill(getX() + 1, getY() + 1, getX() + width - 1, getY() + height - 1, 0x30FFFFFF);
+            }
+            var font = SetInputAmountScreen.this.font;
+            Component label = Component.translatable("ae2_gvt.face.short." + face.getName().toLowerCase(Locale.ROOT));
+            guiGraphics.drawString(font, label, getX() + (width - font.width(label)) / 2, getY() + 3,
+                    on ? 0xFFFFFF : 0x404040, false);
+        }
+
+        @Override
+        public void onClick(double mouseX, double mouseY) {
+            faces ^= 1 << face.get3DDataValue();
+        }
+
+        @Override
+        protected void updateWidgetNarration(NarrationElementOutput output) {
+            output.add(NarratedElementType.TITLE, getMessage());
+        }
     }
 }

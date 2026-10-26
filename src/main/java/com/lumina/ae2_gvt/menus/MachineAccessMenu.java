@@ -6,6 +6,7 @@ import com.lumina.twinstar.api.ITwinStarService;
 import com.lumina.twinstar.service.TwinStarService;
 
 import appeng.api.networking.IGrid;
+import appeng.api.stacks.GenericStack;
 import appeng.menu.AEBaseMenu;
 import appeng.menu.SlotSemantic;
 import appeng.menu.SlotSemantics;
@@ -13,10 +14,11 @@ import appeng.menu.guisync.GuiSync;
 import appeng.menu.slot.FakeSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.MenuType;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The machine access interface's screen: the machine it stands for (a ghost slot), blocking, how
- * materials go in, and what it is feeding now.
+ * materials go in, and what its machine is doing.
  */
 public class MachineAccessMenu extends AEBaseMenu {
     public static final SlotSemantic MACHINE = SlotSemantics.register("AE2GVT_ACCESS_MACHINE", false);
@@ -30,8 +32,19 @@ public class MachineAccessMenu extends AEBaseMenu {
     @GuiSync(11)
     public int insertMode;
     /** "" = idle; otherwise output name, amount in and amount to go in, tab-separated */
+    /** what its machine is doing; the rest says more about it ({@link TwinStarService.MachineView}) */
     @GuiSync(12)
-    public String feeding = "";
+    public TwinStarService.MachineState state = TwinStarService.MachineState.IDLE;
+    @GuiSync(13)
+    public @Nullable GenericStack output;
+    @GuiSync(14)
+    public long fed;
+    @GuiSync(15)
+    public long total;
+    @GuiSync(16)
+    public long runsIn;
+    @GuiSync(17)
+    public boolean chance;
 
     public MachineAccessMenu(MenuType<?> menuType, int id, Inventory playerInventory, MachineAccessInterface part) {
         super(menuType, id, playerInventory, part);
@@ -42,6 +55,10 @@ public class MachineAccessMenu extends AEBaseMenu {
         createPlayerInventorySlots(playerInventory);
         registerClientAction(TOGGLE_BLOCKING, this::toggleBlocking);
         registerClientAction(CYCLE_MODE, this::cycleInsertMode);
+    }
+
+    public MachineAccessInterface getPart() {
+        return part;
     }
 
     public IMachineAccess.InsertMode getInsertMode() {
@@ -71,15 +88,19 @@ public class MachineAccessMenu extends AEBaseMenu {
         if (isServerSide()) {
             blocking = part.isBlocking();
             insertMode = part.getInsertMode().ordinal();
-            feeding = "";
+            TwinStarService.MachineView view = TwinStarService.MachineView.of(TwinStarService.MachineState.NO_HUB);
             IGrid grid = part.getMainNode().getGrid();
-            if (grid != null && grid.getService(ITwinStarService.class) instanceof TwinStarService service) {
-                TwinStarService.FeedView view = service.feedView(part);
-                if (view != null) {
-                    String name = view.output() == null ? "?" : view.output().getDisplayName().getString();
-                    feeding = name + "\t" + view.fed() + "\t" + view.total();
-                }
+            if (!part.isAccessActive()) {
+                view = TwinStarService.MachineView.of(TwinStarService.MachineState.INACTIVE);
+            } else if (grid != null && grid.getService(ITwinStarService.class) instanceof TwinStarService service) {
+                view = service.machineView(part);
             }
+            state = view.state();
+            output = view.output() == null ? null : new GenericStack(view.output(), 0);
+            fed = view.fed();
+            total = view.total();
+            runsIn = view.runsIn();
+            chance = view.chance();
         }
         super.broadcastChanges();
     }

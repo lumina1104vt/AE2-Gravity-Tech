@@ -1,0 +1,77 @@
+{
+  "$schema": "schema.json",
+  "$comment": "AE2's set_stock_amount.json, taller: the machine faces of the material under the amount",
+  "includes": [
+    "common/common.json"
+  ],
+  "background": {
+    "texture": "ae2_gvt:textures/gui/input_faces.png",
+    "srcRect": [
+      0,
+      0,
+      176,
+      160
+    ]
+  },
+  "slots": {
+    "MACHINE_OUTPUT": {
+      "left": 23,
+      "top": 53
+    }
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.ae2.SelectAmount"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    },
+    "faces_label": {
+      "text": {
+        "translate": "ae2_gvt.pattern.faces"
+      },
+      "position": {
+        "left": 8,
+        "top": 118
+      }
+    },
+    "faces_hint": {
+      "text": {
+        "translate": "ae2_gvt.pattern.faces.hint"
+      },
+      "position": {
+        "left": 8,
+        "top": 147
+      }
+    }
+  },
+  "widgets": {
+    "save": {
+      "left": 120,
+      "top": 51,
+      "width": 38,
+      "height": 20
+    },
+    "back": {
+      "left": 152,
+      "top": -5,
+      "width": 20,
+      "height": 20
+    },
+    "amountToStock": {
+      "left": 20,
+      "top": 30,
+      "width": 138,
+      "height": 62
+    },
+    "amountToStockInput": {
+      "left": 48,
+      "top": 55,
+      "width": 66,
+      "height": 12
+    }
+  }
+}

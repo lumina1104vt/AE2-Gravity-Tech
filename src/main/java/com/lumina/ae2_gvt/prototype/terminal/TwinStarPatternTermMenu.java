@@ -46,6 +46,15 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
     /** Per processing input slot the face bits of what is in it ("" = not set), ';' between slots. */
     @GuiSync(201)
     public String inputFaces = "";
+    /**
+     * Per processing output slot its probability by the recipe JEI's [+] filled the slots from, ';'
+     * between slots: what the dialog's [JEI] button puts back ("" = no such recipe, 1 = always).
+     */
+    @GuiSync(202)
+    public String recipeChances = "";
+    /** the probabilities of {@link TwinStarPatternTerminalPart#getRecipe()}, read once per recipe */
+    private @Nullable ResourceLocation readRecipe;
+    private @Nullable Map<String, Double> readChances;
     /** the encoded pattern slot as last seen: one put in loads its probabilities, like AE2 loads the rest */
     private ItemStack lastEncoded = ItemStack.EMPTY;
 
@@ -137,6 +146,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
         if (this.isServerSide()) {
             host.clearOutputChances();
             host.clearInputFaces();
+            host.setRecipe(null);
         }
     }
 
@@ -158,6 +168,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
                     if (f != null) {
                         f.entries().forEach(e -> host.setInputFaces(e.key(), e.faces()));
                     }
+                    host.setRecipe(null);
                 }
             }
             StringBuilder sb = new StringBuilder();
@@ -173,6 +184,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
                 }
             }
             outputChances = sb.toString();
+            recipeChances = recipeChancesBySlot(outs);
             StringBuilder fb = new StringBuilder();
             FakeSlot[] ins = getProcessingInputSlots();
             for (int i = 0; i < ins.length; i++) {
@@ -242,16 +254,12 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
     /** The slots JEI filled arrived before this (same connection, in order). */
     private void receiveRecipeChances(String id) {
         host.clearOutputChances();
-        ResourceLocation rl = ResourceLocation.tryParse(id);
-        if (rl == null) {
+        ResourceLocation rl = id.isEmpty() ? null : ResourceLocation.tryParse(id);
+        host.setRecipe(rl);
+        Map<String, Double> byId = chancesOf(rl);
+        if (byId == null) {
             return;
         }
-        var level = getPlayer().level();
-        RecipeHolder<?> recipe = level.getRecipeManager().byKey(rl).orElse(null);
-        if (recipe == null) {
-            return;
-        }
-        Map<String, Double> byId = RecipeChances.of(recipe.value(), level.registryAccess());
         for (FakeSlot slot : getProcessingOutputSlots()) {
             GenericStack out = GenericStack.fromItemStack(slot.getItem());
             if (out == null) {
@@ -261,6 +269,54 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             if (c != null) {
                 host.setOutputChance(out.what(), c);
             }
+        }
+    }
+
+    /** The probabilities of recipe {@code id}'s outputs by item id; null when there is no such recipe. */
+    private @Nullable Map<String, Double> chancesOf(@Nullable ResourceLocation id) {
+        if (id == null) {
+            return null;
+        }
+        if (!id.equals(readRecipe)) {
+            var level = getPlayer().level();
+            RecipeHolder<?> recipe = level.getRecipeManager().byKey(id).orElse(null);
+            readRecipe = id;
+            readChances = recipe == null ? null : RecipeChances.of(recipe.value(), level.registryAccess());
+        }
+        return readChances;
+    }
+
+    private String recipeChancesBySlot(FakeSlot[] outs) {
+        Map<String, Double> byId = chancesOf(host.getRecipe());
+        if (byId == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < outs.length; i++) {
+            if (i > 0) {
+                sb.append(';');
+            }
+            GenericStack out = GenericStack.fromItemStack(outs[i].getItem());
+            if (out != null) {
+                sb.append(byId.getOrDefault(out.what().getId().toString(), 1.0));
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * The probability of processing output slot {@code index} by the recipe JEI filled the slots
+     * from (1 = always); null when the slots did not come from a known recipe.
+     */
+    public @Nullable Double getRecipeChance(int index) {
+        String[] parts = recipeChances.split(";", -1);
+        if (recipeChances.isEmpty() || index < 0 || index >= parts.length || parts[index].isEmpty()) {
+            return null;
+        }
+        try {
+            return Double.parseDouble(parts[index]);
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 

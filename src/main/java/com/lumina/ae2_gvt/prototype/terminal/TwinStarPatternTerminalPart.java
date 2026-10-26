@@ -25,9 +25,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * AE2's pattern encoding terminal plus the remembered machine (a ghost item, never dropped) and the
- * probability of each output that does not always come (by key, like the pattern keeps it).
+ * probability of each output that does not always come (by key, like the pattern keeps it), the
+ * faces each material goes in through, and the recipe JEI last filled it from.
  */
 public class TwinStarPatternTerminalPart extends PatternEncodingTerminalPart {
     private static final ResourceLocation SCREEN_OFF = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "part/twin_star_pattern_terminal_off");
@@ -46,6 +49,8 @@ public class TwinStarPatternTerminalPart extends PatternEncodingTerminalPart {
     private final Map<AEKey, Double> outputChances = new LinkedHashMap<>();
     /** per material the machine faces it goes in through (bits by Direction.get3DDataValue); not listed = not set */
     private final Map<AEKey, Integer> inputFaces = new LinkedHashMap<>();
+    /** the recipe JEI's [+] last filled the slots from: the amount dialog's [JEI] reads its probabilities */
+    private @Nullable ResourceLocation recipe;
 
     public TwinStarPatternTerminalPart(IPartItem<?> partItem) {
         super(partItem);
@@ -77,6 +82,17 @@ public class TwinStarPatternTerminalPart extends PatternEncodingTerminalPart {
         }
     }
 
+    public @Nullable ResourceLocation getRecipe() {
+        return recipe;
+    }
+
+    public void setRecipe(@Nullable ResourceLocation recipe) {
+        if (!java.util.Objects.equals(this.recipe, recipe)) {
+            this.recipe = recipe;
+            markForSave();
+        }
+    }
+
     /** The faces material {@code key} goes in through (0 = not set). */
     public int getInputFaces(AEKey key) {
         return inputFaces.getOrDefault(key, 0);
@@ -103,6 +119,7 @@ public class TwinStarPatternTerminalPart extends PatternEncodingTerminalPart {
         machineInv.clear();
         outputChances.clear();
         inputFaces.clear();
+        recipe = null;
     }
 
     @Override
@@ -117,6 +134,7 @@ public class TwinStarPatternTerminalPart extends PatternEncodingTerminalPart {
         if (tag.contains("inputFaces"))
             PatternInputFaces.CODEC.parse(new Dynamic<>(registries.createSerializationContext(NbtOps.INSTANCE), tag.get("inputFaces")))
                     .result().ifPresent(f -> f.entries().forEach(e -> inputFaces.put(e.key(), e.faces())));
+        recipe = tag.contains("recipe") ? ResourceLocation.tryParse(tag.getString("recipe")) : null;
     }
 
     @Override
@@ -135,6 +153,8 @@ public class TwinStarPatternTerminalPart extends PatternEncodingTerminalPart {
             PatternInputFaces.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), new PatternInputFaces(entries))
                     .result().ifPresent(t -> tag.put("inputFaces", t));
         }
+        if (recipe != null)
+            tag.putString("recipe", recipe.toString());
     }
 
     @Override
