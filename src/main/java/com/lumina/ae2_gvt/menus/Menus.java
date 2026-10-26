@@ -5,6 +5,7 @@ import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.blockentities.FusionControllerBlockEntity;
 import com.lumina.ae2_gvt.blockentities.GravityFactoryBlockEntity;
 import com.lumina.ae2_gvt.blockentities.cpu.DummyTwinStarCPUBlockEntity;
+import com.lumina.ae2_gvt.items.parts.MachineAccessInterface;
 import com.lumina.ae2_gvt.menus.host.ArmorMenuHost;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -28,6 +29,10 @@ public class Menus {
     public static final DeferredHolder<MenuType<?>, MenuType<DummyCpuMenu>> DUMMY_CPU = MENUS.register("dummy_twinstar_cpu",
             () -> MenuTypeBuilder.create(DummyCpuMenu::new, DummyTwinStarCPUBlockEntity.class)
                     .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "dummy_twinstar_cpu")));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<MachineAccessMenu>> MACHINE_ACCESS = MENUS.register("machine_access_interface",
+            () -> MenuTypeBuilder.create(MachineAccessMenu::new, MachineAccessInterface.class)
+                    .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "machine_access_interface")));
 
     public static void register(IEventBus bus) {
         MENUS.register(bus);

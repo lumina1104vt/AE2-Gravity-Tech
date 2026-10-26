@@ -19,6 +19,10 @@ final class ChanceProgress {
     final Amount sureRuns;
     Amount runsDone = Amount.ZERO;
     final AmountMap got = new AmountMap();
+    /** machine runs: what it waits for is expected as a return (from the first batch on) */
+    boolean expected;
+    /** 機率產物不足 shown */
+    boolean marked;
 
     ChanceProgress(Plan.ChanceNeed n) {
         this.need = n.items().copy();

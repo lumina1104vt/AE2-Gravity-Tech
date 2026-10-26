@@ -53,6 +53,9 @@ public abstract class CraftingStatusTableRendererMixin {
             lines.add(GuiText.Crafting.text(AmountText.format(what, big.active(), full)));
         if (big.pending().signum() > 0)
             lines.add(GuiText.Scheduled.text(AmountText.format(what, big.pending(), full)));
+        if (big.machineLost().signum() > 0)
+            lines.add(Component.translatable("gui.twinstar.machine_lost", big.machineLost().toString())
+                    .withStyle(net.minecraft.ChatFormatting.RED));
         if (big.chanceShort().signum() > 0)
             lines.add(Component.translatable("gui.twinstar.chance_short", AmountText.format(what, big.chanceShort(), full))
                     .withStyle(net.minecraft.ChatFormatting.RED));

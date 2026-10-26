@@ -122,6 +122,16 @@ public final class TwinStarCpu implements ICraftingCPU {
         AmountMap active = job.outstanding();
         AmountMap later = job.drawLater();
         AmountMap chanceShort = job.chanceShortages();
+        // runs lost with a machine taken away: shown on the item the pattern makes
+        AmountMap lost = new AmountMap();
+        job.machineLosses().forEach((p, runs) -> {
+            Pattern pat = snap.pattern(p);
+            for (int o = 0; o < pat.outputCount(); o++)
+                if (!pat.isByproduct(o)) {
+                    lost.add(pat.outputItem(o), runs);
+                    break;
+                }
+        });
         AmountMap pending = new AmountMap();
         Amount remaining = Amount.ZERO;
         for (Task t : job.tasks()) {
@@ -153,6 +163,8 @@ public final class TwinStarCpu implements ICraftingCPU {
             items.add(i);
         for (int i : later.keys())
             items.add(i);
+        for (int i : lost.keys())
+            items.add(i);
         var entries = new ArrayList<CraftingStatusEntry>();
         for (int id : items) {
             AEKey key = index.keyOf(id);
@@ -163,7 +175,7 @@ public final class TwinStarCpu implements ICraftingCPU {
             // exact values beside AE2's longs; infinite = more of it is still drawn from an infinite source
             ((BigStatusEntry) entry).twinstar$setBig(new BigStatusAmounts(stored.get(id).bigValue(),
                     active.get(id).bigValue(), pending.get(id).bigValue(), later.get(id).signum() > 0,
-                    chanceShort.get(id).bigValue()));
+                    chanceShort.get(id).bigValue(), lost.get(id).bigValue()));
             entries.add(entry);
         }
         return new CraftingStatus(true, System.nanoTime() - job.startNanos(), remaining.saturatedLong(),

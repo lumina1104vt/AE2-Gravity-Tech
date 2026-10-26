@@ -1,0 +1,48 @@
+{
+  "$schema": "schema.json",
+  "includes": ["common/common.json", "common/player_inventory.json"],
+  "background": {
+    "texture": "guis/pattern_provider.png",
+    "srcRect": [0, 0, 176, 215]
+  },
+  "slots": {
+    "AE2GVT_ACCESS_MACHINE": {
+      "left": 8,
+      "top": 45
+    }
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "item.ae2_gvt.machine_access_interface"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    },
+    "machine_label": {
+      "text": {
+        "translate": "gui.ae2_gvt.machine_access.machine"
+      },
+      "position": {
+        "left": 8,
+        "top": 34
+      }
+    }
+  },
+  "widgets": {
+    "blocking": {
+      "left": 8,
+      "top": 64,
+      "width": 78,
+      "height": 16
+    },
+    "insertMode": {
+      "left": 90,
+      "top": 64,
+      "width": 78,
+      "height": 16
+    }
+  }
+}

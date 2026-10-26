@@ -269,6 +269,7 @@ public final class EngineLog {
         }
         sb.append("] ").append(switch (p.where) {
             case HUB_INTERNAL -> "中樞內部";
+            case HUB_MACHINE -> "機器接入接口";
             case EXTERNAL_CRAFT -> "外部合成";
             case EXTERNAL_PROCESS -> "外部處理";
         });

@@ -8,6 +8,7 @@ import java.util.Map;
 import org.jetbrains.annotations.Nullable;
 
 import com.lumina.twinstar.algorithm.ae2.PatternChances;
+import com.lumina.twinstar.algorithm.ae2.PatternInputFaces;
 import com.lumina.twinstar.storage.TwinstarContent;
 import com.lumina.twinstar.tools.RecipeChances;
 
@@ -26,19 +27,25 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 
 /**
- * AE2's pattern encoding menu, locked to the processing layout, plus the machine ghost slot and the
+ * AE2's pattern encoding menu, locked to the processing layout, plus the machine ghost slot, the
  * probability of each output (set in the amount dialog of an output slot, or read from the recipe
- * by JEI's [+]). Extending AE2's menu keeps its ME grid, encoding and recipe-transfer handling.
+ * by JEI's [+]) and the machine faces each material goes in through (set in the amount dialog of an
+ * input slot; used by interfaces set to "specified"). Extending AE2's menu keeps its ME grid,
+ * encoding and recipe-transfer handling.
  */
 public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
     private static final String SET_OUTPUT_CHANCE = "setOutputChance";
     private static final String RECIPE_CHANCES = "recipeChances";
+    private static final String SET_INPUT_FACES = "setInputFaces";
 
     private final TwinStarPatternTerminalPart host;
     private final FakeSlot machineSlot;
     /** Per processing output slot its probability ("" = always), ';' between slots: what the dialog shows. */
     @GuiSync(200)
     public String outputChances = "";
+    /** Per processing input slot the face bits of what is in it ("" = not set), ';' between slots. */
+    @GuiSync(201)
+    public String inputFaces = "";
     /** the encoded pattern slot as last seen: one put in loads its probabilities, like AE2 loads the rest */
     private ItemStack lastEncoded = ItemStack.EMPTY;
 
@@ -57,6 +64,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
         }
         registerClientAction(SET_OUTPUT_CHANCE, String.class, this::receiveOutputChance);
         registerClientAction(RECIPE_CHANCES, String.class, this::receiveRecipeChances);
+        registerClientAction(SET_INPUT_FACES, String.class, this::receiveInputFaces);
     }
 
     private Slot encodedSlot() {
@@ -103,6 +111,22 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
         } else {
             pattern.set(TwinstarContent.PATTERN_CHANCES.get(), new PatternChances(chances));
         }
+        List<PatternInputFaces.Entry> faces = new ArrayList<>();
+        for (FakeSlot slot : getProcessingInputSlots()) {
+            GenericStack in = GenericStack.fromItemStack(slot.getItem());
+            if (in == null || faces.stream().anyMatch(e -> e.key().equals(in.what()))) {
+                continue;
+            }
+            int f = host.getInputFaces(in.what());
+            if (f != 0) {
+                faces.add(new PatternInputFaces.Entry(in.what(), f));
+            }
+        }
+        if (faces.isEmpty()) {
+            pattern.remove(TwinstarContent.PATTERN_INPUT_FACES.get());
+        } else {
+            pattern.set(TwinstarContent.PATTERN_INPUT_FACES.get(), new PatternInputFaces(faces));
+        }
         encoded.set(pattern);
         lastEncoded = pattern.copy();
     }
@@ -112,6 +136,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
         super.clear();
         if (this.isServerSide()) {
             host.clearOutputChances();
+            host.clearInputFaces();
         }
     }
 
@@ -128,6 +153,11 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
                     if (c != null) {
                         c.entries().forEach(e -> host.setOutputChance(e.key(), e.chance()));
                     }
+                    host.clearInputFaces();
+                    PatternInputFaces f = now.get(TwinstarContent.PATTERN_INPUT_FACES.get());
+                    if (f != null) {
+                        f.entries().forEach(e -> host.setInputFaces(e.key(), e.faces()));
+                    }
                 }
             }
             StringBuilder sb = new StringBuilder();
@@ -143,6 +173,19 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
                 }
             }
             outputChances = sb.toString();
+            StringBuilder fb = new StringBuilder();
+            FakeSlot[] ins = getProcessingInputSlots();
+            for (int i = 0; i < ins.length; i++) {
+                if (i > 0) {
+                    fb.append(';');
+                }
+                GenericStack in = GenericStack.fromItemStack(ins[i].getItem());
+                int f = in == null ? 0 : host.getInputFaces(in.what());
+                if (f != 0) {
+                    fb.append(f);
+                }
+            }
+            inputFaces = fb.toString();
         }
         super.broadcastChanges();
     }
@@ -218,6 +261,45 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             if (c != null) {
                 host.setOutputChance(out.what(), c);
             }
+        }
+    }
+
+    /** The face bits shown for processing input slot {@code index} (0 = not set). */
+    public int getInputFaces(int index) {
+        String[] parts = inputFaces.split(";", -1);
+        if (index < 0 || index >= parts.length || parts[index].isEmpty()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(parts[index]);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    /** Client: sets the faces of what is in processing input slot {@code index}. */
+    public void setInputFaces(int index, int faces) {
+        sendClientAction(SET_INPUT_FACES, index + ";" + faces);
+    }
+
+    private void receiveInputFaces(String arg) {
+        String[] parts = arg.split(";");
+        if (parts.length != 2) {
+            return;
+        }
+        try {
+            int index = Integer.parseInt(parts[0]);
+            int faces = Integer.parseInt(parts[1]);
+            FakeSlot[] ins = getProcessingInputSlots();
+            if (index < 0 || index >= ins.length) {
+                return;
+            }
+            GenericStack in = GenericStack.fromItemStack(ins[index].getItem());
+            if (in != null) {
+                host.setInputFaces(in.what(), faces);
+            }
+        } catch (NumberFormatException e) {
+            // a malformed request: ignore it
         }
     }
 

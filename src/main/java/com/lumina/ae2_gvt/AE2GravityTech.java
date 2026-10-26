@@ -103,6 +103,11 @@ public class AE2GravityTech {
         CREATIVE_MODE_TABS.register(modEventBus);
         DataComponents.register(modEventBus);
         Menus.register(modEventBus);
+        // which machine a synthesis pattern is for, for the twin-star engine
+        com.lumina.twinstar.api.PatternMachines.setReader(definition -> {
+            var machine = definition.get(com.lumina.ae2_gvt.prototype.terminal.TwinStarTerminal.PATTERN_MACHINE.get());
+            return machine == null ? null : machine.value();
+        });
         BlockEntities.register(modEventBus);
         AntigravityArmor.register(modEventBus);
         com.lumina.ae2_gvt.prototype.terminal.TwinStarTerminal.register(modEventBus);

@@ -9,7 +9,10 @@ import com.lumina.twinstar.algorithm.model.InputKind;
 import com.lumina.twinstar.algorithm.model.Pattern;
 import com.lumina.twinstar.algorithm.model.PatternLocation;
 import com.lumina.twinstar.algorithm.model.Rational;
+import com.lumina.twinstar.api.PatternMachines;
 import com.lumina.twinstar.storage.TwinstarContent;
+import appeng.api.stacks.AEItemKey;
+import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -32,7 +35,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   <li>AE2 patterns carry no durability, so TOOL only comes from adapters;</li>
  *   <li>an output listed in the pattern's {@link PatternChances} (written by {@code gen_patterns}
  *   from the recipe) comes only with that probability. Such patterns only run in the hub: one in
- *   an ordinary pattern provider is not used.</li>
+ *   an ordinary pattern provider is not used;</li>
+ *   <li>a hub pattern that names a machine ({@link PatternMachines}) is {@code HUB_MACHINE}: sent to
+ *   that machine through machine access interfaces, its materials through the faces the pattern
+ *   gives them ({@link PatternInputFaces}).</li>
  * </ul>
  */
 public final class PatternCompiler {
@@ -59,14 +65,20 @@ public final class PatternCompiler {
         PatternChances chances = details.getDefinition().get(TwinstarContent.PATTERN_CHANCES.get());
         if (!hubInternal && chances != null && !chances.entries().isEmpty())
             return List.of();   // a pattern with probable outputs only runs in the hub
-        for (PatternAdapter a : adapters)
-            if (a.handles(details))
-                return a.translate(details, index, where, priority, nextId::getAndIncrement);
-        return List.of(translateDeclared(details, where, priority, chances));
+        Item machine = hubInternal ? PatternMachines.of(details.getDefinition()) : null;
+        if (machine == null)
+            for (PatternAdapter a : adapters)
+                if (a.handles(details))
+                    return a.translate(details, index, where, priority, nextId::getAndIncrement);
+        return List.of(translateDeclared(details, where, priority, chances, machine));
     }
 
-    private Pattern translateDeclared(IPatternDetails details, PatternLocation where, int priority, @Nullable PatternChances chances) {
+    private Pattern translateDeclared(IPatternDetails details, PatternLocation where, int priority, @Nullable PatternChances chances,
+                                      @Nullable Item machine) {
         Pattern.Builder b = new Pattern.Builder().where(where).priority(priority).source(details);
+        if (machine != null)
+            b.machine(index.idOf(AEItemKey.of(machine)));
+        PatternInputFaces faces = machine != null ? details.getDefinition().get(TwinstarContent.PATTERN_INPUT_FACES.get()) : null;
         boolean subst = false;
         Rational energy = Rational.ZERO;
         List<GenericStack> remainders = new ArrayList<>();
@@ -84,6 +96,8 @@ public final class PatternCompiler {
             if (rest != null && !rest.equals(key))
                 remainders.add(new GenericStack(rest, amount));
             b.input(index.idOf(key), Amount.of(amount), kind, 0, alts);
+            if (faces != null)
+                b.faces(faces.facesOf(key));
             energy = energy.add(Rational.of(java.math.BigInteger.valueOf(amount),
                     java.math.BigInteger.valueOf(Math.max(1, key.getAmountPerOperation()))));
         }

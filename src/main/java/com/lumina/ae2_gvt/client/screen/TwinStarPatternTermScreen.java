@@ -50,11 +50,26 @@ public class TwinStarPatternTermScreen extends PatternEncodingTermScreen<TwinSta
         }
     }
 
-    /** Pick-item click on an output slot: our dialog with the probability; anything else as AE2 does it. */
+    /**
+     * Pick-item click on an output slot: our dialog with the probability; on an input slot: ours with
+     * the faces; anything else as AE2 does it.
+     */
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         Slot slot = this.hoveredSlot;
         if (minecraft.options.keyPickItem.matchesMouse(button) && slot != null) {
+            Slot[] inputs = menu.getProcessingInputSlots();
+            for (int i = 0; i < inputs.length; i++) {
+                if (inputs[i] != slot) {
+                    continue;
+                }
+                GenericStack stack = GenericStack.fromItemStack(slot.getItem());
+                if (stack == null) {
+                    break;
+                }
+                switchToScreen(new SetInputAmountScreen(this, stack, slot, i));
+                return true;
+            }
             Slot[] outputs = menu.getProcessingOutputSlots();
             for (int i = 0; i < outputs.length; i++) {
                 if (outputs[i] != slot) {

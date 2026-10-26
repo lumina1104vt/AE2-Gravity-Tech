@@ -19,5 +19,7 @@ public final class DummyCpuClient {
     @SubscribeEvent
     static void registerScreens(RegisterMenuScreensEvent event) {
         InitScreens.register(event, Menus.DUMMY_CPU.get(), DummyCpuScreen::new, "/screens/dummy_twinstar_cpu.json");
+        InitScreens.register(event, Menus.MACHINE_ACCESS.get(), com.lumina.ae2_gvt.client.screen.MachineAccessScreen::new,
+                "/screens/machine_access_interface.json");
     }
 }

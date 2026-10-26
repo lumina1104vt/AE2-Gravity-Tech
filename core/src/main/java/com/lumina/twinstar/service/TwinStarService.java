@@ -40,6 +40,7 @@ import com.lumina.twinstar.algorithm.model.StockSnapshot;
 import com.lumina.twinstar.algorithm.planning.OrderResult;
 import com.lumina.twinstar.algorithm.planning.Planner;
 import com.lumina.twinstar.api.IBigStorage;
+import com.lumina.twinstar.api.IMachineAccess;
 import com.lumina.twinstar.api.ITwinStarService;
 import com.lumina.twinstar.cpu.TwinStarCpu;
 import com.lumina.twinstar.host.ITwinStarHost;
@@ -99,6 +100,7 @@ public final class TwinStarService implements ITwinStarService, IGridServiceProv
     private final IEnergyService energy;
     private final Map<IGridNode, ITwinStarHost> hosts = new LinkedHashMap<>();
     private final Map<IGridNode, IBigStorage> bigStorages = new LinkedHashMap<>();
+    private final Map<IGridNode, IMachineAccess> machineAccess = new LinkedHashMap<>();
     private final TwinStarCpu idleCpu = new TwinStarCpu(this, null, null);
     private final List<TwinStarCpu> workingCpus = new ArrayList<>();
 
@@ -144,12 +146,15 @@ public final class TwinStarService implements ITwinStarService, IGridServiceProv
         }
         if (node.getOwner() instanceof IBigStorage big)
             bigStorages.put(node, big);
+        if (node.getOwner() instanceof IMachineAccess access)
+            machineAccess.put(node, access);
     }
 
     @Override
     public void removeNode(IGridNode node) {
         hosts.remove(node);
         bigStorages.remove(node);
+        machineAccess.remove(node);
     }
 
     @Override
@@ -530,7 +535,26 @@ public final class TwinStarService implements ITwinStarService, IGridServiceProv
         BigInteger p = getParallelism();
         Amount parallelism = p == null ? null : Amount.of(p.max(BigInteger.ONE));
         return new ExecutionEnv(index, store(), energy, host != null ? host.getHostEnergySource() : null,
-                crafting::getProviders, parallelism, System.nanoTime(), TICK_BUDGET_NANOS);
+                crafting::getProviders, List.copyOf(machineAccess.values()), parallelism, System.nanoTime(), TICK_BUDGET_NANOS);
+    }
+
+    /**
+     * What machine access interface {@code access} is feeding, for its screen: the output it is for,
+     * amounts in and to go in; null when idle.
+     */
+    public @Nullable FeedView feedView(IMachineAccess access) {
+        HubState.FeedStatus s = hub.feedStatus(access);
+        if (s == null)
+            return null;
+        Pattern p = s.job().snapshot().pattern(s.pattern());
+        AEKey out = null;
+        for (int o = 0; o < p.outputCount() && out == null; o++)
+            if (!p.isByproduct(o))
+                out = index.keyOf(p.outputItem(o));
+        return new FeedView(out, s.fed(), s.total());
+    }
+
+    public record FeedView(@Nullable AEKey output, long fed, long total) {
     }
 
     private IActionSource actionSource() {

@@ -29,6 +29,7 @@ public final class Pattern {
     private final InputKind[] inputKinds;
     private final int[] inputDurability;        // TOOL only: runs one tool lasts
     private final int[][] inputAlternatives;    // other items accepted in the slot (allowSubst only)
+    private final int[] inputFaces;             // HUB_MACHINE: machine faces the slot goes in through (bits), 0 = not set
 
     private final int[] outputItems;
     private final Amount[] outputAmounts;
@@ -36,6 +37,8 @@ public final class Pattern {
     private final double[] outputChance;        // 1: always
 
     public final PatternLocation where;
+    /** HUB_MACHINE: the item id of the machine it runs in; −1 otherwise */
+    public final int machine;
     public final int priority;                  // provider priority (AE2, higher first)
     public final boolean allowSubst;
     public final Rational energyPerRun;         // AE energy per run, exact (AE2: sum of inputs / amount per operation)
@@ -50,12 +53,14 @@ public final class Pattern {
         this.inputKinds = new InputKind[n];
         this.inputDurability = new int[n];
         this.inputAlternatives = new int[n][];
+        this.inputFaces = new int[n];
         for (int i = 0; i < n; i++) {
             inputItems[i] = b.inItems.get(i);
             inputAmounts[i] = b.inAmounts.get(i);
             inputKinds[i] = b.inKinds.get(i);
             inputDurability[i] = b.inDurability.get(i);
             inputAlternatives[i] = b.inAlternatives.get(i).clone();
+            inputFaces[i] = i < b.inFaces.size() ? b.inFaces.get(i) : 0;
         }
         // outputs: merge repeated items so outputAmount(x) is a single lookup
         // (an item that is also a main output is a main output for the whole amount)
@@ -90,6 +95,7 @@ public final class Pattern {
             outputByproduct[i] = ob.get(i);
         this.outputChance = oc.stream().mapToDouble(Double::doubleValue).toArray();
         this.where = b.where;
+        this.machine = b.machine;
         this.priority = b.priority;
         this.allowSubst = b.allowSubst;
         this.energyPerRun = b.energyPerRun;
@@ -114,6 +120,11 @@ public final class Pattern {
 
     public int inputDurability(int i) {
         return inputDurability[i];
+    }
+
+    /** Machine faces input slot {@code i} goes in through (bits by {@code Direction.get3DDataValue}); 0 = not set. */
+    public int inputFaces(int i) {
+        return inputFaces[i];
     }
 
     public int alternativeCount(int i) {
@@ -283,6 +294,8 @@ public final class Pattern {
         private final List<Boolean> outByproduct = new ArrayList<>();
         private final List<Double> outChance = new ArrayList<>();
         private PatternLocation where = PatternLocation.HUB_INTERNAL;
+        private int machine = -1;
+        private final List<Integer> inFaces = new ArrayList<>();
         private int priority;
         private boolean allowSubst;
         private Rational energyPerRun = Rational.ZERO;
@@ -354,6 +367,21 @@ public final class Pattern {
             outAmounts.add(amount);
             outByproduct.add(byproduct);
             outChance.add(chance);
+            return this;
+        }
+
+        /** A hub pattern for a machine (item id): {@link PatternLocation#HUB_MACHINE}. */
+        public Builder machine(int machine) {
+            this.machine = machine;
+            this.where = PatternLocation.HUB_MACHINE;
+            return this;
+        }
+
+        /** The machine faces the last input added goes in through. */
+        public Builder faces(int faces) {
+            while (inFaces.size() < inItems.size())
+                inFaces.add(0);
+            inFaces.set(inItems.size() - 1, faces);
             return this;
         }
 

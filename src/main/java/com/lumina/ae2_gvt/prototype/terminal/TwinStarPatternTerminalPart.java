@@ -16,6 +16,7 @@ import net.minecraft.resources.ResourceLocation;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.twinstar.algorithm.ae2.PatternChances;
+import com.lumina.twinstar.algorithm.ae2.PatternInputFaces;
 import com.mojang.serialization.Dynamic;
 import net.minecraft.nbt.NbtOps;
 
@@ -43,6 +44,8 @@ public class TwinStarPatternTerminalPart extends PatternEncodingTerminalPart {
     private final AppEngInternalInventory machineInv = new AppEngInternalInventory(this, 1, 1);
     /** outputs that come only with a probability; an output not listed always comes */
     private final Map<AEKey, Double> outputChances = new LinkedHashMap<>();
+    /** per material the machine faces it goes in through (bits by Direction.get3DDataValue); not listed = not set */
+    private final Map<AEKey, Integer> inputFaces = new LinkedHashMap<>();
 
     public TwinStarPatternTerminalPart(IPartItem<?> partItem) {
         super(partItem);
@@ -74,11 +77,32 @@ public class TwinStarPatternTerminalPart extends PatternEncodingTerminalPart {
         }
     }
 
+    /** The faces material {@code key} goes in through (0 = not set). */
+    public int getInputFaces(AEKey key) {
+        return inputFaces.getOrDefault(key, 0);
+    }
+
+    public void setInputFaces(AEKey key, int faces) {
+        if ((faces & 0x3F) != 0)
+            inputFaces.put(key, faces & 0x3F);
+        else
+            inputFaces.remove(key);
+        markForSave();
+    }
+
+    public void clearInputFaces() {
+        if (!inputFaces.isEmpty()) {
+            inputFaces.clear();
+            markForSave();
+        }
+    }
+
     @Override
     public void clearContent() {
         super.clearContent();
         machineInv.clear();
         outputChances.clear();
+        inputFaces.clear();
     }
 
     @Override
@@ -89,6 +113,10 @@ public class TwinStarPatternTerminalPart extends PatternEncodingTerminalPart {
         if (tag.contains("outputChances"))
             PatternChances.CODEC.parse(new Dynamic<>(registries.createSerializationContext(NbtOps.INSTANCE), tag.get("outputChances")))
                     .result().ifPresent(c -> c.entries().forEach(e -> outputChances.put(e.key(), e.chance())));
+        inputFaces.clear();
+        if (tag.contains("inputFaces"))
+            PatternInputFaces.CODEC.parse(new Dynamic<>(registries.createSerializationContext(NbtOps.INSTANCE), tag.get("inputFaces")))
+                    .result().ifPresent(f -> f.entries().forEach(e -> inputFaces.put(e.key(), e.faces())));
     }
 
     @Override
@@ -100,6 +128,12 @@ public class TwinStarPatternTerminalPart extends PatternEncodingTerminalPart {
             outputChances.forEach((k, c) -> entries.add(new PatternChances.Entry(k, c)));
             PatternChances.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), new PatternChances(entries))
                     .result().ifPresent(t -> tag.put("outputChances", t));
+        }
+        if (!inputFaces.isEmpty()) {
+            List<PatternInputFaces.Entry> entries = new ArrayList<>();
+            inputFaces.forEach((k, f) -> entries.add(new PatternInputFaces.Entry(k, f)));
+            PatternInputFaces.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), new PatternInputFaces(entries))
+                    .result().ifPresent(t -> tag.put("inputFaces", t));
         }
     }
 

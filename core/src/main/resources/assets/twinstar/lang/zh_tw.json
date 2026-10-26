@@ -1,5 +1,6 @@
 {
   "gui.twinstar.infinite": "∞",
+  "gui.twinstar.machine_lost": "機器被移除：%s 次的材料留在機器裡",
   "gui.twinstar.chance_short": "機率產物不足：%s",
   "gui.twinstar.infinite_drawing": "無限來源：執行中陸續取出（CPU 內現有 %s）",
   "message.twinstar.plan_needs_hub": "此計畫由雙星引擎計算，只能由雙星調度中樞執行：請在 CPU 選擇中改選中樞或「自動分配」。",

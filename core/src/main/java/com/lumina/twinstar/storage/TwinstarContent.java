@@ -6,6 +6,7 @@ import appeng.blockentity.AEBaseBlockEntity;
 import appeng.menu.implementations.MenuTypeBuilder;
 import com.lumina.twinstar.Twinstar;
 import com.lumina.twinstar.algorithm.ae2.PatternChances;
+import com.lumina.twinstar.algorithm.ae2.PatternInputFaces;
 import com.lumina.twinstar.order.OrderMenu;
 import com.lumina.twinstar.order.PlanMenu;
 import net.minecraft.core.component.DataComponentType;
@@ -39,6 +40,10 @@ public final class TwinstarContent {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<PatternChances>> PATTERN_CHANCES =
             COMPONENTS.registerComponentType("pattern_chances",
                     b -> b.persistent(PatternChances.CODEC).networkSynchronized(PatternChances.STREAM_CODEC));
+    /** On a hub pattern: the machine faces each material goes in through ("specified" interfaces). */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<PatternInputFaces>> PATTERN_INPUT_FACES =
+            COMPONENTS.registerComponentType("pattern_input_faces",
+                    b -> b.persistent(PatternInputFaces.CODEC).networkSynchronized(PatternInputFaces.STREAM_CODEC));
 
     /** The twin-star order screen (replaces AE2's amount screen on grids with a hub). */
     public static final DeferredHolder<MenuType<?>, MenuType<OrderMenu>> ORDER_MENU = MENUS.register("order",

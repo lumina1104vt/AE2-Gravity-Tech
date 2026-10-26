@@ -68,6 +68,8 @@ public final class Job {
      * like a machine's return, so a late arrival, a player's insertion or "pull from network" fills it)
      */
     final AmountMap chanceShort = new AmountMap();
+    /** runs per pattern lost with a machine that was taken away (its products are no longer waited for) */
+    final AmountMap machineLost = new AmountMap();
 
     boolean suspended;
     boolean unloaded;
@@ -164,6 +166,11 @@ public final class Job {
     /** 機率產物不足: per item, what the probable outputs did not give after all the planned runs. */
     public AmountMap chanceShortages() {
         return chanceShort.copy();
+    }
+
+    /** Per pattern: runs whose materials stayed in a machine that was taken away. */
+    public AmountMap machineLosses() {
+        return machineLost.copy();
     }
 
     public List<StuckMark> stuckMarks() {

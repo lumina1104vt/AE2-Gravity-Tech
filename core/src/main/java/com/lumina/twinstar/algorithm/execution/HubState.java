@@ -4,8 +4,10 @@ import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
 import appeng.api.crafting.IPatternDetails;
 import appeng.api.networking.crafting.ICraftingProvider;
+import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.KeyCounter;
+import com.lumina.twinstar.algorithm.ae2.PatternInputFaces;
 import com.lumina.twinstar.algorithm.cache.Snapshot;
 import com.lumina.twinstar.algorithm.model.Amount;
 import com.lumina.twinstar.algorithm.model.AmountMap;
@@ -16,16 +18,25 @@ import com.lumina.twinstar.algorithm.model.PatternLocation;
 import com.lumina.twinstar.algorithm.model.Rational;
 import com.lumina.twinstar.algorithm.planning.CycleContract;
 import com.lumina.twinstar.algorithm.planning.Plan;
+import com.lumina.twinstar.api.IMachineAccess;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.GlobalPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.Item;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SplittableRandom;
 import java.util.random.RandomGenerator;
 
@@ -119,6 +130,8 @@ public final class HubState {
     // ───────────────────────────── tick ─────────────────────────────
 
     public void hubTick(ExecutionEnv env) {
+        syncMachines(env);
+        machineTick(env);
         if (jobs.isEmpty())
             return;
         long deadline = System.nanoTime() + env.tickBudgetNanos();
@@ -188,7 +201,8 @@ public final class HubState {
                 consume(job, pat, n);
                 produce(job, pat, n, chance);   // later tasks may become ready within this tick
             } else {
-                n = dispatchEven(job, t, pat, n, env);
+                n = pat.where == PatternLocation.HUB_MACHINE ? dispatchMachines(job, t, pat, n, chance, env)
+                        : dispatchEven(job, t, pat, n, env);
                 if (n.signum() <= 0) {
                     // materials are here but every machine is busy or refused: no inventory change
                     // will wake this task, so it must try again next tick
@@ -199,7 +213,7 @@ public final class HubState {
             payEnergy(pat, n, env);
             t.remaining = t.remaining.sub(n);
             release(job, n);            // one byte per run
-            if (chance != null)
+            if (chance != null && pat.where == PatternLocation.HUB_INTERNAL)
                 chanceCheck(job, t, chance, env.nowNanos());
             if (p != null)
                 p = p.sub(n);
@@ -565,11 +579,16 @@ public final class HubState {
         }
     }
 
-    /** Only the products the pattern states count as completion; containers sent along come back too. */
+    /**
+     * Only the products the pattern states count as completion; containers sent along come back too.
+     * Outputs that come with a probability are not expected run by run (a run may give none): a
+     * pattern run for them expects what it waits for as a whole ({@link #dispatchMachines}).
+     */
     private void expectOutputs(Job job, Task t, Pattern pat, long runs, long now) {
         Amount r = Amount.of(runs);
         for (int o = 0; o < pat.outputCount(); o++)
-            expect(job, pat.outputItem(o), pat.outputAmount(o).mul(r), now);
+            if (!pat.isChance(o))
+                expect(job, pat.outputItem(o), pat.outputAmount(o).mul(r), now);
         for (int s = 0; s < pat.inputCount(); s++)
             if (pat.inputKind(s) == InputKind.CONTAINER || pat.inputKind(s) == InputKind.CATALYST)
                 expect(job, pat.inputItem(s), pat.inputAmount(s).mul(r), now);
@@ -621,6 +640,7 @@ public final class HubState {
             job.outstanding.sub(item, got);
             job.inventory.add(item, got);
             job.chanceShort.sub(item, got.min(job.chanceShort.get(item)));
+            chanceReturned(job, item, got);
             job.stuck.remove(item);
             if (job.outstanding.contains(item))
                 job.outstandingSince.put(item, env.nowNanos());
@@ -894,6 +914,426 @@ public final class HubState {
         seeds.forEach(job.protectedSeeds::sub);
         for (int item : seeds.keys())
             notifyItem(job, item);
+    }
+
+    // ───────────────────────────── machines ─────────────────────────────
+
+    /**
+     * One machine behind a machine access interface. It is fed one run at a time: a run's
+     * materials go in as the machine takes them (a singularity compressor takes a stack at a time),
+     * and the next run starts only when they are all in. Products are taken out of its output slots
+     * by the hub every tick, whoever's they are.
+     */
+    static final class MachineState {
+        final IMachineAccess access;
+        @Nullable Feed feed;
+        /** the pattern fed last (blocking interfaces) */
+        int lastPattern = -1;
+        @Nullable Pattern lastPat;
+        /** runs started here whose products are not all back, per job and pattern */
+        final Map<Flight, Amount> inFlight = new LinkedHashMap<>();
+        /** products taken out that neither the hub nor the network took yet */
+        final Map<AEKey, Long> overflow = new LinkedHashMap<>();
+        /** where the machine is, kept for when the interface is gone (lost runs are kept by place) */
+        @Nullable GlobalPos place;
+
+        MachineState(IMachineAccess access) {
+            this.access = access;
+        }
+    }
+
+    record Flight(Job job, int pattern) {
+    }
+
+    /** The run being fed: per input slot what is still to go in, and through which faces. */
+    static final class Feed {
+        final Job job;
+        final int pattern;
+        final List<Part> parts = new ArrayList<>();
+        long total;
+        long fed;
+
+        Feed(Job job, int pattern) {
+            this.job = job;
+            this.pattern = pattern;
+        }
+
+        boolean done() {
+            for (Part p : parts)
+                if (p.left > 0)
+                    return false;
+            return true;
+        }
+    }
+
+    static final class Part {
+        final AEKey key;
+        long left;
+        final List<@Nullable Direction> faces;
+
+        Part(AEKey key, long left, List<@Nullable Direction> faces) {
+            this.key = key;
+            this.left = left;
+            this.faces = faces;
+        }
+    }
+
+    /** Runs lost with a machine that went away, kept by the machine's place until an interface is back on it. */
+    private final Map<GlobalPos, Map<Flight, Amount>> lostAt = new HashMap<>();
+    private final Map<IMachineAccess, MachineState> machines = new LinkedHashMap<>();
+
+    /** Machine access interfaces added and gone since the last tick. */
+    private void syncMachines(ExecutionEnv env) {
+        Set<IMachineAccess> now = Collections.newSetFromMap(new IdentityHashMap<>());
+        now.addAll(env.machines());
+        for (Iterator<Map.Entry<IMachineAccess, MachineState>> it = machines.entrySet().iterator(); it.hasNext(); ) {
+            MachineState m = it.next().getValue();
+            if (!now.contains(m.access)) {
+                it.remove();
+                machineGone(m, env);
+            }
+        }
+        for (IMachineAccess a : now)
+            if (!machines.containsKey(a)) {
+                MachineState m = new MachineState(a);
+                machines.put(a, m);
+                machineBack(m, env);
+            }
+    }
+
+    private static @Nullable GlobalPos placeOf(IMachineAccess a) {
+        ServerLevel level = a.getMachineLevel();
+        return level == null ? null : GlobalPos.of(level.dimension(), a.getMachinePos());
+    }
+
+    /**
+     * An interface taken off (or its machine broken): the runs in that machine are lost. What a feed
+     * had not put in yet goes back to its job; the products of the lost runs are no longer waited
+     * for, and the job shows why it stopped. Nothing is made again on its own.
+     */
+    private void machineGone(MachineState m, ExecutionEnv env) {
+        if (m.feed != null) {
+            Feed f = m.feed;
+            for (Part p : f.parts)
+                if (p.left > 0) {
+                    int id = env.index().idOf(p.key);
+                    f.job.inventory.add(id, Amount.of(p.left));
+                    reoccupy(f.job, id, Amount.of(p.left));
+                    notifyItem(f.job, id);
+                }
+            m.feed = null;
+        }
+        for (Map.Entry<AEKey, Long> e : m.overflow.entrySet())
+            insertAll(env, env.index().idOf(e.getKey()), Amount.of(e.getValue()));
+        m.overflow.clear();
+        GlobalPos at = m.place;
+        for (Map.Entry<Flight, Amount> e : m.inFlight.entrySet()) {
+            Job job = e.getKey().job();
+            if (job.finished || job.cancelled)
+                continue;
+            Pattern pat = job.snap.pattern(e.getKey().pattern());
+            for (int o = 0; o < pat.outputCount(); o++)
+                if (!pat.isChance(o)) {
+                    int item = pat.outputItem(o);
+                    job.outstanding.sub(item, pat.outputAmount(o).mul(e.getValue()).min(job.outstanding.get(item)));
+                }
+            job.machineLost.add(e.getKey().pattern(), e.getValue());
+            if (at != null)
+                lostAt.computeIfAbsent(at, k -> new LinkedHashMap<>()).merge(e.getKey(), e.getValue(), Amount::add);
+        }
+        m.inFlight.clear();
+    }
+
+    /** An interface on a machine whose runs were lost: they are tracked again, late products are taken. */
+    private void machineBack(MachineState m, ExecutionEnv env) {
+        GlobalPos at = m.place = placeOf(m.access);
+        Map<Flight, Amount> lost = at == null ? null : lostAt.remove(at);
+        if (lost == null)
+            return;
+        for (Map.Entry<Flight, Amount> e : lost.entrySet()) {
+            Job job = e.getKey().job();
+            if (job.finished || job.cancelled || !jobs.contains(job))
+                continue;
+            Pattern pat = job.snap.pattern(e.getKey().pattern());
+            Amount r = e.getValue();
+            for (int o = 0; o < pat.outputCount(); o++)
+                if (!pat.isChance(o))
+                    expect(job, pat.outputItem(o), pat.outputAmount(o).mul(r), env.nowNanos());
+            job.machineLost.sub(e.getKey().pattern(), r.min(job.machineLost.get(e.getKey().pattern())));
+            m.inFlight.merge(e.getKey(), r, Amount::add);
+        }
+    }
+
+    /** Every tick: products out of every machine, feeds go on, probable outputs that ran out are marked. */
+    private void machineTick(ExecutionEnv env) {
+        for (MachineState m : machines.values()) {
+            ServerLevel level = m.access.getMachineLevel();
+            BlockPos pos = m.access.getMachinePos();
+            if (level == null || !level.isLoaded(pos))
+                continue;
+            if (m.place == null)
+                m.place = GlobalPos.of(level.dimension(), pos);
+            dropFeedOfEndedJob(m, env);
+            flushOverflow(m, env);
+            MachineIO.extractOutputs(level, pos, (key, n) -> {
+                int id = env.index().idOf(key);
+                landed(m, id, Amount.of(n));
+                long rest = n - deliver(id, key, Amount.of(n), env).saturatedLong();
+                if (rest > 0)
+                    m.overflow.merge(key, rest, Long::sum);
+            });
+            if (m.access.isAccessActive())
+                feed(m, level, pos);
+        }
+        for (Job job : jobs)
+            for (Map.Entry<Integer, ChanceProgress> e : job.chances.entrySet())
+                chanceCheckMachine(job, e.getKey(), e.getValue(), env);
+    }
+
+    /** A cancelled job's run that is not all in: what is left goes to network storage, not into the machine. */
+    private static void dropFeedOfEndedJob(MachineState m, ExecutionEnv env) {
+        Feed f = m.feed;
+        if (f == null || !(f.job.cancelled || f.job.finished))
+            return;
+        for (Part p : f.parts)
+            if (p.left > 0) {
+                Amount went = env.store().insert(p.key, Amount.of(p.left));
+                long rest = p.left - went.saturatedLong();
+                if (rest > 0)
+                    m.overflow.merge(p.key, rest, Long::sum);
+            }
+        m.feed = null;
+    }
+
+    /** Into the hub for the jobs that wait for it, the rest into network storage; returns what went. */
+    private Amount deliver(int id, AEKey key, Amount n, ExecutionEnv env) {
+        Amount kept = onInsert(id, n, env.nowNanos());
+        Amount rest = n.sub(kept);
+        return rest.signum() > 0 ? kept.add(env.store().insert(key, rest)) : kept;
+    }
+
+    private void flushOverflow(MachineState m, ExecutionEnv env) {
+        for (Iterator<Map.Entry<AEKey, Long>> it = m.overflow.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<AEKey, Long> e = it.next();
+            long went = deliver(env.index().idOf(e.getKey()), e.getKey(), Amount.of(e.getValue()), env).saturatedLong();
+            if (went >= e.getValue())
+                it.remove();
+            else
+                e.setValue(e.getValue() - went);
+        }
+    }
+
+    /** Products out of machine {@code m}: the runs they finish there are no longer in flight. */
+    private static void landed(MachineState m, int item, Amount n) {
+        for (Iterator<Map.Entry<Flight, Amount>> it = m.inFlight.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<Flight, Amount> e = it.next();
+            Pattern pat = e.getKey().job().snap.pattern(e.getKey().pattern());
+            Amount per = pat.sureOutputAmountOf(item);
+            if (per.signum() <= 0)
+                continue;
+            Amount left = e.getValue().sub(n.ceilDiv(per));
+            if (left.signum() <= 0)
+                it.remove();
+            else
+                e.setValue(left);
+            return;
+        }
+    }
+
+    /** Puts in what the machine takes of its current run. */
+    private static void feed(MachineState m, ServerLevel level, BlockPos pos) {
+        Feed f = m.feed;
+        if (f == null)
+            return;
+        for (Part p : f.parts) {
+            if (p.left <= 0)
+                continue;
+            long in = MachineIO.insert(level, pos, p.faces, p.key, p.left);
+            p.left -= in;
+            f.fed += in;
+        }
+        if (f.done())
+            m.feed = null;
+    }
+
+    /** The machines of {@code pat} on the grid, working and loaded. */
+    private List<MachineState> machinesFor(Pattern pat, ExecutionEnv env) {
+        List<MachineState> out = new ArrayList<>();
+        for (MachineState m : machines.values()) {
+            Item machine = m.access.getMachine();
+            ServerLevel level = m.access.getMachineLevel();
+            if (machine == null || level == null || !m.access.isAccessActive() || !level.isLoaded(m.access.getMachinePos()))
+                continue;
+            if (env.index().find(AEItemKey.of(machine)) == pat.machine)
+                out.add(m);
+        }
+        return out;
+    }
+
+    /** Every key the pattern's materials can be (substitutes too): what "its materials are still in" looks for. */
+    private static Set<AEKey> inputKeys(Pattern pat, ExecutionEnv env) {
+        Set<AEKey> keys = new HashSet<>();
+        for (int s = 0; s < pat.inputCount(); s++) {
+            AEKey k = env.index().keyOf(pat.inputItem(s));
+            if (k != null)
+                keys.add(k);
+            for (int a = 0; a < pat.alternativeCount(s); a++) {
+                AEKey alt = env.index().keyOf(pat.alternative(s, a));
+                if (alt != null)
+                    keys.add(alt);
+            }
+        }
+        return keys;
+    }
+
+    /** Some input slot of the machine holds a material of {@code pat}. */
+    private static boolean holds(MachineState m, Pattern pat, ExecutionEnv env) {
+        ServerLevel level = m.access.getMachineLevel();
+        return level != null && level.isLoaded(m.access.getMachinePos())
+                && MachineIO.holdsAny(level, m.access.getMachinePos(), inputKeys(pat, env));
+    }
+
+    /** Machine {@code m} still works on a run of {@code job}'s pattern {@code p}: being fed, or its materials still in. */
+    private static boolean busyWith(MachineState m, Job job, int p, ExecutionEnv env) {
+        if (m.feed != null && m.feed.job == job && m.feed.pattern == p)
+            return true;
+        return m.inFlight.containsKey(new Flight(job, p)) && holds(m, job.snap.pattern(p), env);
+    }
+
+    /**
+     * Sends up to {@code n} runs to the pattern's machines, spread evenly over the ones free to take
+     * a run (not feeding one; a blocking interface also waits until the previous pattern's
+     * materials are gone). A machine gets its next run in the same tick as long as each goes in
+     * whole. A pattern run for probable outputs sends its next batch only once its machines have
+     * none of its materials left. Returns the runs started.
+     */
+    private Amount dispatchMachines(Job job, Task t, Pattern pat, Amount n, @Nullable ChanceProgress chance, ExecutionEnv env) {
+        List<MachineState> all = machinesFor(pat, env);
+        if (all.isEmpty())
+            return Amount.ZERO;
+        if (chance != null && chance.runsDone.signum() > 0)
+            for (MachineState m : all)
+                if (busyWith(m, job, t.pattern, env))
+                    return Amount.ZERO;     // the last batch is not all in yet
+        List<MachineState> free = new ArrayList<>();
+        for (MachineState m : all) {
+            if (m.feed != null)
+                continue;
+            if (m.access.isBlocking() && m.lastPat != null && m.lastPattern != t.pattern && holds(m, m.lastPat, env))
+                continue;   // the previous pattern's materials are still in
+            free.add(m);
+        }
+        if (free.isEmpty())
+            return Amount.ZERO;
+        if (chance != null && !chance.expected) {
+            chance.need.forEach((item, a) -> expect(job, item, a, env.nowNanos()));
+            chance.expected = true;
+        }
+        long want = n.saturatedLong();
+        long sent = 0;
+        int k = free.size();
+        long share = want / k, extra = want % k;
+        for (int i = 0; i < k && sent < want; i++) {
+            MachineState m = free.get((i + rotate) % k);
+            long runs = share + (i < extra ? 1 : 0);
+            for (long c = 0; c < runs; c++) {
+                if (!startRun(job, t, pat, m, env))
+                    return Amount.of(sent);     // out of materials
+                sent++;
+                if (chance != null)
+                    chance.ran(Amount.ONE);
+                ServerLevel level = m.access.getMachineLevel();
+                if (level != null)
+                    feed(m, level, m.access.getMachinePos());
+                if (m.feed != null)
+                    break;                      // the machine takes the rest over the next ticks
+            }
+        }
+        return Amount.of(sent);
+    }
+
+    /** Takes one run's materials out of the job and starts feeding them to {@code m}. */
+    private boolean startRun(Job job, Task t, Pattern pat, MachineState m, ExecutionEnv env) {
+        KeyCounter[] inputs = extractInputs(job, pat, env);
+        if (inputs == null)
+            return false;
+        Feed f = new Feed(job, t.pattern);
+        for (int s = 0; s < inputs.length; s++) {
+            if (inputs[s] == null)
+                continue;
+            List<@Nullable Direction> faces = facesFor(m.access, pat.inputFaces(s));
+            for (Object2LongMap.Entry<AEKey> e : inputs[s]) {
+                f.parts.add(new Part(e.getKey(), e.getLongValue(), faces));
+                f.total += e.getLongValue();
+            }
+        }
+        m.feed = f;
+        m.lastPattern = t.pattern;
+        m.lastPat = pat;
+        m.inFlight.merge(new Flight(job, t.pattern), Amount.ONE, Amount::add);
+        expectOutputs(job, t, pat, 1, env.nowNanos());
+        return true;
+    }
+
+    /** The faces a material goes in through, by the interface's mode and the pattern's faces for it. */
+    private static List<@Nullable Direction> facesFor(IMachineAccess a, int patternFaces) {
+        List<@Nullable Direction> out = new ArrayList<>();
+        switch (a.getInsertMode()) {
+            case ANY -> out.add(null);
+            case SPECIFIED -> {
+                out.addAll(PatternInputFaces.directions(patternFaces));
+                if (out.isEmpty())
+                    out.add(a.getMachineFace());
+            }
+            default -> out.add(a.getMachineFace());
+        }
+        return out;
+    }
+
+    /** A probable output that came back: counts for the machine pattern waiting for it; enough stops it. */
+    private void chanceReturned(Job job, int item, Amount got) {
+        for (Map.Entry<Integer, ChanceProgress> e : job.chances.entrySet()) {
+            Pattern pat = job.snap.pattern(e.getKey());
+            ChanceProgress c = e.getValue();
+            if (pat.where != PatternLocation.HUB_MACHINE || !c.need.contains(item))
+                continue;
+            c.gave(item, got);
+            if (c.satisfied())
+                for (Task t : job.tasks)
+                    if (t.pattern == e.getKey())
+                        t.remaining = Amount.ZERO;   // the materials of the runs left over go back at the end
+            return;
+        }
+    }
+
+    /**
+     * A machine pattern run for probable outputs with every planned run sent and its machines
+     * done with its materials, still short: 機率產物不足. What it waits for stays expected, so late
+     * products, an insertion into the network or "pull from network" still fill it.
+     */
+    private void chanceCheckMachine(Job job, int p, ChanceProgress c, ExecutionEnv env) {
+        Pattern pat = job.snap.pattern(p);
+        if (c.marked || !c.expected || pat.where != PatternLocation.HUB_MACHINE || c.satisfied())
+            return;
+        for (Task t : job.tasks)
+            if (t.pattern == p && t.remaining.signum() > 0)
+                return;
+        for (MachineState m : machines.values())
+            if (busyWith(m, job, p, env))
+                return;
+        c.shortfall().forEach(job.chanceShort::add);
+        c.marked = true;
+    }
+
+    /** What machine access interface {@code a} is feeding: the pattern's job, the pattern, amounts in and to go in. */
+    public record FeedStatus(Job job, int pattern, long fed, long total) {
+    }
+
+    public @Nullable FeedStatus feedStatus(IMachineAccess a) {
+        MachineState m = machines.get(a);
+        if (m == null || m.feed == null)
+            return null;
+        return new FeedStatus(m.feed.job, m.feed.pattern, m.feed.fed, m.feed.total);
     }
 
     /** Snapshot of the window table, for debugging screens. */
