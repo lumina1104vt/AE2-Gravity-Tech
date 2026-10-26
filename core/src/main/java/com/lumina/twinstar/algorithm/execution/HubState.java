@@ -624,6 +624,8 @@ public final class HubState {
      * keep only what jobs still expect; the rest flows on into the network. Returns the amount kept.
      */
     public Amount onInsert(int item, Amount amount, long nowNanos) {
+        if (selfInserting)
+            return Amount.ZERO;     // the hub's own insertion coming back through AE2
         Amount room = requestedAmount(item);
         Amount take = amount.min(room);
         if (take.signum() <= 0)
@@ -688,7 +690,14 @@ public final class HubState {
             Amount left = have;
             for (int c = 0; c < MAX_CHUNKS_PER_CALL && left.signum() > 0; c++) {
                 long chunk = left.saturatedLong();
-                long took = job.sink.insert(key, chunk);
+                boolean was = selfInserting;
+                selfInserting = true;
+                long took;
+                try {
+                    took = job.sink.insert(key, chunk);
+                } finally {
+                    selfInserting = was;
+                }
                 in = in.add(Amount.of(took));
                 left = left.sub(Amount.of(took));
                 if (took < chunk)
@@ -705,10 +714,28 @@ public final class HubState {
     /** The requester's crafting link takes longs: an astronomical amount goes to it a few chunks per call. */
     private static final int MAX_CHUNKS_PER_CALL = 16;
 
+    /**
+     * The hub putting something into network storage itself (finished products, what is left of a
+     * job, machine products no job waits for). AE2 offers every insertion to the crafting CPUs
+     * first; the hub must not take back what it is giving away, or a job still waiting for more of
+     * its product would count its own delivery again and again as products coming back.
+     */
+    private boolean selfInserting;
+
+    private Amount toNetwork(ExecutionEnv env, AEKey key, Amount amount) {
+        boolean was = selfInserting;
+        selfInserting = true;
+        try {
+            return env.store().insert(key, amount);
+        } finally {
+            selfInserting = was;
+        }
+    }
+
     /** Into network storage (exactly, when the grid has a big storage); returns what went in. */
-    private static Amount insertAll(ExecutionEnv env, int item, Amount amount) {
+    private Amount insertAll(ExecutionEnv env, int item, Amount amount) {
         AEKey key = env.index().keyOf(item);
-        return key == null ? Amount.ZERO : env.store().insert(key, amount);
+        return key == null ? Amount.ZERO : toNetwork(env, key, amount);
     }
 
     // ───────────────────────────── end, cancel, problems ─────────────────────────────
@@ -1139,13 +1166,13 @@ public final class HubState {
     }
 
     /** A cancelled job's run that is not all in: what is left goes to network storage, not into the machine. */
-    private static void dropFeedOfEndedJob(MachineState m, ExecutionEnv env) {
+    private void dropFeedOfEndedJob(MachineState m, ExecutionEnv env) {
         Feed f = m.feed;
         if (f == null || !(f.job.cancelled || f.job.finished))
             return;
         for (Part p : f.parts)
             if (p.left > 0) {
-                Amount went = env.store().insert(p.key, Amount.of(p.left));
+                Amount went = toNetwork(env, p.key, Amount.of(p.left));
                 long rest = p.left - went.saturatedLong();
                 if (rest > 0)
                     m.overflow.merge(p.key, rest, Long::sum);
@@ -1157,7 +1184,7 @@ public final class HubState {
     private Amount deliver(int id, AEKey key, Amount n, ExecutionEnv env) {
         Amount kept = onInsert(id, n, env.nowNanos());
         Amount rest = n.sub(kept);
-        return rest.signum() > 0 ? kept.add(env.store().insert(key, rest)) : kept;
+        return rest.signum() > 0 ? kept.add(toNetwork(env, key, rest)) : kept;
     }
 
     private void flushOverflow(MachineState m, ExecutionEnv env) {
