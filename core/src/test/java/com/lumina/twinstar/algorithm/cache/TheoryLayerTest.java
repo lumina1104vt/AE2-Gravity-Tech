@@ -118,6 +118,24 @@ class TheoryLayerTest {
         assertEquals(TheoryLayer.LOG_HIGH, g.flush().logCost(INGOT), 1e-9);
     }
 
+    /** The stock is synced every second: when nothing moved, the last version is kept, not published again. */
+    @Test
+    void nothingChangedKeepsTheVersion() {
+        TestGraphs g = new TestGraphs();
+        g.pattern(b -> b.input(ORE, 1).output(INGOT, 1));
+        g.stock(ORE, 100).stock(INGOT, 5);
+        Snapshot first = g.flush();
+        g.stock(ORE, 99);       // same tier
+        assertTrue(first == g.flush(), "same tier: the same version");
+        assertEquals(0, g.theory.lastFlushStats().processed());
+        g.stock(INGOT, 50);     // a craftable item's tier: no component, but the raw prices move
+        Snapshot second = g.flush();
+        assertEquals(first.version() + 1, second.version());
+        assertEquals(-1.0, second.logRawPrice(INGOT), 1e-9);
+        g.stock(ORE, 10);
+        assertEquals(second.version() + 1, g.flush().version());
+    }
+
     /** The most important A test: after random changes, incremental results equal a full rebuild. */
     @Test
     void incrementalEqualsRebuild() {

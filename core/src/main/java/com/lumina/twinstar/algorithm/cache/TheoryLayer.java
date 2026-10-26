@@ -90,6 +90,8 @@ public final class TheoryLayer {
     private boolean needRebuild = true;
     private long version;
     private volatile Snapshot published = null;
+    /** a price tier, "none in stock" or "infinite" changed since the last version */
+    private boolean stockMoved;
     private volatile FlushStats lastFlush = new FlushStats(0, false, 0, 0);
 
     // ─────────────────────────────── public API ───────────────────────────────
@@ -174,17 +176,25 @@ public final class TheoryLayer {
                 changed = true;
             }
         }
+        if (changed)
+            stockMoved = true;      // the snapshot's raw prices change even when no component does
         if (changed && (producers[k].length == 0 || mined.get(k)))
             pending.set(k);
     }
 
     /**
-     * Applies all pending changes and publishes a new version: the components the changes touch
+     * Applies all pending changes and publishes a new version (the last one again when nothing
+     * changed since): the components the changes touch
      * are recomputed, sources first, and so is everything downstream of a component whose result
      * changed. A rebuild marks every component; otherwise the same steps.
      */
     public synchronized Snapshot flush() {
         long t0 = System.nanoTime();
+        if (published != null && !needRebuild && !patternsChanged && !stockMoved && pending.isEmpty()) {
+            // nothing changed since the last version (the stock sync runs every second): keep it
+            lastFlush = new FlushStats(published.version(), false, 0, System.nanoTime() - t0);
+            return published;
+        }
         boolean rebuilt = needRebuild;
         java.util.TreeSet<Integer> dirty = new java.util.TreeSet<>();
         if (needRebuild || patternsChanged) {
@@ -204,6 +214,7 @@ public final class TheoryLayer {
         pending.clear();
         patternsChanged = false;
         needRebuild = false;
+        stockMoved = false;
 
         int processed = 0;
         while (!dirty.isEmpty()) {
