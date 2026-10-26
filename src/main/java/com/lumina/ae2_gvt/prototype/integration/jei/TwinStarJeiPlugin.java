@@ -38,7 +38,8 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 /**
  * JEI's [+] for the Twin-Star Pattern Terminal: fills the recipe's inputs and outputs into the
  * pattern, and the machine slot with the recipe category's work block (its first crafting station), so
- * the player never has to say which machine a pattern is for.
+ * the player never has to say which machine a pattern is for; the recipe's id goes to the server,
+ * which reads the probabilities of its outputs from the recipe.
  */
 @JeiPlugin
 public class TwinStarJeiPlugin implements IModPlugin {
@@ -99,8 +100,22 @@ public class TwinStarJeiPlugin implements IModPlugin {
             }
 
             EncodingHelper.encodeProcessingRecipe(menu, inputs, outputs);
-            menu.getMachineSlot().setFilterTo(findMachine(recipe));   // an empty stack clears the slot
+            IRecipeCategory<?> category = findCategory(recipe);
+            menu.getMachineSlot().setFilterTo(machineOf(category));   // an empty stack clears the slot
+            menu.setRecipeChances(idOf(category, recipe));
             return null;
+        }
+
+        @SuppressWarnings("unchecked")
+        private static @Nullable ResourceLocation idOf(@Nullable IRecipeCategory<?> category, Object recipe) {
+            if (category == null) {
+                return null;
+            }
+            try {
+                return ((IRecipeCategory<Object>) category).getRegistryName(recipe);
+            } catch (RuntimeException e) {
+                return null;
+            }
         }
 
         private static @Nullable GenericStack toGenericStack(ITypedIngredient<?> ingredient) {
@@ -111,11 +126,11 @@ public class TwinStarJeiPlugin implements IModPlugin {
             return ingredient.getIngredient(NeoForgeTypes.FLUID_STACK).map(GenericStack::fromFluidStack).orElse(null);
         }
 
-        /** The work block of the category this recipe is shown in: its first crafting station. */
-        private static ItemStack findMachine(Object recipe) {
+        /** The category this recipe is shown in. */
+        private static @Nullable IRecipeCategory<?> findCategory(Object recipe) {
             IJeiRuntime jei = runtime;
             if (jei == null) {
-                return ItemStack.EMPTY;
+                return null;
             }
             IRecipeManager recipes = jei.getRecipeManager();
             List<IRecipeCategory<?>> candidates = recipes.createRecipeCategoryLookup().includeHidden().get()
@@ -132,10 +147,16 @@ public class TwinStarJeiPlugin implements IModPlugin {
                 match = candidates.size() == 1 ? candidates.get(0)
                         : candidates.stream().filter(category -> lists(recipes, category.getRecipeType(), recipe)).findFirst().orElse(null);
             }
-            if (match == null) {
+            return match;
+        }
+
+        /** The work block of a category: its first crafting station. */
+        private static ItemStack machineOf(@Nullable IRecipeCategory<?> category) {
+            IJeiRuntime jei = runtime;
+            if (jei == null || category == null) {
                 return ItemStack.EMPTY;
             }
-            return recipes.createRecipeCatalystLookup(match.getRecipeType()).getItemStack().findFirst()
+            return jei.getRecipeManager().createRecipeCatalystLookup(category.getRecipeType()).getItemStack().findFirst()
                     .map(stack -> stack.copyWithCount(1)).orElse(ItemStack.EMPTY);
         }
 

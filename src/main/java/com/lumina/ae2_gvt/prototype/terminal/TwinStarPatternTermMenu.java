@@ -1,24 +1,50 @@
 package com.lumina.ae2_gvt.prototype.terminal;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import org.jetbrains.annotations.Nullable;
+
+import com.lumina.twinstar.algorithm.ae2.PatternChances;
+import com.lumina.twinstar.storage.TwinstarContent;
+import com.lumina.twinstar.tools.RecipeChances;
+
 import appeng.api.crafting.PatternDetailsHelper;
+import appeng.api.stacks.GenericStack;
 import appeng.menu.SlotSemantics;
+import appeng.menu.guisync.GuiSync;
 import appeng.menu.me.items.PatternEncodingTermMenu;
 import appeng.menu.slot.FakeSlot;
 import appeng.parts.encoding.EncodingMode;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
 
 /**
- * AE2's pattern encoding menu, locked to the processing layout, plus the machine ghost slot.
- * Extending AE2's menu keeps its ME grid, encoding and recipe-transfer handling.
+ * AE2's pattern encoding menu, locked to the processing layout, plus the machine ghost slot and the
+ * probability of each output (set in the amount dialog of an output slot, or read from the recipe
+ * by JEI's [+]). Extending AE2's menu keeps its ME grid, encoding and recipe-transfer handling.
  */
 public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
+    private static final String SET_OUTPUT_CHANCE = "setOutputChance";
+    private static final String RECIPE_CHANCES = "recipeChances";
+
+    private final TwinStarPatternTerminalPart host;
     private final FakeSlot machineSlot;
+    /** Per processing output slot its probability ("" = always), ';' between slots: what the dialog shows. */
+    @GuiSync(200)
+    public String outputChances = "";
+    /** the encoded pattern slot as last seen: one put in loads its probabilities, like AE2 loads the rest */
+    private ItemStack lastEncoded = ItemStack.EMPTY;
 
     public TwinStarPatternTermMenu(MenuType<?> menuType, int id, Inventory ip, TwinStarPatternTerminalPart host) {
         super(menuType, id, ip, host, true);
+        this.host = host;
         this.machineSlot = new FakeSlot(host.getMachineInv(), 0);
         this.machineSlot.setHideAmount(true);
         this.addSlot(this.machineSlot, TwinStarTerminal.MACHINE_SLOT);
@@ -27,12 +53,19 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
         this.mode = EncodingMode.PROCESSING;
         if (this.isServerSide()) {
             host.getLogic().setMode(EncodingMode.PROCESSING);
+            lastEncoded = encodedSlot().getItem().copy();
         }
+        registerClientAction(SET_OUTPUT_CHANCE, String.class, this::receiveOutputChance);
+        registerClientAction(RECIPE_CHANCES, String.class, this::receiveRecipeChances);
+    }
+
+    private Slot encodedSlot() {
+        return this.getSlots(SlotSemantics.ENCODED_PATTERN).get(0);
     }
 
     /**
      * AE2 encodes a processing pattern; we turn it into a synthesis pattern (same data) and stamp
-     * the machine on it (or clear a stale one).
+     * the machine on it (or clear a stale one), and the probabilities of its outputs.
      */
     @Override
     public void encode() {
@@ -40,7 +73,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
         if (this.isClientSide()) {
             return;
         }
-        Slot encoded = this.getSlots(SlotSemantics.ENCODED_PATTERN).get(0);
+        Slot encoded = encodedSlot();
         ItemStack pattern = encoded.getItem();
         if (!PatternDetailsHelper.isEncodedPattern(pattern)) {
             return;
@@ -54,7 +87,138 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
         } else {
             pattern.set(TwinStarTerminal.PATTERN_MACHINE.get(), machine.getItemHolder());
         }
+        List<PatternChances.Entry> chances = new ArrayList<>();
+        for (FakeSlot slot : getProcessingOutputSlots()) {
+            GenericStack out = GenericStack.fromItemStack(slot.getItem());
+            if (out == null || chances.stream().anyMatch(e -> e.key().equals(out.what()))) {
+                continue;
+            }
+            double c = host.getOutputChance(out.what());
+            if (c < 1) {
+                chances.add(new PatternChances.Entry(out.what(), c));
+            }
+        }
+        if (chances.isEmpty()) {
+            pattern.remove(TwinstarContent.PATTERN_CHANCES.get());
+        } else {
+            pattern.set(TwinstarContent.PATTERN_CHANCES.get(), new PatternChances(chances));
+        }
         encoded.set(pattern);
+        lastEncoded = pattern.copy();
+    }
+
+    @Override
+    public void clear() {
+        super.clear();
+        if (this.isServerSide()) {
+            host.clearOutputChances();
+        }
+    }
+
+    @Override
+    public void broadcastChanges() {
+        if (this.isServerSide()) {
+            ItemStack now = encodedSlot().getItem();
+            if (!ItemStack.matches(now, lastEncoded)) {
+                lastEncoded = now.copy();
+                if (PatternDetailsHelper.isEncodedPattern(now)) {
+                    // a pattern put in: AE2 fills the grid from it, the probabilities come along
+                    host.clearOutputChances();
+                    PatternChances c = now.get(TwinstarContent.PATTERN_CHANCES.get());
+                    if (c != null) {
+                        c.entries().forEach(e -> host.setOutputChance(e.key(), e.chance()));
+                    }
+                }
+            }
+            StringBuilder sb = new StringBuilder();
+            FakeSlot[] outs = getProcessingOutputSlots();
+            for (int i = 0; i < outs.length; i++) {
+                if (i > 0) {
+                    sb.append(';');
+                }
+                GenericStack out = GenericStack.fromItemStack(outs[i].getItem());
+                double c = out == null ? 1 : host.getOutputChance(out.what());
+                if (c < 1) {
+                    sb.append(c);
+                }
+            }
+            outputChances = sb.toString();
+        }
+        super.broadcastChanges();
+    }
+
+    // ── probabilities ──
+
+    /** The probability shown for processing output slot {@code index} (1 = always). */
+    public double getOutputChance(int index) {
+        String[] parts = outputChances.split(";", -1);
+        if (index < 0 || index >= parts.length || parts[index].isEmpty()) {
+            return 1;
+        }
+        try {
+            return Double.parseDouble(parts[index]);
+        } catch (NumberFormatException e) {
+            return 1;
+        }
+    }
+
+    /** Client: sets the probability of what is in processing output slot {@code index}. */
+    public void setOutputChance(int index, double chance) {
+        sendClientAction(SET_OUTPUT_CHANCE, index + ";" + String.format(Locale.ROOT, "%.17g", chance));
+    }
+
+    private void receiveOutputChance(String arg) {
+        String[] parts = arg.split(";");
+        if (parts.length != 2) {
+            return;
+        }
+        try {
+            int index = Integer.parseInt(parts[0]);
+            double chance = Double.parseDouble(parts[1]);
+            FakeSlot[] outs = getProcessingOutputSlots();
+            if (index < 0 || index >= outs.length) {
+                return;
+            }
+            GenericStack out = GenericStack.fromItemStack(outs[index].getItem());
+            if (out != null) {
+                host.setOutputChance(out.what(), chance);
+            }
+        } catch (NumberFormatException e) {
+            // a malformed request: ignore it
+        }
+    }
+
+    /**
+     * Client, after JEI's [+] filled the slots: the recipe it came from, so the server reads the
+     * probabilities of its outputs from the recipe (null: none known, every output always comes).
+     */
+    public void setRecipeChances(@Nullable ResourceLocation recipe) {
+        sendClientAction(RECIPE_CHANCES, recipe == null ? "" : recipe.toString());
+    }
+
+    /** The slots JEI filled arrived before this (same connection, in order). */
+    private void receiveRecipeChances(String id) {
+        host.clearOutputChances();
+        ResourceLocation rl = ResourceLocation.tryParse(id);
+        if (rl == null) {
+            return;
+        }
+        var level = getPlayer().level();
+        RecipeHolder<?> recipe = level.getRecipeManager().byKey(rl).orElse(null);
+        if (recipe == null) {
+            return;
+        }
+        Map<String, Double> byId = RecipeChances.of(recipe.value(), level.registryAccess());
+        for (FakeSlot slot : getProcessingOutputSlots()) {
+            GenericStack out = GenericStack.fromItemStack(slot.getItem());
+            if (out == null) {
+                continue;
+            }
+            Double c = byId.get(out.what().getId().toString());
+            if (c != null) {
+                host.setOutputChance(out.what(), c);
+            }
+        }
     }
 
     public FakeSlot getMachineSlot() {

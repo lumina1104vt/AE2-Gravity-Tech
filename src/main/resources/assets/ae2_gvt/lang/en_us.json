@@ -43,6 +43,8 @@
   "block.ae2_gvt.quantum_controller": "Quantum Controller",
   "ae2_gvt.jei.pattern_needs_input_and_output": "A pattern needs at least one input and one output",
   "ae2_gvt.pattern.machine": "Machine: %s",
+  "ae2_gvt.pattern.chance": "Chance",
+  "ae2_gvt.pattern.output_chance": "Probable output: %s (%s)",
   "gui.ae2_gvt.twin_star_hub": "Twin-Star Dispatch Hub",
   "gui.ae2_gvt.twin_star_hub.status.running": "Running",
   "gui.ae2_gvt.twin_star_hub.black": "Black Hole: Crafting",

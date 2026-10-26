@@ -1,6 +1,7 @@
 package com.lumina.ae2_gvt.prototype.terminal;
 
 import appeng.api.inventories.InternalInventory;
+import appeng.api.stacks.AEKey;
 import appeng.api.parts.IPartItem;
 import appeng.api.parts.IPartModel;
 import appeng.items.parts.PartModels;
@@ -14,8 +15,19 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
+import com.lumina.twinstar.algorithm.ae2.PatternChances;
+import com.mojang.serialization.Dynamic;
+import net.minecraft.nbt.NbtOps;
 
-/** AE2's pattern encoding terminal plus the remembered machine (a ghost item, never dropped). */
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * AE2's pattern encoding terminal plus the remembered machine (a ghost item, never dropped) and the
+ * probability of each output that does not always come (by key, like the pattern keeps it).
+ */
 public class TwinStarPatternTerminalPart extends PatternEncodingTerminalPart {
     private static final ResourceLocation SCREEN_OFF = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "part/twin_star_pattern_terminal_off");
     private static final ResourceLocation SCREEN_ON = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "part/twin_star_pattern_terminal_on");
@@ -29,6 +41,8 @@ public class TwinStarPatternTerminalPart extends PatternEncodingTerminalPart {
     public static final IPartModel TWIN_STAR_HAS_CHANNEL = new PartModel(MODEL_BASE, SCREEN_ON, MODEL_STATUS_HAS_CHANNEL);
 
     private final AppEngInternalInventory machineInv = new AppEngInternalInventory(this, 1, 1);
+    /** outputs that come only with a probability; an output not listed always comes */
+    private final Map<AEKey, Double> outputChances = new LinkedHashMap<>();
 
     public TwinStarPatternTerminalPart(IPartItem<?> partItem) {
         super(partItem);
@@ -39,22 +53,54 @@ public class TwinStarPatternTerminalPart extends PatternEncodingTerminalPart {
         return machineInv;
     }
 
+    /** Probability of output {@code key} (1 when it always comes). */
+    public double getOutputChance(AEKey key) {
+        return outputChances.getOrDefault(key, 1.0);
+    }
+
+    /** {@code chance} of 1 (or anything not in (0, 1)) means it always comes. */
+    public void setOutputChance(AEKey key, double chance) {
+        if (chance > 0 && chance < 1)
+            outputChances.put(key, chance);
+        else
+            outputChances.remove(key);
+        markForSave();
+    }
+
+    public void clearOutputChances() {
+        if (!outputChances.isEmpty()) {
+            outputChances.clear();
+            markForSave();
+        }
+    }
+
     @Override
     public void clearContent() {
         super.clearContent();
         machineInv.clear();
+        outputChances.clear();
     }
 
     @Override
     public void readFromNBT(CompoundTag tag, HolderLookup.Provider registries) {
         super.readFromNBT(tag, registries);
         machineInv.readFromNBT(tag, "machine", registries);
+        outputChances.clear();
+        if (tag.contains("outputChances"))
+            PatternChances.CODEC.parse(new Dynamic<>(registries.createSerializationContext(NbtOps.INSTANCE), tag.get("outputChances")))
+                    .result().ifPresent(c -> c.entries().forEach(e -> outputChances.put(e.key(), e.chance())));
     }
 
     @Override
     public void writeToNBT(CompoundTag tag, HolderLookup.Provider registries) {
         super.writeToNBT(tag, registries);
         machineInv.writeToNBT(tag, "machine", registries);
+        if (!outputChances.isEmpty()) {
+            List<PatternChances.Entry> entries = new ArrayList<>();
+            outputChances.forEach((k, c) -> entries.add(new PatternChances.Entry(k, c)));
+            PatternChances.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), new PatternChances(entries))
+                    .result().ifPresent(t -> tag.put("outputChances", t));
+        }
     }
 
     @Override

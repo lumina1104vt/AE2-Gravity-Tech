@@ -5,6 +5,7 @@ import java.util.Map;
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.prototype.terminal.TwinStarPatternTermMenu;
 
+import appeng.api.stacks.GenericStack;
 import appeng.client.Point;
 import appeng.client.gui.ICompositeWidget;
 import appeng.client.gui.me.items.PatternEncodingTermScreen;
@@ -16,11 +17,13 @@ import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.Slot;
 
 /**
  * AE2's pattern encoding screen with our processing panel drawn over AE2's (input grid moved right,
  * machine slot at its top-left) and the mode tabs hidden. Slot and widget positions come from
- * assets/ae2/screens/terminals/twin_star_pattern_terminal.json.
+ * assets/ae2/screens/terminals/twin_star_pattern_terminal.json. The amount dialog of an output slot
+ * also sets its probability ({@link SetOutputAmountScreen}); input slots keep AE2's.
  */
 public class TwinStarPatternTermScreen extends PatternEncodingTermScreen<TwinStarPatternTermMenu> {
     private static final Blitter PANEL = Blitter
@@ -45,6 +48,27 @@ public class TwinStarPatternTermScreen extends PatternEncodingTermScreen<TwinSta
         } catch (ReflectiveOperationException e) {
             AE2GravityTech.LOGGER.warn("Could not hide the pattern terminal mode tabs", e);
         }
+    }
+
+    /** Pick-item click on an output slot: our dialog with the probability; anything else as AE2 does it. */
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        Slot slot = this.hoveredSlot;
+        if (minecraft.options.keyPickItem.matchesMouse(button) && slot != null) {
+            Slot[] outputs = menu.getProcessingOutputSlots();
+            for (int i = 0; i < outputs.length; i++) {
+                if (outputs[i] != slot) {
+                    continue;
+                }
+                GenericStack stack = GenericStack.fromItemStack(slot.getItem());
+                if (stack == null) {
+                    break;
+                }
+                switchToScreen(new SetOutputAmountScreen(this, stack, slot, i));
+                return true;
+            }
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override

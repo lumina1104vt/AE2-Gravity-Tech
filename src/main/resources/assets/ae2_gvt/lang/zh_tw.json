@@ -5,6 +5,8 @@
   "block.ae2_gvt.quantum_controller": "量子控制器",
   "ae2_gvt.jei.pattern_needs_input_and_output": "樣板至少需要一個輸入和一個輸出",
   "ae2_gvt.pattern.machine": "主方塊：%s",
+  "ae2_gvt.pattern.chance": "機率",
+  "ae2_gvt.pattern.output_chance": "機率產物：%s（%s）",
   "gui.ae2_gvt.twin_star_hub": "雙星調度中樞",
   "gui.ae2_gvt.twin_star_hub.status.running": "運作中",
   "gui.ae2_gvt.twin_star_hub.black": "黑洞・合成",

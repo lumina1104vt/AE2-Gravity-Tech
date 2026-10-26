@@ -7,6 +7,10 @@ import com.lumina.ae2_gvt.menus.Menus;
 import com.lumina.ae2_gvt.payload.OpenArmorModulesPayload;
 import com.lumina.ae2_gvt.prototype.terminal.TwinStarTerminal;
 
+import com.lumina.twinstar.algorithm.ae2.PatternChances;
+import com.lumina.twinstar.storage.TwinstarContent;
+
+import appeng.api.client.AEKeyRendering;
 import appeng.init.client.InitScreens;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
@@ -62,6 +66,13 @@ public final class TwinStarTerminalClient {
             if (machine != null) {
                 event.getToolTip().add(Component.translatable("ae2_gvt.pattern.machine", machine.value().getName(new ItemStack(machine)))
                         .withStyle(ChatFormatting.GRAY));
+            }
+            PatternChances chances = event.getItemStack().get(TwinstarContent.PATTERN_CHANCES.get());
+            if (chances != null) {
+                for (PatternChances.Entry e : chances.entries()) {
+                    event.getToolTip().add(Component.translatable("ae2_gvt.pattern.output_chance", AEKeyRendering.getDisplayName(e.key()),
+                            String.format(java.util.Locale.ROOT, "%.4g%%", e.chance() * 100)).withStyle(ChatFormatting.GRAY));
+                }
             }
         }
 

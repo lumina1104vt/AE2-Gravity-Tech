@@ -25,7 +25,7 @@ import java.util.Set;
  * Only values strictly between 0 and 1 count (a field of 1 or more is no probability). An unusual
  * field name is not found: that output is taken as always coming.
  */
-final class RecipeChances {
+public final class RecipeChances {
     private static final Set<String> NAMES = Set.of("chance", "probability");
     /** fields that name the item or fluid of an output */
     private static final Set<String> ID_FIELDS = Set.of("id", "item", "fluid");
@@ -34,7 +34,7 @@ final class RecipeChances {
     }
 
     /** item or fluid id → probability, for the outputs found with one */
-    static Map<String, Double> of(Recipe<?> recipe, RegistryAccess registries) {
+    public static Map<String, Double> of(Recipe<?> recipe, RegistryAccess registries) {
         Map<String, Double> out = new HashMap<>();
         JsonElement json;
         try {
