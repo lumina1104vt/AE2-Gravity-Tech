@@ -80,6 +80,50 @@ class PlannerTest {
         assertEquals(Amount.ONE, p.patternTimes.get(2));
     }
 
+    /** An output that comes with probability ½: enough runs that one comes with 99.99 %, and the job knows what it waits for. */
+    @Test
+    void chanceOutputRunsForTheConfidence() {
+        TestGraphs g = new TestGraphs();
+        g.pattern(b -> b.input(ORE, 1).output(INGOT, 1, 0.5));      // P0
+        g.stock(ORE, 100);
+        Plan p = plan(g, INGOT, 1);
+        assertTrue(p.isComplete(), p.toString());
+        assertEquals(Amount.of(14), p.patternTimes.get(0));
+        assertEquals(Amount.of(14), p.pulled.get(ORE));
+        Plan.ChanceNeed need = p.chanceNeeds.get(0);
+        assertEquals(Amount.ONE, need.items().get(INGOT), p.toString());
+        assertEquals(Amount.ZERO, need.sureRuns());
+        assertEquals(Amount.ZERO, p.leftover.get(INGOT), "what the runs may give beyond the order is not counted");
+    }
+
+    /** A side output that comes with a probability is not counted on: the nuggets are made anyway. */
+    @Test
+    void sideChanceOutputCountsNothing() {
+        TestGraphs g = new TestGraphs();
+        g.pattern(b -> b.input(ORE, 1).output(INGOT, 1).output(NUGGET, 1, 0.5));    // P0
+        g.pattern(b -> b.input(ORE, 1).output(NUGGET, 1));                           // P1
+        g.pattern(b -> b.input(INGOT, 1).input(NUGGET, 1).output(GEAR, 1));         // P2
+        g.stock(ORE, 100);
+        Plan p = plan(g, GEAR, 10);
+        assertTrue(p.isComplete(), p.toString());
+        assertEquals(Amount.of(10), p.patternTimes.get(0));
+        assertEquals(Amount.of(10), p.patternTimes.get(1), p.toString());
+        assertTrue(p.chanceNeeds.isEmpty(), p.toString());
+    }
+
+    /** A route that comes with a probability costs its expected amount: 1 ore for a 10 % ingot is dearer than 3 for a sure one. */
+    @Test
+    void chanceRouteCostsItsExpectedAmount() {
+        TestGraphs g = new TestGraphs();
+        g.pattern(b -> b.input(ORE, 1).output(INGOT, 1, 0.1));      // P0
+        g.pattern(b -> b.input(ORE, 3).output(INGOT, 1));           // P1
+        g.stock(ORE, 1000);
+        Plan p = plan(g, INGOT, 5);
+        assertTrue(p.isComplete(), p.toString());
+        assertEquals(Amount.of(5), p.patternTimes.get(1), p.toString());
+        assertEquals(Amount.ZERO, p.patternTimes.get(0));
+    }
+
     /** water bucket → (cake + bucket back): only one bucket is made, the cake's buckets carry the rest. */
     @Test
     void itemGivenBackIsSeededNotMadeAgain() {

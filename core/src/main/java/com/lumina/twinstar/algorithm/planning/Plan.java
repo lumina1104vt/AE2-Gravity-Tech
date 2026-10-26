@@ -36,6 +36,8 @@ public final class Plan {
     public final Map<Integer, AmountMap> loopSeeds;
     /** items a pattern of this plan gives back to its own inputs (the bucket of a water bucket): only seeds are planned */
     public final List<Recycle> recycles;
+    /** per pattern run for outputs that come only with a probability: what the plan counts on; key = pattern */
+    public final Map<Integer, ChanceNeed> chanceNeeds;
 
     /**
      * One loop of an item the plan uses again: {@code seed} of {@code item} starts it, the rest of the
@@ -56,9 +58,19 @@ public final class Plan {
         }
     }
 
+    /**
+     * A pattern run (also) for outputs that come only with a probability. Its runs in
+     * {@link #patternTimes} cover {@code items} with {@link com.lumina.twinstar.algorithm.model.ChanceRuns#CONFIDENCE};
+     * the plan counts on nothing else of those runs, so the job may stop the pattern once it has
+     * {@code items} and at least {@code sureRuns} runs are done (the runs for outputs that always
+     * come, which all run).
+     */
+    public record ChanceNeed(AmountMap items, Amount sureRuns) {
+    }
+
     Plan(long snapshotVersion, int target, Amount amount, AmountMap patternTimes, AmountMap pulled, AmountMap drawLater,
          AmountMap missing, AmountMap leftover, Amount usage, Map<Integer, CycleContract> contracts,
-         Map<Integer, AmountMap> loopSeeds, List<Recycle> recycles) {
+         Map<Integer, AmountMap> loopSeeds, List<Recycle> recycles, Map<Integer, ChanceNeed> chanceNeeds) {
         this.snapshotVersion = snapshotVersion;
         this.target = target;
         this.amount = amount;
@@ -71,6 +83,7 @@ public final class Plan {
         this.contracts = Map.copyOf(contracts);
         this.loopSeeds = Map.copyOf(loopSeeds);
         this.recycles = List.copyOf(recycles);
+        this.chanceNeeds = Map.copyOf(chanceNeeds);
     }
 
     /** Can be made with what the network has. */
@@ -82,6 +95,7 @@ public final class Plan {
     public String toString() {
         return "Plan{target=" + target + " ×" + amount + ", runs=" + patternTimes + ", pulled=" + pulled
                 + ", missing=" + missing + ", leftover=" + leftover + ", usage=" + usage
-                + (recycles.isEmpty() ? "" : ", recycles=" + recycles) + "}";
+                + (recycles.isEmpty() ? "" : ", recycles=" + recycles)
+                + (chanceNeeds.isEmpty() ? "" : ", chanceNeeds=" + chanceNeeds) + "}";
     }
 }

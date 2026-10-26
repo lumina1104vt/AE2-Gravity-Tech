@@ -264,6 +264,8 @@ public final class EngineLog {
             sb.append(amount(p.outputAmount(i))).append('×').append(item(index, p.outputItem(i)));
             if (p.isByproduct(i))
                 sb.append("（副產物）");
+            if (p.isChance(i))
+                sb.append(String.format(java.util.Locale.ROOT, "（機率 %.4g%%）", p.outputChance(i) * 100));
         }
         sb.append("] ").append(switch (p.where) {
             case HUB_INTERNAL -> "中樞內部";

@@ -100,6 +100,10 @@ public final class DemandPass {
     final Map<Integer, CycleContract> contracts = new HashMap<>();
     /** the seed rotation chosen per loop (kept when the loop is reopened) */
     final Map<Integer, AmountMap> loopSeeds = new HashMap<>();
+    /** per pattern run for outputs that come with a probability: how much of them the plan counts on */
+    final Map<Integer, AmountMap> chanceNeed = new HashMap<>();
+    /** per pattern with such outputs: runs fired for outputs that always come (they all run) */
+    final AmountMap sureRuns = new AmountMap();
 
     private final PriorityQueue<Integer> queue;
     private final BitSet inQueue = new BitSet();
@@ -300,7 +304,7 @@ public final class DemandPass {
     }
 
     Split whole(int p, int x, Amount d) {
-        return new Split(p, d.ceilDiv(snap.pattern(p).mainOutputAmountOf(x)), d);
+        return new Split(p, snap.pattern(p).runsFor(x, d), d);
     }
 
     /** C2's fixed allocation, cut or topped up to the demand this pass actually has. */
@@ -609,7 +613,7 @@ public final class DemandPass {
         }
         if (sum == LogMath.ZERO || sum == LogMath.INF)
             return sum;
-        return sum - snap.pattern(q).mainOutputAmountOf(x).log10();
+        return sum - snap.pattern(q).mainOutputLog10(x);
     }
 
     private boolean usesReserved(int q) {
@@ -633,10 +637,22 @@ public final class DemandPass {
     private void fire(int p, Amount runs, int x, Amount used, @Nullable BitSet cx) {
         Pattern pat = snap.pattern(p);
         patternTimes.add(p, runs);
-        for (int o = 0; o < pat.outputCount(); o++) {
-            Amount made = pat.outputAmount(o).mul(runs);
-            ledger.add(pat.outputItem(o), made);
-            lots.computeIfAbsent(pat.outputItem(o), k -> new AmountMap()).add(p, made);
+        if (pat.chanceOf(x) < 1) {
+            // run for an output that comes with a probability: the runs cover `used` of it and the
+            // job may stop once it has that, so nothing else of the runs is counted on
+            chanceNeed.computeIfAbsent(p, k -> new AmountMap()).add(x, used);
+            ledger.add(x, used);
+            lots.computeIfAbsent(x, k -> new AmountMap()).add(p, used);
+        } else {
+            if (pat.hasChanceOutput())
+                sureRuns.add(p, runs);
+            for (int o = 0; o < pat.outputCount(); o++) {
+                if (pat.isChance(o))
+                    continue;   // comes with a probability: nothing counted on
+                Amount made = pat.outputAmount(o).mul(runs);
+                ledger.add(pat.outputItem(o), made);
+                lots.computeIfAbsent(pat.outputItem(o), k -> new AmountMap()).add(p, made);
+            }
         }
         ledger.sub(x, used);
         lots.get(x).sub(p, used);
@@ -762,7 +778,7 @@ public final class DemandPass {
             Pattern pat = snap.pattern(p);
             patternTimes.add(p, runs[j]);
             for (int o = 0; o < pat.outputCount(); o++)
-                ledger.add(pat.outputItem(o), pat.outputAmount(o).mul(runs[j]));
+                ledger.add(pat.outputItem(o), pat.sureOutputAmount(o).mul(runs[j]));
             for (int slot = 0; slot < pat.inputCount(); slot++) {
                 int y = pat.inputItem(slot);
                 if (members.contains(y)) {
@@ -858,8 +874,10 @@ public final class DemandPass {
                 perRun = perRun.add(p.outputAmount(o));
             usage = usage.add(perRun.mul(e.getValue()));
         }
+        Map<Integer, Plan.ChanceNeed> chances = new HashMap<>();
+        chanceNeed.forEach((p, items) -> chances.put(p, new Plan.ChanceNeed(items.copy(), sureRuns.get(p))));
         return new Plan(snap.version(), target, amount, patternTimes.copy(), pulled.copy(), drawLater.copy(), missing.copy(),
-                leftover, usage, contracts, loopSeeds, recycles());
+                leftover, usage, contracts, loopSeeds, recycles(), chances);
     }
 
     /**

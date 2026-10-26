@@ -187,8 +187,11 @@ class RecipePackBench {
                 boolean container = slot.size() > 2 && slot.get(2).getAsString().equals("container");
                 b.input(opts.get(0).getAsInt(), Amount.of(count), container ? InputKind.CONTAINER : InputKind.CONSUME, 0, alts);
             }
-            for (JsonElement o : r.getAsJsonArray("out"))
-                b.output(o.getAsJsonArray().get(0).getAsInt(), o.getAsJsonArray().get(1).getAsLong());
+            // format 3: a third element is the probability of an output that does not always come
+            for (JsonElement o : r.getAsJsonArray("out")) {
+                JsonArray a = o.getAsJsonArray();
+                b.output(a.get(0).getAsInt(), a.get(1).getAsLong(), a.size() > 2 ? a.get(2).getAsDouble() : 1);
+            }
             // items left behind that the recipe does not list (the bucket of a water bucket): byproducts
             if (r.has("rem"))
                 for (JsonElement o : r.getAsJsonArray("rem"))

@@ -191,7 +191,7 @@ public final class CycleSolver {
         for (int o = 0; o < p.outputCount(); o++) {
             int i = s.memberIndex(p.outputItem(o));
             if (i >= 0)
-                inv[i] = inv[i].add(p.outputAmount(o).mul(batch));
+                inv[i] = inv[i].add(p.sureOutputAmount(o).mul(batch));
         }
     }
 

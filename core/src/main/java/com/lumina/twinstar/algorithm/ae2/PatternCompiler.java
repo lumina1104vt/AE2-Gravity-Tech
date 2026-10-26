@@ -9,6 +9,7 @@ import com.lumina.twinstar.algorithm.model.InputKind;
 import com.lumina.twinstar.algorithm.model.Pattern;
 import com.lumina.twinstar.algorithm.model.PatternLocation;
 import com.lumina.twinstar.algorithm.model.Rational;
+import com.lumina.twinstar.storage.TwinstarContent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +28,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   CONTAINER; a different remaining key (water bucket → bucket, damaged tool) stays CONSUME and the
  *   remainder is added as a byproduct: the pattern does not list it, so it is no route to that item,
  *   but the ledger keeps it for the order's later steps;</li>
- *   <li>AE2 patterns carry no durability, so TOOL only comes from adapters.</li>
+ *   <li>AE2 patterns carry no durability, so TOOL only comes from adapters;</li>
+ *   <li>an output listed in the pattern's {@link PatternChances} (written by {@code gen_patterns}
+ *   from the recipe) comes only with that probability.</li>
  * </ul>
  */
 public final class PatternCompiler {
@@ -79,8 +82,11 @@ public final class PatternCompiler {
             energy = energy.add(Rational.of(java.math.BigInteger.valueOf(amount),
                     java.math.BigInteger.valueOf(Math.max(1, key.getAmountPerOperation()))));
         }
-        for (GenericStack out : details.getOutputs())
-            b.output(index.idOf(out.what()), out.amount());
+        PatternChances chances = details.getDefinition().get(TwinstarContent.PATTERN_CHANCES.get());
+        for (GenericStack out : details.getOutputs()) {
+            double chance = chances == null ? 1 : chances.chanceOf(out.what());
+            b.output(index.idOf(out.what()), Amount.of(out.amount()), chance > 0 && chance < 1 ? chance : 1);
+        }
         for (GenericStack r : remainders)
             b.byproduct(index.idOf(r.what()), r.amount());
         return b.allowSubst(subst).energyPerRun(energy).build(nextId.getAndIncrement());

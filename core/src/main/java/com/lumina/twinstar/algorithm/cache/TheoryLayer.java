@@ -399,13 +399,13 @@ public final class TheoryLayer {
     }
 
     private double unitCost(int q, int x) {
-        Amount out = patterns.get(q).mainOutputAmountOf(x);
-        if (out.isZero())
+        double out = patterns.get(q).mainOutputLog10(x);
+        if (out == LogMath.ZERO)
             return LogMath.INF;
         double c = patRunLogCost[q];
         if (c == LogMath.ZERO || c == LogMath.INF)
             return c;
-        return c - out.log10();
+        return c - out;
     }
 
     /** bom_p for one run: Σ consumed (amount × bom[input]) + Σ tools (bom[tool] ÷ durability). */
@@ -432,7 +432,7 @@ public final class TheoryLayer {
     }
 
     private void setItemBomFrom(int x, int q) {
-        double out = patterns.get(q).mainOutputAmountOf(x).log10();
+        double out = patterns.get(q).mainOutputLog10(x);
         int[] ks = patBomItems[q];
         double[] vs = patBomLog[q].clone();
         for (int j = 0; j < vs.length; j++)
@@ -703,7 +703,7 @@ public final class TheoryLayer {
             for (int o = 0; o < p.outputCount(); o++) {
                 Integer i = row.get(p.outputItem(o));
                 if (i != null)
-                    a[i][j] = a[i][j].add(Rational.of(p.outputAmount(o)));
+                    a[i][j] = a[i][j].add(Rational.of(p.sureOutputAmount(o)));
             }
             for (int s = 0; s < p.inputCount(); s++) {
                 Integer i = row.get(p.inputItem(s));
@@ -1166,7 +1166,7 @@ public final class TheoryLayer {
                 }
             }
         }
-        return sum / Math.pow(10, p.mainOutputAmountOf(m).log10());
+        return sum / Math.pow(10, p.mainOutputLog10(m));
     }
 
     /** Unit cost with every input inside the component taken as free (only outside inputs count). */
@@ -1191,7 +1191,7 @@ public final class TheoryLayer {
         }
         if (sum == LogMath.ZERO || sum == LogMath.INF)
             return sum;
-        return sum - p.mainOutputAmountOf(m).log10();
+        return sum - p.mainOutputLog10(m);
     }
 
     private int firstAllowed(int m, int i, Set<Long> banned) {
@@ -1288,7 +1288,7 @@ public final class TheoryLayer {
                 return;
             }
             Pattern p = patterns.get(q);
-            double outLog = p.mainOutputAmountOf(m).log10();
+            double outLog = p.mainOutputLog10(m);
             double b = LogMath.ZERO;
             for (int s = 0; s < p.inputCount(); s++) {
                 int y = p.inputItem(s);
@@ -1421,7 +1421,7 @@ public final class TheoryLayer {
         for (int i = 0; i < k; i++)
             for (int j = 0; j < pats.length; j++) {
                 Pattern p = patterns.get(pats[j]);
-                Rational v = Rational.of(p.outputAmountOf(group[i]));
+                Rational v = Rational.of(p.sureOutputAmountOf(group[i]));
                 for (int s = 0; s < p.inputCount(); s++) {
                     if (p.inputItem(s) != group[i])
                         continue;
@@ -1457,7 +1457,7 @@ public final class TheoryLayer {
                         inv.sub(y, need);
                 }
                 for (int o = 0; o < p.outputCount(); o++)
-                    if (members.contains(p.outputItem(o)))
+                    if (members.contains(p.outputItem(o)) && !p.isChance(o))
                         inv.add(p.outputItem(o), p.outputAmount(o));
             }
             Amount total = seeds.total();
@@ -1494,7 +1494,7 @@ public final class TheoryLayer {
         Set<Integer> raws = new java.util.TreeSet<>();
         for (int i = 0; i < k; i++) {
             Pattern p = patterns.get(policy[i]);
-            double outLog = p.mainOutputAmountOf(group[i]).log10();
+            double outLog = p.mainOutputLog10(group[i]);
             TreeMap<Integer, Double> e = new TreeMap<>();
             for (int s = 0; s < p.inputCount(); s++) {
                 InputKind kind = p.inputKind(s);
