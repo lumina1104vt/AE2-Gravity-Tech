@@ -23,6 +23,8 @@ repositories {
 dependencies {
     // the engine hooks AE2's crafting service; AE2 itself is provided by the player
     compileOnly "maven.modrinth:ae2:${ae2_version}"
+    // gen_patterns / dump_recipes read recipes (amounts, fluids, all outputs) from the player's JEI
+    compileOnly "maven.modrinth:jei:${jei_version}"
 
     // planner tests (algorithm.model / cache / planning / allocation are plain Java on int ids)
     testImplementation platform('org.junit:junit-bom:5.10.3')

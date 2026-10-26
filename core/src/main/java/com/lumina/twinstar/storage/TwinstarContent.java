@@ -5,8 +5,10 @@ import appeng.api.storage.ISubMenuHost;
 import appeng.blockentity.AEBaseBlockEntity;
 import appeng.menu.implementations.MenuTypeBuilder;
 import com.lumina.twinstar.Twinstar;
+import com.lumina.twinstar.algorithm.ae2.PatternChances;
 import com.lumina.twinstar.order.OrderMenu;
 import com.lumina.twinstar.order.PlanMenu;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.MenuType;
@@ -23,13 +25,20 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
-/** The lib's own registrations: the BigInteger test storage and the order menu. */
+/** The lib's own registrations: the BigInteger test storage, the order menus and the pattern chances component. */
 public final class TwinstarContent {
     private static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(Twinstar.MODID);
     private static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Twinstar.MODID);
     private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, Twinstar.MODID);
     private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, Twinstar.MODID);
+    private static final DeferredRegister.DataComponents COMPONENTS =
+            DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, Twinstar.MODID);
+
+    /** On an encoded pattern: outputs that only come with some probability (written by gen_patterns). */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<PatternChances>> PATTERN_CHANCES =
+            COMPONENTS.registerComponentType("pattern_chances",
+                    b -> b.persistent(PatternChances.CODEC).networkSynchronized(PatternChances.STREAM_CODEC));
 
     /** The twin-star order screen (replaces AE2's amount screen on grids with a hub). */
     public static final DeferredHolder<MenuType<?>, MenuType<OrderMenu>> ORDER_MENU = MENUS.register("order",
@@ -60,6 +69,7 @@ public final class TwinstarContent {
         ITEMS.register(bus);
         BLOCK_ENTITIES.register(bus);
         MENUS.register(bus);
+        COMPONENTS.register(bus);
         bus.addListener(TwinstarContent::registerCapabilities);
         bus.addListener(TwinstarContent::addToCreativeTab);
     }

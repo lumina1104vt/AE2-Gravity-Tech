@@ -6,6 +6,8 @@ import com.lumina.twinstar.order.PlanViewPacket;
 import com.lumina.twinstar.service.TwinStarService;
 import com.lumina.twinstar.storage.TwinstarContent;
 import com.lumina.twinstar.tools.EngineCommands;
+import com.lumina.twinstar.tools.JeiPackets;
+import com.lumina.twinstar.tools.JeiRequests;
 import com.lumina.twinstar.tools.NetworkDump;
 import com.lumina.twinstar.tools.PatternGen;
 import com.lumina.twinstar.tools.RecipeDump;
@@ -33,10 +35,14 @@ public class Twinstar {
         NeoForge.EVENT_BUS.addListener(PatternGen::onServerStopping);
         NeoForge.EVENT_BUS.addListener(RecipeDump::onServerStarted);
         NeoForge.EVENT_BUS.addListener(RecipeDump::onServerTick);
+        NeoForge.EVENT_BUS.addListener(JeiRequests::onServerTick);
+        NeoForge.EVENT_BUS.addListener(JeiRequests::onServerStopping);
     }
 
     private static void registerPayloads(RegisterPayloadHandlersEvent event) {
         var registrar = event.registrar("1");
         registrar.playToClient(PlanViewPacket.TYPE, PlanViewPacket.STREAM_CODEC, PlanViewPacket::handle);
+        registrar.playToClient(JeiPackets.Request.TYPE, JeiPackets.Request.STREAM_CODEC, JeiPackets.Request::handle);
+        registrar.playToServer(JeiPackets.Recipes.TYPE, JeiPackets.Recipes.STREAM_CODEC, JeiPackets.Recipes::handle);
     }
 }

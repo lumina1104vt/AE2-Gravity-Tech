@@ -2,7 +2,11 @@ package com.lumina.twinstar.tools;
 
 import appeng.api.crafting.PatternDetailsHelper;
 import appeng.api.stacks.AEItemKey;
+import appeng.api.stacks.AEKey;
 import appeng.api.stacks.GenericStack;
+import com.lumina.twinstar.Twinstar;
+import com.lumina.twinstar.algorithm.ae2.PatternChances;
+import com.lumina.twinstar.storage.TwinstarContent;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -14,13 +18,16 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.ShapedRecipe;
+import net.minecraft.world.item.crafting.SmithingTrimRecipe;
 import net.minecraft.world.item.crafting.StonecutterRecipe;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -30,15 +37,17 @@ import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
- * Encodes every recipe the server has loaded as an AE2 pattern and puts them into a block (anything
- * that takes items: the test hub with its 50,000 slots, a chest, a pattern provider). Op level 2.
+ * Encodes every recipe as an AE2 pattern and puts them into a block (anything that takes items:
+ * the test hub with its 50,000 slots, a chest, a pattern provider). Op level 2.
  * <pre>
  * /twinstar gen_patterns &lt;pos&gt; [filter]                          all into pos
  * /twinstar gen_patterns &lt;pos&gt; no_processing [filter]            no processing patterns
@@ -49,17 +58,23 @@ import java.util.Map;
  * with tens of thousands of recipes does not freeze the server; {@code /twinstar gen_patterns cancel}
  * stops it. Patterns can only be put into blocks on the server thread, hence no worker thread.
  * <ul>
- *   <li>crafting table recipes → crafting patterns, laid out as the recipe is shaped, substitutes
- *   allowed (tag recipes take any matching item);</li>
- *   <li>stonecutter recipes → stonecutting patterns;</li>
- *   <li>everything else (furnaces, smithing, mod machines) → processing patterns: inputs as the
- *   recipe lists them, the result as the only output. Items left behind (the bucket of a water
- *   bucket, a damaged tool) are not written: an output written in a pattern is a main product to
- *   the engine, and a remainder is not one.</li>
+ *   <li>crafting table recipes (the server's) → crafting patterns, laid out as the recipe is shaped,
+ *   substitutes allowed (tag recipes take any matching item);</li>
+ *   <li>stonecutter recipes (the server's) → stonecutting patterns;</li>
+ *   <li>everything else (furnaces, smithing, mod machines) → processing patterns from what the
+ *   player's JEI shows (the vanilla recipe interface has no amounts for most mod machines, no fluids
+ *   and only the first output): every input slot's first option with its amount, every output.
+ *   Outputs that come only with some probability ({@link RecipeChances}, from the server's recipe
+ *   by the id JEI gives) are marked on the pattern ({@link PatternChances}). Items left behind
+ *   that JEI does not show as outputs (the bucket of a water bucket) are not written: an output
+ *   written in a pattern is a main product to the engine, and a remainder is not one.</li>
  * </ul>
- * Every pattern is decoded once; one AE2 does not accept as crafting/stonecutting is made as a
- * processing pattern instead. Special recipes (fireworks, map cloning) and pure A → A recipes
- * (only the result item goes in) are skipped.
+ * The JEI part needs a player with JEI to run the command (the server asks the player's client).
+ * Left out: recipes JEI has no id for or the server does not know (their outputs' probabilities
+ * cannot be read), smithing trims (one recipe per armour × trim × material), the anvil, recipes with
+ * a slot AE2 cannot hold, special recipes (fireworks, map cloning) and pure A → A recipes (only the
+ * result item goes in). The summary counts them, per JEI category. Every pattern is decoded once;
+ * one AE2 does not accept as crafting/stonecutting is made as a processing pattern instead.
  */
 public final class PatternGen {
     private PatternGen() {
@@ -105,10 +120,18 @@ public final class PatternGen {
             source.sendFailure(Component.literal("[雙星] " + processingPos.toShortString() + " 的方塊不能放入物品"));
             return 0;
         }
+        ServerPlayer player = source.getPlayer();
+        if (mode != ProcessingTo.NONE && player == null) {
+            source.sendFailure(Component.literal("[雙星] 處理樣板要從玩家的 JEI 讀配方，需要由裝有 JEI 的玩家下指令（或加 no_processing 只生成合成與切石機樣板）"));
+            return 0;
+        }
         Job job = new Job(source, source.getLevel(), pos, processingPos, mode, filter);
         JOBS.add(job);
-        source.sendSuccess(() -> Component.literal("[雙星] 開始生成樣板：" + job.recipes.size()
-                + " 條配方，在背景分批進行（每 tick 最多 20 毫秒）；/twinstar gen_patterns cancel 可取消"), true);
+        if (mode != ProcessingTo.NONE)
+            JeiRequests.request(player, job);
+        source.sendSuccess(() -> Component.literal("[雙星] 開始生成樣板：伺服器的合成與切石機配方 " + job.recipes.size() + " 條"
+                + (mode != ProcessingTo.NONE ? "，其他配方從你的 JEI 讀取" : "")
+                + "，在背景分批進行（每 tick 最多 20 毫秒）；/twinstar gen_patterns cancel 可取消"), true);
         return job.recipes.size();
     }
 
@@ -148,20 +171,27 @@ public final class PatternGen {
         return level.getCapability(Capabilities.ItemHandler.BLOCK, pos, null);
     }
 
-    /** Startup check ({@code -Dtwinstar.genPatternsCheck=true}): encode and decode everything at once, insert nothing. */
+    /**
+     * Startup check ({@code -Dtwinstar.genPatternsCheck=true}): encode and decode at once, insert
+     * nothing. Crafting and stonecutting only: processing patterns need a player's JEI.
+     */
     public static String check(ServerLevel level) {
-        Job job = new Job(null, level, null, null, ProcessingTo.SAME, "");
+        Job job = new Job(null, level, null, null, ProcessingTo.NONE, "");
         job.step(Long.MAX_VALUE);
-        return job.summary();
+        return job.summary() + "（處理樣板需要玩家的 JEI，不在檢查範圍內）";
     }
 
-    /** One generation: the recipes it covers, how far it got, what went where. */
-    private static final class Job {
+    /**
+     * One generation: the server's crafting and stonecutter recipes, then what the player's JEI
+     * sends (as it arrives), how far it got, what went where.
+     */
+    private static final class Job implements JeiRequests.Receiver {
         final @Nullable CommandSourceStack source;
         final ServerLevel level;
         final @Nullable BlockPos pos;
         final @Nullable BlockPos processingPos;
         final ProcessingTo mode;
+        final String filter;
         final List<RecipeHolder<?>> recipes = new ArrayList<>();
         int next;
         int crafting, stonecutting, processing, skipped, selfLoops;
@@ -170,6 +200,13 @@ public final class PatternGen {
         final Sink other = new Sink();
         long lastProgress = System.nanoTime();
 
+        // ── from JEI ──
+        final ArrayDeque<JeiRecipeData> jei = new ArrayDeque<>();
+        boolean jeiDone;
+        @Nullable String jeiFailure;
+        int jeiSeen;
+        final JeiRecipes.Tally jeiTally = new JeiRecipes.Tally();
+
         Job(@Nullable CommandSourceStack source, ServerLevel level, @Nullable BlockPos pos, @Nullable BlockPos processingPos,
             ProcessingTo mode, String filter) {
             this.source = source;
@@ -177,9 +214,30 @@ public final class PatternGen {
             this.pos = pos;
             this.processingPos = processingPos;
             this.mode = mode;
+            this.filter = filter;
             for (RecipeHolder<?> h : level.getRecipeManager().getRecipes())
-                if (filter.isEmpty() || h.id().toString().contains(filter))
+                if ((h.value() instanceof CraftingRecipe || h.value() instanceof StonecutterRecipe)
+                        && (filter.isEmpty() || h.id().toString().contains(filter)))
                     recipes.add(h);
+            jeiDone = mode == ProcessingTo.NONE;
+        }
+
+        @Override
+        public void recipes(List<JeiRecipeData> batch) {
+            jei.addAll(batch);
+            jeiSeen += batch.size();
+        }
+
+        @Override
+        public void done(Map<ResourceLocation, Integer> skippedByClient) {
+            skippedByClient.forEach(jeiTally::left);
+            jeiDone = true;
+        }
+
+        @Override
+        public void failed(String why) {
+            jeiFailure = why;
+            jeiDone = true;
         }
 
         /** Works until {@code deadline}; true when done or stopped. */
@@ -200,16 +258,60 @@ public final class PatternGen {
             }
             while (next < recipes.size() && System.nanoTime() < deadline)
                 one(recipes.get(next++), target, processingTarget);
-            if (next >= recipes.size()) {
+            while (next >= recipes.size() && !jei.isEmpty() && System.nanoTime() < deadline)
+                oneJei(jei.poll(), target, processingTarget);
+            if (jeiFailure != null) {
+                report("[雙星] 讀不到 JEI 的配方：" + jeiFailure + "。" + summary(), false);
+                return true;
+            }
+            if (next >= recipes.size() && jeiDone && jei.isEmpty()) {
                 report(summary(), true);
                 return true;
             }
             long now = System.nanoTime();
             if (now - lastProgress > PROGRESS_EVERY_NANOS) {
                 lastProgress = now;
-                report("[雙星] 生成樣板進度：" + next + " / " + recipes.size(), true);
+                report("[雙星] 生成樣板進度：伺服器配方 " + next + " / " + recipes.size()
+                        + (mode != ProcessingTo.NONE ? "；JEI 已收到 " + jeiSeen + " 條" + (jeiDone ? "（全部）" : "") : ""), true);
             }
             return false;
+        }
+
+        /** One recipe from JEI → a processing pattern, or counted as left out. */
+        private void oneJei(JeiRecipeData r, @Nullable IItemHandler target, @Nullable IItemHandler processingTarget) {
+            if (!filter.isEmpty() && (r.id() == null || !r.id().toString().contains(filter)))
+                return;
+            ItemStack pattern = null;
+            try {
+                JeiRecipes.Converted c = JeiRecipes.convert(r, level, jeiTally);
+                if (c != null) {
+                    pattern = PatternDetailsHelper.encodeProcessingPattern(c.patternInputs(), c.patternOutputs());
+                    if (!c.chances().isEmpty()) {
+                        List<PatternChances.Entry> entries = new ArrayList<>();
+                        c.chances().forEach((k, p) -> entries.add(new PatternChances.Entry(k, p)));
+                        pattern.set(TwinstarContent.PATTERN_CHANCES.get(), new PatternChances(entries));
+                    }
+                    if (PatternDetailsHelper.decodePattern(pattern, level) == null) {
+                        pattern = null;
+                        jeiTally.unholdable++;
+                    } else {
+                        jeiTally.chances(c);
+                    }
+                }
+            } catch (RuntimeException e) {
+                pattern = null;
+                jeiTally.unholdable++;
+            }
+            if (pattern == null) {
+                jeiTally.left(r.category(), 1);
+                return;
+            }
+            jeiTally.made(r.category());
+            processing++;
+            if (mode == ProcessingTo.SAME)
+                main.put(target, pattern);
+            else if (mode == ProcessingTo.OTHER)
+                other.put(processingTarget, pattern);
         }
 
         private void one(RecipeHolder<?> holder, @Nullable IItemHandler target, @Nullable IItemHandler processingTarget) {
@@ -265,12 +367,26 @@ public final class PatternGen {
 
         String summary() {
             StringBuilder sb = new StringBuilder("[雙星] 生成樣板：合成 " + crafting + "、切石機 " + stonecutting);
-            sb.append(mode == ProcessingTo.NONE ? "（處理樣板 " + processing + " 張未生成）" : "、處理 " + processing);
+            sb.append(mode == ProcessingTo.NONE ? "（不生成處理樣板）" : "、處理 " + processing);
+            if (jeiTally.chanceRecipes > 0)
+                sb.append("（其中 ").append(jeiTally.chanceRecipes).append(" 張有機率產物，共 ").append(jeiTally.chanceOutputs)
+                        .append(" 個機率輸出）");
             sb.append("；略過 ").append(skipped).append(" 條特殊或無法讀取的配方");
-            if (selfLoops > 0)
-                sb.append("、").append(selfLoops).append(" 條純粹 A 變 A 的配方（").append(String.join("、", selfLoopIds))
-                        .append(selfLoops > selfLoopIds.size() ? "…" : "").append("）");
+            sb.append(jeiTally.leftOut());
+            int self = selfLoops + jeiTally.selfLoops;
+            if (self > 0) {
+                List<String> ids = new ArrayList<>(selfLoopIds);
+                ids.addAll(jeiTally.selfLoopIds);
+                List<String> shown = ids.subList(0, Math.min(5, ids.size()));
+                sb.append("、").append(self).append(" 條純粹 A 變 A 的配方（").append(String.join("、", shown))
+                        .append(self > shown.size() ? "…" : "").append("）");
+            }
             sb.append("。");
+            if (!jeiTally.perCategory.isEmpty()) {
+                // the categories with the most recipes first; the full list goes to the log
+                Twinstar.LOGGER.info("[雙星] 生成樣板，各 JEI 分類（生成／跳過）：{}", jeiTally.categories(-1));
+                sb.append("各 JEI 分類（生成／跳過，完整清單在日誌）：").append(jeiTally.categories(8)).append("。");
+            }
             if (pos == null)
                 return sb.toString();
             sb.append("放入 ").append(main.inserted).append(" 張");
