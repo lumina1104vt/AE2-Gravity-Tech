@@ -130,6 +130,10 @@ public final class TwinStarService implements ITwinStarService, IGridServiceProv
     public TwinStarService(IGrid grid, IEnergyService energy) {
         this.grid = grid;
         this.energy = energy;
+        hub.setDebugLog(line -> {
+            if (EngineLog.enabled())
+                Twinstar.LOGGER.info(line);
+        });
         theory.setUnits(id -> {
             AEKey key = index.keyOf(id);
             return key == null ? 8 : key.getType().getAmountPerByte();

@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SplittableRandom;
+import java.util.function.Consumer;
 import java.util.random.RandomGenerator;
 
 /**
@@ -61,6 +62,12 @@ public final class HubState {
     private long nextJobId = 1;
     /** draws of the hub's own runs for outputs that come with a probability */
     private final RandomGenerator random = new SplittableRandom();
+    /** the engine's detailed log (/twinstar debug), or null */
+    private @Nullable Consumer<String> debug;
+
+    public void setDebugLog(@Nullable Consumer<String> debug) {
+        this.debug = debug;
+    }
 
     record WindowKey(ICraftingProvider provider, int pattern) {
     }
@@ -202,8 +209,16 @@ public final class HubState {
                 consume(job, pat, n);
                 produce(job, pat, n, chance);   // later tasks may become ready within this tick
             } else {
+                Amount asked = n;
                 n = pat.where == PatternLocation.HUB_MACHINE ? dispatchMachines(job, t, pat, n, chance, env)
                         : dispatchEven(job, t, pat, n, env);
+                if (debug != null && pat.where == PatternLocation.HUB_MACHINE) {
+                    String line = "[雙星] 機器派送 " + nameOf(pat, env) + "：樣板剩 " + t.remaining + " 次、材料夠 " + supported
+                            + " 次、並行與能量後 " + asked + " 次 → 送出 " + n + " 次（" + lastDispatchNote + "）";
+                    // a machine that stays full would log the same line every tick
+                    if (n.signum() > 0 || !line.equals(lastDebugLine.put(t, line)))
+                        debug.accept(line);
+                }
                 if (n.signum() <= 0) {
                     // materials are here but every machine is busy or refused: no inventory change
                     // will wake this task, so it must try again next tick
@@ -982,6 +997,8 @@ public final class HubState {
     /** Runs lost with a machine that went away, kept by the machine's place until an interface is back on it. */
     private final Map<GlobalPos, Map<Flight, Amount>> lostAt = new HashMap<>();
     private final Map<IMachineAccess, MachineState> machines = new LinkedHashMap<>();
+    /** products of interfaces taken off that the network had no room for yet */
+    private final Map<AEKey, Long> orphans = new LinkedHashMap<>();
 
     /** Machine access interfaces added and gone since the last tick. */
     private void syncMachines(ExecutionEnv env) {
@@ -1024,8 +1041,8 @@ public final class HubState {
                 }
             m.feed = null;
         }
-        for (Map.Entry<AEKey, Long> e : m.overflow.entrySet())
-            insertAll(env, env.index().idOf(e.getKey()), Amount.of(e.getValue()));
+        // products held back while the network was full: kept by the hub until it takes them
+        m.overflow.forEach((k, v) -> orphans.merge(k, v, Long::sum));
         m.overflow.clear();
         GlobalPos at = m.place;
         for (Map.Entry<Flight, Amount> e : m.inFlight.entrySet()) {
@@ -1067,6 +1084,14 @@ public final class HubState {
 
     /** Every tick: products out of every machine, feeds go on, probable outputs that ran out are marked. */
     private void machineTick(ExecutionEnv env) {
+        for (Iterator<Map.Entry<AEKey, Long>> it = orphans.entrySet().iterator(); it.hasNext(); ) {
+            Map.Entry<AEKey, Long> e = it.next();
+            long went = deliver(env.index().idOf(e.getKey()), e.getKey(), Amount.of(e.getValue()), env).saturatedLong();
+            if (went >= e.getValue())
+                it.remove();
+            else
+                e.setValue(e.getValue() - went);
+        }
         for (MachineState m : machines.values()) {
             ServerLevel level = m.access.getMachineLevel();
             BlockPos pos = m.access.getMachinePos();
@@ -1085,10 +1110,32 @@ public final class HubState {
             });
             if (m.access.isAccessActive())
                 feed(m, level, pos);
+            pruneFlights(m, env);
         }
         for (Job job : jobs)
             for (Map.Entry<Integer, ChanceProgress> e : job.chances.entrySet())
                 chanceCheckMachine(job, e.getKey(), e.getValue(), env);
+    }
+
+    /**
+     * Runs no longer in this machine: those of jobs that ended, and those of patterns whose
+     * products all come with a probability (no product says a run is done) once the machine has
+     * none of their materials left.
+     */
+    private void pruneFlights(MachineState m, ExecutionEnv env) {
+        for (Iterator<Map.Entry<Flight, Amount>> it = m.inFlight.entrySet().iterator(); it.hasNext(); ) {
+            Flight f = it.next().getKey();
+            if (f.job().finished || f.job().cancelled || !jobs.contains(f.job())) {
+                it.remove();
+                continue;
+            }
+            Pattern pat = f.job().snap.pattern(f.pattern());
+            boolean sure = false;
+            for (int o = 0; o < pat.outputCount() && !sure; o++)
+                sure = !pat.isChance(o);
+            if (!sure && !(m.feed != null && m.feed.job == f.job() && m.feed.pattern == f.pattern()) && !holds(m, pat, env))
+                it.remove();
+        }
     }
 
     /** A cancelled job's run that is not all in: what is left goes to network storage, not into the machine. */
@@ -1218,8 +1265,10 @@ public final class HubState {
      */
     private Amount dispatchMachines(Job job, Task t, Pattern pat, Amount n, @Nullable ChanceProgress chance, ExecutionEnv env) {
         List<MachineState> all = machinesFor(pat, env);
+        lastDispatchNote = "找不到機器";
         if (all.isEmpty())
             return Amount.ZERO;
+        lastDispatchNote = "上一批機率樣板還沒做完";
         if (chance != null && chance.runsDone.signum() > 0)
             for (MachineState m : all)
                 if (busyWith(m, job, t.pattern, env))
@@ -1232,8 +1281,10 @@ public final class HubState {
                 continue;   // the previous pattern's materials are still in
             free.add(m);
         }
+        lastDispatchNote = all.size() + " 台機器都在餵料或阻擋中";
         if (free.isEmpty())
             return Amount.ZERO;
+        lastDispatchNote = all.size() + " 台機器、" + free.size() + " 台空著";
         if (chance != null && !chance.expected) {
             chance.need.forEach((item, a) -> expect(job, item, a, env.nowNanos()));
             chance.expected = true;
@@ -1246,19 +1297,46 @@ public final class HubState {
             MachineState m = free.get((i + rotate) % k);
             long runs = share + (i < extra ? 1 : 0);
             for (long c = 0; c < runs; c++) {
-                if (!startRun(job, t, pat, m, env))
+                if (!startRun(job, t, pat, m, env)) {
+                    lastDispatchNote += "，訂單裡的材料不夠了";
                     return Amount.of(sent);     // out of materials
+                }
                 sent++;
                 if (chance != null)
                     chance.ran(Amount.ONE);
                 ServerLevel level = m.access.getMachineLevel();
                 if (level != null)
                     feed(m, level, m.access.getMachinePos());
-                if (m.feed != null)
+                if (m.feed != null) {
+                    lastDispatchNote += "，機器放不下：" + leftOf(m.feed);
                     break;                      // the machine takes the rest over the next ticks
+                }
             }
         }
         return Amount.of(sent);
+    }
+
+    /** Why the last machine dispatch sent what it sent, for the debug log. */
+    private String lastDispatchNote = "";
+    private final Map<Task, String> lastDebugLine = new java.util.WeakHashMap<>();
+
+    private static String nameOf(Pattern pat, ExecutionEnv env) {
+        for (int o = 0; o < pat.outputCount(); o++)
+            if (!pat.isByproduct(o)) {
+                AEKey k = env.index().keyOf(pat.outputItem(o));
+                return k == null ? "?" : k.getDisplayName().getString();
+            }
+        return "?";
+    }
+
+    private static String leftOf(Feed f) {
+        StringBuilder sb = new StringBuilder();
+        for (Part p : f.parts)
+            if (p.left > 0)
+                sb.append(sb.isEmpty() ? "" : "、").append(p.key.getDisplayName().getString()).append(" 還有 ").append(p.left)
+                        .append(" 放不進去（").append(p.faces.stream().map(d -> d == null ? "不指定面" : d.getName())
+                                .collect(java.util.stream.Collectors.joining("、"))).append("）");
+        return sb.toString();
     }
 
     /** Takes one run's materials out of the job and starts feeding them to {@code m}. */
