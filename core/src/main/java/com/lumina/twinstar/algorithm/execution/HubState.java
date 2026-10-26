@@ -25,6 +25,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -1156,18 +1157,26 @@ public final class HubState {
             m.feed = null;
     }
 
-    /** The machines of {@code pat} on the grid, working and loaded. */
+    /**
+     * The machines of {@code pat} on the grid, working and loaded: the block an interface sits on is
+     * that machine, or the machine the player set on the interface is (a multiblock's port, another
+     * tier of the same machine).
+     */
     private List<MachineState> machinesFor(Pattern pat, ExecutionEnv env) {
         List<MachineState> out = new ArrayList<>();
         for (MachineState m : machines.values()) {
-            Item machine = m.access.getMachine();
             ServerLevel level = m.access.getMachineLevel();
-            if (machine == null || level == null || !m.access.isAccessActive() || !level.isLoaded(m.access.getMachinePos()))
+            BlockPos pos = m.access.getMachinePos();
+            if (level == null || !m.access.isAccessActive() || !level.isLoaded(pos))
                 continue;
-            if (env.index().find(AEItemKey.of(machine)) == pat.machine)
+            if (isMachine(level.getBlockState(pos).getBlock().asItem(), pat, env) || isMachine(m.access.getMachine(), pat, env))
                 out.add(m);
         }
         return out;
+    }
+
+    private static boolean isMachine(@Nullable Item item, Pattern pat, ExecutionEnv env) {
+        return item != null && item != Items.AIR && env.index().find(AEItemKey.of(item)) == pat.machine;
     }
 
     /** Every key the pattern's materials can be (substitutes too): what "its materials are still in" looks for. */

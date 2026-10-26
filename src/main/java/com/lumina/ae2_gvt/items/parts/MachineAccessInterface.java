@@ -29,7 +29,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -37,8 +36,8 @@ import net.minecraft.world.phys.Vec3;
  * on it ({@link IMachineAccess}; the hub does the work through the machine's capabilities). Set in
  * its screen:
  * <ul>
- *   <li>the machine it stands for (a ghost slot, filled with the block it is put on; change it for a
- *   multiblock's port or another tier of the same machine);</li>
+ *   <li>a machine it also stands for, besides the block it is on (a ghost slot, empty by default:
+ *   for a multiblock's port or another tier of the same machine);</li>
  *   <li>blocking: another pattern's materials wait until the previous one's are gone (default off);</li>
  *   <li>how materials go in: through its own face, the faces the pattern gives, or no face.</li>
  * </ul>
@@ -84,19 +83,7 @@ public class MachineAccessInterface extends AEBasePart implements IMachineAccess
         return 4;
     }
 
-    // ── placing and the screen ──
-
-    /** Stands for the block it is put on, until the player says otherwise. */
-    @Override
-    public void onPlacement(Player player) {
-        super.onPlacement(player);
-        if (machineInv.getStackInSlot(0).isEmpty() && getLevel() != null) {
-            Item item = getLevel().getBlockState(getMachinePos()).getBlock().asItem();
-            if (item != Items.AIR) {
-                machineInv.setItemDirect(0, new ItemStack(item));
-            }
-        }
-    }
+    // ── the screen ──
 
     @Override
     public boolean onUseWithoutItem(Player player, Vec3 pos) {

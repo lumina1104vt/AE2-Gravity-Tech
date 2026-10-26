@@ -20,7 +20,7 @@
   "ae2_gvt.face.south": "南面",
   "ae2_gvt.face.west": "西面",
   "ae2_gvt.face.east": "東面",
-  "gui.ae2_gvt.machine_access.machine": "代表的機器",
+  "gui.ae2_gvt.machine_access.machine": "也代表的機器（選填）",
   "gui.ae2_gvt.machine_access.blocking_on": "阻擋：開",
   "gui.ae2_gvt.machine_access.blocking_off": "阻擋：關",
   "gui.ae2_gvt.machine_access.insert.default": "放入：接口面",
