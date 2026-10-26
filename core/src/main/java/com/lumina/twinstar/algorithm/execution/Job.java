@@ -43,8 +43,11 @@ public final class Job {
     /** last time each expected item decreased (or was first expected): stuck detection */
     final Map<Integer, Long> outstandingSince = new HashMap<>();
     final Map<Integer, StuckMark> stuck = new TreeMap<>();
-    /** black-hole capacity still held; released as items leave the job */
+    /** black-hole capacity still held (AE2's bytes); released as items leave the job and runs are done */
     Amount occupancy;
+    /** keys counted in fractions of a byte (fluids): amounts released so far and the whole bytes they made */
+    final AmountMap releasedUnits = new AmountMap();
+    final AmountMap releasedBytes = new AmountMap();
     Amount delivered = Amount.ZERO;
 
     /** seeds of loops still running: other tasks may not eat them */

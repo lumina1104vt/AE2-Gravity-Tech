@@ -1,6 +1,7 @@
 package com.lumina.twinstar.algorithm.cache;
 
 import com.lumina.twinstar.algorithm.model.Amount;
+import com.lumina.twinstar.algorithm.model.ByteUnits;
 import com.lumina.twinstar.algorithm.model.AmountMap;
 import com.lumina.twinstar.algorithm.model.InputKind;
 import com.lumina.twinstar.algorithm.model.LogMath;
@@ -90,11 +91,17 @@ public final class TheoryLayer {
     private boolean needRebuild = true;
     private long version;
     private volatile Snapshot published = null;
+    private ByteUnits units = ByteUnits.ITEMS;
     /** a price tier, "none in stock" or "infinite" changed since the last version */
     private boolean stockMoved;
     private volatile FlushStats lastFlush = new FlushStats(0, false, 0, 0);
 
     // ─────────────────────────────── public API ───────────────────────────────
+
+    /** How amounts count against the black-hole capacity; published with the next version. */
+    public synchronized void setUnits(ByteUnits units) {
+        this.units = units;
+    }
 
     /** The last published version (null before the first flush). */
     public Snapshot snapshot() {
@@ -364,7 +371,7 @@ public final class TheoryLayer {
                 bomItems.clone(), bomLog.clone(), producers.clone(), consumers.clone(),
                 patterns.toArray(new Pattern[0]), Arrays.copyOf(patRunLogCost, patterns.size()),
                 Arrays.copyOf(patBomItems, patterns.size()), Arrays.copyOf(patBomLog, patterns.size()),
-                sccs.toArray(new Scc[0]));
+                sccs.toArray(new Scc[0]), units);
         published = s;
         return s;
     }

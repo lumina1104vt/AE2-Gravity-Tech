@@ -198,6 +198,7 @@ public final class HubState {
             }
             payEnergy(pat, n, env);
             t.remaining = t.remaining.sub(n);
+            release(job, n);            // one byte per run
             if (chance != null)
                 chanceCheck(job, t, chance, env.nowNanos());
             if (p != null)
@@ -357,9 +358,41 @@ public final class HubState {
         Amount got = job.inventory.get(item).min(want).clampNonNegative();
         if (got.signum() > 0) {
             job.inventory.sub(item, got);
-            release(job, got);
+            releaseItems(job, item, got);
         }
         return got;
+    }
+
+    /**
+     * {@code amount} of {@code item} left the job: its bytes. Keys counted in fractions of a byte
+     * (fluids) release whole bytes as their amounts add up; the rest goes at the end.
+     */
+    private void releaseItems(Job job, int item, Amount amount) {
+        int apb = job.snap.units().amountPerByte(item);
+        if (apb == 8 || apb <= 0) {
+            release(job, amount);
+            return;
+        }
+        Amount units = job.releasedUnits.get(item).add(amount);
+        job.releasedUnits.set(item, units);
+        Amount bytes = units.mul(8).div(Amount.of(apb));
+        release(job, bytes.sub(job.releasedBytes.get(item)));
+        job.releasedBytes.set(item, bytes);
+    }
+
+    /** Items back in the job (a machine refused them): {@link #releaseItems} undone. */
+    private void reoccupy(Job job, int item, Amount amount) {
+        int apb = job.snap.units().amountPerByte(item);
+        Amount back = amount;
+        if (apb != 8 && apb > 0) {
+            Amount units = job.releasedUnits.get(item).sub(amount).clampNonNegative();
+            job.releasedUnits.set(item, units);
+            Amount bytes = units.mul(8).div(Amount.of(apb));
+            back = job.releasedBytes.get(item).sub(bytes);
+            job.releasedBytes.set(item, bytes);
+        }
+        job.occupancy = job.occupancy.add(back);
+        used = used.add(back);
     }
 
     private void release(Job job, Amount a) {
@@ -510,7 +543,7 @@ public final class HubState {
             out[s] = new KeyCounter();
             out[s].add(key, amt.longValue());
         }
-        taken.forEach((id, a) -> release(job, a));
+        taken.forEach((id, a) -> releaseItems(job, id, a));
         return out;
     }
 
@@ -527,8 +560,7 @@ public final class HubState {
                 int id = env.index().idOf(e.getKey());
                 Amount a = Amount.of(e.getLongValue());
                 job.inventory.add(id, a);
-                job.occupancy = job.occupancy.add(a);
-                used = used.add(a);
+                reoccupy(job, id, a);
             }
         }
     }
@@ -631,7 +663,7 @@ public final class HubState {
             in = in.add(insertAll(env, target, have.sub(in)));
         job.inventory.sub(target, in);
         job.delivered = job.delivered.add(in);
-        release(job, in);
+        releaseItems(job, target, in);
     }
 
     /** The requester's crafting link takes longs: an astronomical amount goes to it a few chunks per call. */

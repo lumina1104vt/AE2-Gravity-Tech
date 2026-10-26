@@ -73,7 +73,7 @@ public final class Planner {
                 if (loPlan != null)
                     r = loPlan;
             }
-            // capacity = pulled materials + intermediates + finals; shared by all running jobs
+            // capacity (AE2's bytes: amounts asked for, runs, nodes) is shared by all running jobs
             if (r.usage.compareTo(freeCapacity) > 0) {
                 Amount m = r.amount.mul(freeCapacity).div(r.usage.max(Amount.ONE));
                 // fixed overheads and rounding make the ratio estimate too high: step down until it fits

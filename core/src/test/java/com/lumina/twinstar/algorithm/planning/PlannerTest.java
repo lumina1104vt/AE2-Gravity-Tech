@@ -39,8 +39,9 @@ class PlannerTest {
         assertEquals(Amount.of(3), p.patternTimes.get(1));
         assertEquals(Amount.of(3), p.patternTimes.get(2));
         assertEquals(Amount.of(12), p.pulled.get(ORE));
-        // usage = pulled 12 + made (12 ingots + 3 plates + 3 gears)
-        assertEquals(Amount.of(30), p.usage);
+        // usage, as AE2 counts bytes: asked for 3 gears + 3 plates + 12 ingots + 12 ore = 30,
+        // one per run (12 + 3 + 3), eight per node (4 items + 3 patterns)
+        assertEquals(Amount.of(30 + 18 + 56), p.usage);
     }
 
     @Test
@@ -315,10 +316,12 @@ class PlannerTest {
         TestGraphs g = gears().stock(ORE, 100);
         Snapshot s = g.flush();
         OrderResult r = Planner.order(s, g.stockSnapshot(), GEAR, Amount.of(3), OrderMode.EXACT,
-                Amount.of(10), new Overlay(), Deadline.NONE);
+                Amount.of(80), new Overlay(), Deadline.NONE);
         OrderResult.Rejected rej = assertInstanceOf(OrderResult.Rejected.class, r);
-        assertEquals(Amount.ONE, rej.suggested());     // one gear: 4 ore + 4 ingots + 1 plate + 1 gear = 10
-        assertEquals(Amount.of(30), rej.usage());
+        // one gear: asked for 4 ore + 4 ingots + 1 plate + 1 gear = 10, 6 runs, 7 nodes = 72;
+        // two take 88
+        assertEquals(Amount.ONE, rej.suggested());
+        assertEquals(Amount.of(104), rej.usage());
     }
 
     @Test

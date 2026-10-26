@@ -28,7 +28,10 @@ public final class Plan {
     public final AmountMap missing;
     /** what is left in the CPU at the end and goes back to the network (leftovers, catalysts, containers, seeds) */
     public final AmountMap leftover;
-    /** black-hole capacity: pulled materials + everything made (intermediates and finals) */
+    /**
+     * black-hole capacity, in AE2's CPU bytes: what the plan asks for of every item (from stock or
+     * made; one byte per item, per bucket of fluid), one per run, eight per item and pattern of the plan
+     */
     public final Amount usage;
     /** firing orders for policy cycles the plain executor rules would get stuck on; key = scc index */
     public final Map<Integer, CycleContract> contracts;

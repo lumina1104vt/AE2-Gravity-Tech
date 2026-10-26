@@ -866,14 +866,18 @@ public final class DemandPass {
             if (hold.signum(i) > 0)
                 leftover.add(i, hold.get(i));
         returned.forEach(leftover::add);
-        Amount usage = pulled.total();
-        for (var e : patternTimes.entries()) {
-            Pattern p = snap.pattern(e.getKey());
-            Amount perRun = Amount.ZERO;
-            for (int o = 0; o < p.outputCount(); o++)
-                perRun = perRun.add(p.outputAmount(o));
-            usage = usage.add(perRun.mul(e.getValue()));
-        }
+        // black-hole capacity as AE2 counts a CPU's bytes: every amount the plan asks for (from
+        // stock or made), one byte per run, eight per node (item asked for or pattern used)
+        Amount usage = Amount.ZERO;
+        int nodes = patternTimes.size();
+        for (int i = 0; i < need.size(); i++)
+            if (need.signum(i) > 0) {
+                usage = usage.add(snap.units().bytes(i, need.get(i)));
+                nodes++;
+            }
+        for (var e : patternTimes.entries())
+            usage = usage.add(e.getValue());
+        usage = usage.add(Amount.of(8L * nodes));
         Map<Integer, Plan.ChanceNeed> chances = new HashMap<>();
         chanceNeed.forEach((p, items) -> chances.put(p, new Plan.ChanceNeed(items.copy(), sureRuns.get(p))));
         return new Plan(snap.version(), target, amount, patternTimes.copy(), pulled.copy(), drawLater.copy(), missing.copy(),

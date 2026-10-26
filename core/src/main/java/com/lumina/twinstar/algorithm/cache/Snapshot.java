@@ -1,6 +1,7 @@
 package com.lumina.twinstar.algorithm.cache;
 
 import com.lumina.twinstar.algorithm.model.Amount;
+import com.lumina.twinstar.algorithm.model.ByteUnits;
 import com.lumina.twinstar.algorithm.model.LogMath;
 import com.lumina.twinstar.algorithm.model.Pattern;
 import org.jetbrains.annotations.Nullable;
@@ -35,10 +36,11 @@ public final class Snapshot {
 
     // ── policy cycles ──
     final Scc[] sccs;
+    private final ByteUnits units;
 
     Snapshot(long version, int items, int[] level, int[] scc, double[] logCost, double[] logRawPrice, int[] best,
              int[][] bomItems, double[][] bomLog, int[][] producers, int[][] consumers,
-             Pattern[] patterns, double[] patRunLogCost, int[][] patBomItems, double[][] patBomLog, Scc[] sccs) {
+             Pattern[] patterns, double[] patRunLogCost, int[][] patBomItems, double[][] patBomLog, Scc[] sccs, ByteUnits units) {
         this.version = version;
         this.items = items;
         this.level = level;
@@ -55,6 +57,12 @@ public final class Snapshot {
         this.patBomItems = patBomItems;
         this.patBomLog = patBomLog;
         this.sccs = sccs;
+        this.units = units;
+    }
+
+    /** How amounts count against the black-hole capacity (AE2's bytes). */
+    public ByteUnits units() {
+        return units;
     }
 
     public long version() {

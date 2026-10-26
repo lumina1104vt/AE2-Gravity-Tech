@@ -128,6 +128,10 @@ public final class TwinStarService implements ITwinStarService, IGridServiceProv
     public TwinStarService(IGrid grid, IEnergyService energy) {
         this.grid = grid;
         this.energy = energy;
+        theory.setUnits(id -> {
+            AEKey key = index.keyOf(id);
+            return key == null ? 8 : key.getType().getAmountPerByte();
+        });
         LIVE.add(this);
     }
 
