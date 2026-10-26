@@ -2,6 +2,7 @@ package com.lumina.twinstar.order;
 
 import appeng.api.stacks.AEKey;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,10 +30,11 @@ public record PlanView(AEKey target, String amount, int patterns, long planNanos
      * in {@code runs} runs, taken from stock, an infinite source, missing). Empty text = none.
      */
     public record Row(int depth, AEKey key, String amount, String runs, String stock, boolean infinite, String missing,
-                      boolean shared) {
+                      boolean shared, @Nullable AEKey missingMachine) {
     }
 
-    public record Missing(AEKey key, String amount) {
+    /** {@code machine}: a machine with no interface on the grid ({@code key} is the machine, no amount). */
+    public record Missing(AEKey key, String amount, boolean machine) {
     }
 
     public void write(RegistryFriendlyByteBuf buf) {
@@ -55,12 +57,16 @@ public record PlanView(AEKey target, String amount, int patterns, long planNanos
             buf.writeBoolean(r.infinite());
             buf.writeUtf(r.missing());
             buf.writeBoolean(r.shared());
+            buf.writeBoolean(r.missingMachine() != null);
+            if (r.missingMachine() != null)
+                AEKey.writeKey(buf, r.missingMachine());
         }
         buf.writeBoolean(truncated);
         buf.writeVarInt(missing.size());
         for (Missing m : missing) {
             AEKey.writeKey(buf, m.key());
             buf.writeUtf(m.amount());
+            buf.writeBoolean(m.machine());
         }
     }
 
@@ -78,12 +84,12 @@ public record PlanView(AEKey target, String amount, int patterns, long planNanos
         List<Row> rows = new ArrayList<>(Math.min(n, PlanTree.MAX_ROWS));
         for (int i = 0; i < n; i++)
             rows.add(new Row(buf.readVarInt(), AEKey.readKey(buf), buf.readUtf(), buf.readUtf(), buf.readUtf(),
-                    buf.readBoolean(), buf.readUtf(), buf.readBoolean()));
+                    buf.readBoolean(), buf.readUtf(), buf.readBoolean(), buf.readBoolean() ? AEKey.readKey(buf) : null));
         boolean truncated = buf.readBoolean();
         int m = buf.readVarInt();
         List<Missing> missing = new ArrayList<>(Math.min(m, PlanTree.MAX_ROWS));
         for (int i = 0; i < m; i++)
-            missing.add(new Missing(AEKey.readKey(buf), buf.readUtf()));
+            missing.add(new Missing(AEKey.readKey(buf), buf.readUtf(), buf.readBoolean()));
         return new PlanView(target, amount, patterns, nanos, usage, free, parallel, complete, fits, rows, truncated, missing);
     }
 }

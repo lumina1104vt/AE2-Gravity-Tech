@@ -119,7 +119,7 @@ public class PlanScreen extends AEBaseScreen<PlanMenu> {
                 break;
             PlanView.Row row = rows.get(index);
             int x = TREE_X + 2 + Math.min(row.depth(), MAX_INDENT_DEPTH) * 10;
-            if (!row.missing().isEmpty())
+            if (!row.missing().isEmpty() || row.missingMachine() != null)
                 g.fill(TREE_X, y, TREE_X + TREE_W, y + ROW_H - 1, MISSING_ROW);
             if (row.depth() > 0) {
                 g.vLine(x - 6, y - 2, y + 9, LINE);
@@ -147,6 +147,9 @@ public class PlanScreen extends AEBaseScreen<PlanMenu> {
             parts.add(Component.translatable("gui.twinstar.plan.infinite").withColor(GOOD));
         if (!row.missing().isEmpty())
             parts.add(Component.translatable("gui.twinstar.plan.missing", shortText(row.missing(), row.key())).withColor(BAD));
+        if (row.missingMachine() != null)
+            parts.add(Component.translatable("gui.twinstar.plan.missing_machine", AEKeyRendering.getDisplayName(row.missingMachine()))
+                    .withColor(BAD));
         MutableComponent out = Component.empty();
         for (int i = 0; i < parts.size(); i++) {
             if (i > 0)
@@ -179,14 +182,20 @@ public class PlanScreen extends AEBaseScreen<PlanMenu> {
                     SIDE_X, 84 + HEADER, GOOD, SIDE_W);
             return;
         }
-        g.drawString(font, Component.translatable("gui.twinstar.plan.missing_title", missing.size()), SIDE_X, 83 + HEADER, BAD, false);
+        long machines = missing.stream().filter(PlanView.Missing::machine).count();
+        long materials = missing.size() - machines;
+        Component title = machines == 0 ? Component.translatable("gui.twinstar.plan.missing_title", materials)
+                : materials == 0 ? Component.translatable("gui.twinstar.plan.missing_machines_title", machines)
+                : Component.translatable("gui.twinstar.plan.missing_both_title", materials, machines);
+        g.drawString(font, title, SIDE_X, 83 + HEADER, BAD, false);
         int shown = missing.size() > MISSING_ROWS ? MISSING_ROWS - 1 : missing.size();
         for (int i = 0; i < shown; i++) {
             PlanView.Missing m = missing.get(i);
             int y = MISSING_Y + i * MISSING_ROW_H;
             AEKeyRendering.drawInGui(minecraft, g, SIDE_X, y, m.key());
             small(g, AEKeyRendering.getDisplayName(m.key()), SIDE_X + 18, y + 1, BAD, SIDE_W - 18);
-            small(g, Component.literal("×" + shortText(m.amount(), m.key())), SIDE_X + 18, y + 9, BAD, SIDE_W - 18);
+            small(g, m.machine() ? Component.translatable("gui.twinstar.plan.machine")
+                    : Component.literal("×" + shortText(m.amount(), m.key())), SIDE_X + 18, y + 9, BAD, SIDE_W - 18);
         }
         if (shown < missing.size())
             small(g, Component.translatable("gui.twinstar.plan.more_missing", missing.size() - shown), SIDE_X,
@@ -223,8 +232,9 @@ public class PlanScreen extends AEBaseScreen<PlanMenu> {
             int shown = missing.size() > MISSING_ROWS ? MISSING_ROWS - 1 : missing.size();
             if (index < shown) {
                 PlanView.Missing m = missing.get(index);
-                drawTooltip(g, mouseX, mouseY, List.of(AEKeyRendering.getDisplayName(m.key()),
-                        Component.translatable("gui.twinstar.plan.missing", fullText(m.amount(), m.key())).withColor(BAD)));
+                drawTooltip(g, mouseX, mouseY, List.of(AEKeyRendering.getDisplayName(m.key()), m.machine()
+                        ? Component.translatable("gui.twinstar.plan.machine.tooltip").withColor(BAD)
+                        : Component.translatable("gui.twinstar.plan.missing", fullText(m.amount(), m.key())).withColor(BAD)));
             }
         } else if (x >= SIDE_X && x < SIDE_X + SIDE_W && y >= 18 + HEADER && y < 76 + HEADER) {
             drawTooltip(g, mouseX, mouseY, List.of(AEKeyRendering.getDisplayName(view.target()),
@@ -246,6 +256,9 @@ public class PlanScreen extends AEBaseScreen<PlanMenu> {
             lines.add(Component.translatable("gui.twinstar.plan.infinite").withColor(GOOD));
         if (!row.missing().isEmpty())
             lines.add(Component.translatable("gui.twinstar.plan.missing", fullText(row.missing(), row.key())).withColor(BAD));
+        if (row.missingMachine() != null)
+            lines.add(Component.translatable("gui.twinstar.plan.missing_machine", AEKeyRendering.getDisplayName(row.missingMachine()))
+                    .withColor(BAD));
         if (row.shared())
             lines.add(Component.translatable("gui.twinstar.plan.shared.tooltip").withColor(DIM));
         return lines;

@@ -310,12 +310,16 @@ public final class TwinStarService implements ITwinStarService, IGridServiceProv
             // after many pattern changes) can take longer than that on a big pack and is not planning
             Deadline deadline = Deadline.startingNow();
             long t0 = System.nanoTime();
-            OrderResult r = Planner.order(snap, stock, target, amount, mode, free, withoutMissingMachines(snap, machinesHere),
-                    deadline);
+            Overlay restricted = withoutMissingMachines(snap, machinesHere);
+            OrderResult r = Planner.order(snap, stock, target, amount, mode, free, restricted, deadline);
+            if (!restricted.disabled.isEmpty() && r instanceof OrderResult.Accepted a && !a.plan().isComplete())
+                r = bestWithMachinesMarked(snap, stock, target, amount, mode, free, restricted, r);
             long took = System.nanoTime() - t0;
             if (r instanceof OrderResult.Accepted a) {
-                EngineLog.planned(a.plan(), snap, index, mode, a.plan().isComplete() ? "可以完成" : "缺料", took);
-                planned(what, amount, a.plan().isComplete() ? "可以完成" : "缺料", took);
+                String outcome = a.plan().isComplete() ? "可以完成"
+                        : !a.plan().missingMachines.isEmpty() ? "缺機器" + (a.plan().missing.isEmpty() ? "" : "、缺料") : "缺料";
+                EngineLog.planned(a.plan(), snap, index, mode, outcome, took);
+                planned(what, amount, outcome, took);
                 return new PlanWrapper(a.plan(), snap, index);
             }
             if (r instanceof OrderResult.Rejected rej) {
@@ -562,6 +566,23 @@ public final class TwinStarService implements ITwinStarService, IGridServiceProv
                 out.add(index.idOf(appeng.api.stacks.AEItemKey.of(a.getMachine())));
         }
         return out;
+    }
+
+    /**
+     * Nothing can be made without the machines that are missing: the best plan as if they were
+     * there, with the machine patterns it uses marked by the machine they lack (the plan screen
+     * shows "缺機器"; the plan cannot be started). Kept as it was when that plan lacks no machine.
+     */
+    private static OrderResult bestWithMachinesMarked(Snapshot snap, StockSnapshot stock, int target, Amount amount,
+                                                      OrderMode mode, Amount free, Overlay restricted, OrderResult without) {
+        OrderResult r = Planner.order(snap, stock, target, amount, mode, free, new Overlay(), Deadline.startingNow());
+        if (!(r instanceof OrderResult.Accepted a))
+            return without;
+        Map<Integer, Integer> lacking = new LinkedHashMap<>();
+        for (int p : a.plan().patternTimes.keys())
+            if (restricted.disabled.get(p))
+                lacking.put(p, snap.pattern(p).machine);
+        return lacking.isEmpty() ? without : new OrderResult.Accepted(a.plan().withMissingMachines(lacking));
     }
 
     /** An order may not use a machine pattern whose machine has no interface on the grid. */

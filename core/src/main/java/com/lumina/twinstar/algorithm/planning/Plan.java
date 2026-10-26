@@ -41,6 +41,11 @@ public final class Plan {
     public final List<Recycle> recycles;
     /** per pattern run for outputs that come only with a probability: what the plan counts on; key = pattern */
     public final Map<Integer, ChanceNeed> chanceNeeds;
+    /**
+     * Machine patterns of this plan whose machine has no interface on the grid: pattern → the
+     * machine's item id. Set on the best plan shown when no plan without them could be made.
+     */
+    public final Map<Integer, Integer> missingMachines;
 
     /**
      * One loop of an item the plan uses again: {@code seed} of {@code item} starts it, the rest of the
@@ -87,11 +92,34 @@ public final class Plan {
         this.loopSeeds = Map.copyOf(loopSeeds);
         this.recycles = List.copyOf(recycles);
         this.chanceNeeds = Map.copyOf(chanceNeeds);
+        this.missingMachines = Map.of();
     }
 
-    /** Can be made with what the network has. */
+    private Plan(Plan p, Map<Integer, Integer> missingMachines) {
+        this.snapshotVersion = p.snapshotVersion;
+        this.target = p.target;
+        this.amount = p.amount;
+        this.patternTimes = p.patternTimes;
+        this.pulled = p.pulled;
+        this.drawLater = p.drawLater;
+        this.missing = p.missing;
+        this.leftover = p.leftover;
+        this.usage = p.usage;
+        this.contracts = p.contracts;
+        this.loopSeeds = p.loopSeeds;
+        this.recycles = p.recycles;
+        this.chanceNeeds = p.chanceNeeds;
+        this.missingMachines = Map.copyOf(missingMachines);
+    }
+
+    /** This plan with the machines it lacks marked (it cannot run until they are there). */
+    public Plan withMissingMachines(Map<Integer, Integer> missingMachines) {
+        return new Plan(this, missingMachines);
+    }
+
+    /** Can be made with what the network has (materials and machines). */
     public boolean isComplete() {
-        return missing.isEmpty();
+        return missing.isEmpty() && missingMachines.isEmpty();
     }
 
     @Override

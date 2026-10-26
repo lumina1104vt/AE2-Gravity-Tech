@@ -46,10 +46,16 @@ public final class PlanTree {
         node(plan, snap, index, producedBy, plan.target, 0, new HashSet<>(), rows, truncated);
 
         List<PlanView.Missing> missing = new ArrayList<>();
+        // machines first, each once
+        new LinkedHashSet<>(plan.missingMachines.values()).forEach(m -> {
+            AEKey key = index.keyOf(m);
+            if (key != null && missing.size() < MAX_ROWS)
+                missing.add(new PlanView.Missing(key, "", true));
+        });
         plan.missing.forEach((id, a) -> {
             AEKey key = index.keyOf(id);
             if (key != null && missing.size() < MAX_ROWS)
-                missing.add(new PlanView.Missing(key, text(a.bigValue())));
+                missing.add(new PlanView.Missing(key, text(a.bigValue()), false));
         });
 
         AEKey target = index.keyOf(plan.target);
@@ -81,8 +87,12 @@ public final class PlanTree {
         BigInteger missing = plan.missing.get(x).bigValue();
         BigInteger used = pulled.add(missing).add(produced).subtract(plan.leftover.get(x).bigValue()).max(BigInteger.ZERO);
         boolean shared = !ps.isEmpty() && !listed.add(x);
+        AEKey machine = null;
+        for (int p : ps)
+            if (machine == null && plan.missingMachines.containsKey(p))
+                machine = index.keyOf(plan.missingMachines.get(p));
         rows.add(new PlanView.Row(depth, key, text(used), shared ? "" : text(runs),
-                text(pulled.subtract(later)), later.signum() > 0, text(missing), shared));
+                text(pulled.subtract(later)), later.signum() > 0, text(missing), shared, machine));
         if (shared)
             return;     // its inputs are listed under its first appearance
         LinkedHashSet<Integer> inputs = new LinkedHashSet<>();
