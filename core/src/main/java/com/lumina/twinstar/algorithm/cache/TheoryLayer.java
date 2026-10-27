@@ -65,8 +65,8 @@ public final class TheoryLayer {
     int[][] producers = new int[0][];
     private int[][] consumers = new int[0][];
     private int[] priceTier = new int[0];
-    private final BitSet noStock = new BitSet();
-    private final BitSet infinite = new BitSet();
+    final BitSet noStock = new BitSet();
+    final BitSet infinite = new BitSet();
     /**
      * Items only loops without an outside input make, loops that do not grow (raw iron ⇄ raw iron
      * block, wheat ⇄ hay bale): they are mined, so they are priced like raws by their own stock;
@@ -150,7 +150,7 @@ public final class TheoryLayer {
                 pending.set(p.outputItem(i));
     }
 
-    /** Reads a whole stock snapshot; only raws whose price tier changed become dirty. */
+    /** Reads a whole stock snapshot; raws whose price tier changed become dirty, and loop members whose "any in stock" did. */
     public synchronized void applyStock(StockSnapshot s) {
         ensureItems(s.size());
         for (int k = 0; k < items; k++)
@@ -161,14 +161,15 @@ public final class TheoryLayer {
     public synchronized void onStockChanged(int k, Amount stock, boolean isInfinite) {
         ensureItems(k + 1);
         boolean changed = false;
+        boolean have = false;     // "any in stock" flipped: a seed of a loop came or ran out
         if (isInfinite != infinite.get(k)) {
             infinite.set(k, isInfinite);
-            changed = true;
+            changed = have = true;
         }
         boolean none = stock.signum() <= 0;
         if (none != noStock.get(k)) {
             noStock.set(k, none);
-            changed = true;
+            changed = have = true;
         }
         if (!none) {
             double lg = stock.log10();
@@ -186,6 +187,15 @@ public final class TheoryLayer {
             stockMoved = true;      // the snapshot's raw prices change even when no component does
         if (changed && (producers[k].length == 0 || mined.get(k)))
             pending.set(k);
+        else if (have && inLoop(k))
+            pending.set(k);         // a loop without seeds is priced as out of stock (PolicyCycles)
+    }
+
+    /** {@code k} is a member of a loop as of the last flush. */
+    private boolean inLoop(int k) {
+        if (k >= compOf.length || compOf[k] < 0 || compOf[k] >= comps.size())
+            return false;
+        return comps.get(compOf[k]).length > 1 || selfLoop(k);
     }
 
     /**

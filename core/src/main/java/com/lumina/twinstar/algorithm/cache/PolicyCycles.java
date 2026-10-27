@@ -490,6 +490,108 @@ final class PolicyCycles {
             }
         }
         solveGroupCost(group, idx, pol);
+        priceUnseeded(group, idx, pol);
+    }
+
+    /**
+     * A loop of the policy that needs members up front (its seeds) and has none of any seed option:
+     * none in stock, and none made by a route from outside the loop. It cannot start, so it is priced
+     * like a raw out of stock (at least {@link TheoryLayer#LOG_HIGH}); a route that does not need it
+     * wins. Coming into stock makes the member dirty ({@code TheoryLayer.onStockChanged}).
+     */
+    private void priceUnseeded(int[] group, Map<Integer, Integer> idx, int[] pol) {
+        Set<Integer> members = new HashSet<>();
+        for (int m : group)
+            members.add(m);
+        LinkedHashSet<Integer> distinct = new LinkedHashSet<>();
+        for (int m : group) {
+            int q = pol[idx.get(m)];
+            if (q < 0)
+                return;
+            distinct.add(q);
+        }
+        int[] pats = distinct.stream().mapToInt(Integer::intValue).toArray();
+        for (AmountMap option : seeds(pats, members).options())
+            if (canSeed(option, members, distinct))
+                return;
+        for (int m : group)
+            layer.logCost[m] = Math.max(layer.logCost[m], TheoryLayer.LOG_HIGH);
+    }
+
+    /** Every seed of {@code option} is in stock, or made by a possible route that takes nothing from the loop. */
+    private boolean canSeed(AmountMap option, Set<Integer> members, Set<Integer> loopPatterns) {
+        for (int y : option.keys()) {
+            if (layer.infinite.get(y) || !layer.noStock.get(y))
+                continue;
+            boolean made = false;
+            for (int q : layer.producers[y]) {
+                if (loopPatterns.contains(q) || takesFrom(q, members))
+                    continue;
+                layer.computeRunCost(q);
+                if (layer.unitCost(q, y) != LogMath.INF) {
+                    made = true;
+                    break;
+                }
+            }
+            if (!made)
+                return false;
+        }
+        return true;
+    }
+
+    private boolean takesFrom(int q, Set<Integer> members) {
+        Pattern p = layer.patterns.get(q);
+        for (int s = 0; s < p.inputCount(); s++)
+            if (members.contains(p.inputItem(s)))
+                return true;
+        return false;
+    }
+
+    /**
+     * Seeds of a loop: run each of its patterns once, in every rotation; what each rotation needs
+     * of the members up front is an option. {@code best} needs the fewest; {@code growth}: with it
+     * the loop ends up with more members than it started with.
+     */
+    private record Seeds(List<AmountMap> options, AmountMap best, boolean growth) {
+    }
+
+    private Seeds seeds(int[] pats, Set<Integer> members) {
+        AmountMap bestSeeds = null;
+        Amount bestTotal = null;
+        boolean growth = false;
+        List<AmountMap> options = new ArrayList<>();
+        for (int r = 0; r < pats.length; r++) {
+            AmountMap seeds = new AmountMap();
+            AmountMap inv = new AmountMap();
+            for (int t = 0; t < pats.length; t++) {
+                Pattern p = layer.patterns.get(pats[(r + t) % pats.length]);
+                for (int s = 0; s < p.inputCount(); s++) {
+                    int y = p.inputItem(s);
+                    if (!members.contains(y))
+                        continue;
+                    Amount need = p.inputKind(s) == InputKind.TOOL ? Amount.ONE : p.inputAmount(s);
+                    Amount have = inv.get(y);
+                    if (have.compareTo(need) < 0) {
+                        seeds.add(y, need.sub(have));
+                        inv.set(y, need);
+                    }
+                    if (p.inputKind(s) == InputKind.CONSUME)
+                        inv.sub(y, need);
+                }
+                for (int o = 0; o < p.outputCount(); o++)
+                    if (members.contains(p.outputItem(o)) && !p.isChance(o))
+                        inv.add(p.outputItem(o), p.outputAmount(o));
+            }
+            Amount total = seeds.total();
+            if (options.stream().noneMatch(o -> o.toString().equals(seeds.toString())))
+                options.add(seeds);
+            if (bestTotal == null || total.compareTo(bestTotal) < 0) {
+                bestTotal = total;
+                bestSeeds = seeds;
+                growth = inv.total().compareTo(total) > 0;
+            }
+        }
+        return new Seeds(options, bestSeeds, growth);
     }
 
     /** c = A c + b for a cycle of the policy; no external source (or a non-convergent loop) → ∞. */
@@ -655,41 +757,10 @@ final class PolicyCycles {
             }
 
         // seeds: run each pattern once, try every rotation, keep the one needing the fewest members up front
-        AmountMap bestSeeds = null;
-        Amount bestTotal = null;
-        boolean growth = false;
-        List<AmountMap> options = new ArrayList<>();
-        for (int r = 0; r < pats.length; r++) {
-            AmountMap seeds = new AmountMap();
-            AmountMap inv = new AmountMap();
-            for (int t = 0; t < pats.length; t++) {
-                Pattern p = layer.patterns.get(pats[(r + t) % pats.length]);
-                for (int s = 0; s < p.inputCount(); s++) {
-                    int y = p.inputItem(s);
-                    if (!members.contains(y))
-                        continue;
-                    Amount need = p.inputKind(s) == InputKind.TOOL ? Amount.ONE : p.inputAmount(s);
-                    Amount have = inv.get(y);
-                    if (have.compareTo(need) < 0) {
-                        seeds.add(y, need.sub(have));
-                        inv.set(y, need);
-                    }
-                    if (p.inputKind(s) == InputKind.CONSUME)
-                        inv.sub(y, need);
-                }
-                for (int o = 0; o < p.outputCount(); o++)
-                    if (members.contains(p.outputItem(o)) && !p.isChance(o))
-                        inv.add(p.outputItem(o), p.outputAmount(o));
-            }
-            Amount total = seeds.total();
-            if (options.stream().noneMatch(o -> o.toString().equals(seeds.toString())))
-                options.add(seeds);
-            if (bestTotal == null || total.compareTo(bestTotal) < 0) {
-                bestTotal = total;
-                bestSeeds = seeds;
-                growth = inv.total().compareTo(total) > 0;
-            }
-        }
+        Seeds found = seeds(pats, members);
+        AmountMap bestSeeds = found.best();
+        boolean growth = found.growth();
+        List<AmountMap> options = new ArrayList<>(found.options());
         int[] seedItems = bestSeeds.keys();
         Amount[] seedAmounts = new Amount[seedItems.length];
         for (int i = 0; i < seedItems.length; i++)

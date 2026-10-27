@@ -82,6 +82,51 @@ class TheoryLayerTest {
     }
 
     @Test
+    void growthLoopWithoutSeedsIsPricedOutOfStock() {
+        // gear from a seed (a growth loop on dirt) in 2 steps, or from ore in 3: the same raw cost,
+        // but the loop cannot start without a seed
+        int seed = 20, dirt = 21, ingot = 22;
+        java.util.function.Consumer<TestGraphs> recipes = g -> {
+            g.pattern(b -> b.input(seed, 1).input(dirt, 1).output(seed, 2));
+            g.pattern(b -> b.input(seed, 1).output(GEAR, 1));
+            g.pattern(b -> b.input(ORE, 1).output(ingot, 1));
+            g.pattern(b -> b.input(ingot, 1).output(PLATE, 1));
+            g.pattern(b -> b.input(PLATE, 1).output(GEAR, 1));
+        };
+        TestGraphs g = new TestGraphs();
+        recipes.accept(g);
+        g.stock(dirt, 100).stock(ORE, 100);
+        Snapshot none = g.flush();
+        assertEquals(TheoryLayer.LOG_HIGH, none.logCost(seed), 1e-9);
+        assertEquals(PLATE, g.theory.patterns.get(none.best(GEAR)).inputItem(0), "no seed: the longer route");
+
+        g.stock(seed, 1);
+        Snapshot seeded = g.flush();
+        assertEquals(seeded.logCost(dirt), seeded.logCost(seed), 1e-9);
+        assertEquals(seed, g.theory.patterns.get(seeded.best(GEAR)).inputItem(0), "a seed in stock: the loop again");
+
+        TestGraphs fresh = new TestGraphs();
+        recipes.accept(fresh);
+        fresh.stock(dirt, 100).stock(ORE, 100).stock(seed, 1);
+        Snapshot rebuilt = fresh.flush();
+        assertEquals(rebuilt.best(GEAR), seeded.best(GEAR));
+        assertEquals(rebuilt.logCost(GEAR), seeded.logCost(GEAR), 1e-9);
+
+        g.stock(seed, 0);
+        assertEquals(TheoryLayer.LOG_HIGH, g.flush().logCost(seed), 1e-9, "out of seeds again");
+    }
+
+    @Test
+    void seedMadeOutsideTheLoopIsEnough() {
+        int seed = 20, dirt = 21;
+        TestGraphs g = new TestGraphs();
+        g.pattern(b -> b.input(seed, 1).input(dirt, 1).output(seed, 2));
+        g.pattern(b -> b.input(ORE, 1).output(seed, 1));
+        g.stock(dirt, 100).stock(ORE, 100);
+        assertTrue(g.flush().logCost(seed) < TheoryLayer.LOG_HIGH);
+    }
+
+    @Test
     void growthLoopIsAPolicyCycle() {
         int seed = 20, dirt = 21;
         TestGraphs g = new TestGraphs();
