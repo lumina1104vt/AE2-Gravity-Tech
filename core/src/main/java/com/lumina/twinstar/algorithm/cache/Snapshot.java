@@ -60,6 +60,17 @@ public final class Snapshot {
         this.units = units;
     }
 
+    /**
+     * Only patterns, no theory values: what a job restored from a save runs on (its patterns by id,
+     * {@code null} for ids it does not use).
+     */
+    public static Snapshot ofPatterns(Pattern[] patterns, ByteUnits units) {
+        int n = patterns.length;
+        return new Snapshot(-1, 0, new int[0], new int[0], new double[0], new double[0], new int[0],
+                new int[0][], new double[0][], new int[0][], new int[0][], patterns, new double[n],
+                new int[n][], new double[n][], new Scc[0], units);
+    }
+
     /** How amounts count against the black-hole capacity (AE2's bytes). */
     public ByteUnits units() {
         return units;

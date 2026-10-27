@@ -46,6 +46,11 @@ public final class PatternCompiler {
     private final ItemIndex index;
     private final AtomicInteger nextId = new AtomicInteger();
 
+    /** A pattern id no pattern has had yet (patterns read back from a save get new ones). */
+    public int newPatternId() {
+        return nextId.getAndIncrement();
+    }
+
     public PatternCompiler(ItemIndex index) {
         this.index = index;
     }

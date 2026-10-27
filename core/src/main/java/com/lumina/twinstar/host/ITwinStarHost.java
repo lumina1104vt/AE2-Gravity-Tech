@@ -2,6 +2,7 @@ package com.lumina.twinstar.host;
 
 import appeng.api.config.CpuSelectionMode;
 import appeng.api.networking.security.IActionHost;
+import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.Nullable;
 
 import java.math.BigInteger;
@@ -40,4 +41,17 @@ public interface ITwinStarHost extends IActionHost {
     boolean isHostActive();
 
     CpuSelectionMode getHostWorkerMode();
+
+    /**
+     * Jobs the engine leaves with this hub when its node leaves the grid (chunk unloaded, network
+     * split): the block saves them and hands them back ({@link #takeParkedJobs}) when it joins a
+     * grid again. Null clears them.
+     */
+    default void setParkedJobs(@Nullable CompoundTag jobs) {
+    }
+
+    /** The parked jobs, cleared; null when there are none. */
+    default @Nullable CompoundTag takeParkedJobs() {
+        return null;
+    }
 }

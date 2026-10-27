@@ -31,6 +31,7 @@ import com.lumina.twinstar.algorithm.cache.TheoryLayer;
 import com.lumina.twinstar.algorithm.execution.ExecutionEnv;
 import com.lumina.twinstar.algorithm.execution.HubState;
 import com.lumina.twinstar.algorithm.execution.Job;
+import com.lumina.twinstar.algorithm.execution.JobStore;
 import com.lumina.twinstar.algorithm.model.Amount;
 import com.lumina.twinstar.algorithm.model.Deadline;
 import com.lumina.twinstar.algorithm.model.OrderMode;
@@ -135,12 +136,115 @@ public final class TwinStarService implements ITwinStarService, IGridServiceProv
             if (EngineLog.enabled())
                 Twinstar.LOGGER.info(line);
         });
-        theory.setUnits(id -> {
-            AEKey key = index.keyOf(id);
-            return key == null ? 8 : key.getType().getAmountPerByte();
-        });
+        theory.setUnits(units);
         LIVE.add(this);
     }
+
+    /** How amounts count against the black-hole capacity: AE2's amount per byte of each key type. */
+    private final com.lumina.twinstar.algorithm.model.ByteUnits units = id -> {
+        AEKey key = index.keyOf(id);
+        return key == null ? 8 : key.getType().getAmountPerByte();
+    };
+
+    // ───────────────────────────── jobs saved with the hub ─────────────────────────────
+
+    /** jobs handed over by a hub joining the grid, put back once the hub works (its level and the patterns are there) */
+    private @Nullable CompoundTag pendingJobs;
+
+    /** The host node the jobs belong to: the first hub on the grid. */
+    private @Nullable IGridNode jobsNode() {
+        return hosts.isEmpty() ? null : hosts.keySet().iterator().next();
+    }
+
+    /**
+     * The jobs to save with {@code host}'s block: null when they are not this hub's or there are none.
+     * The block saves them itself (AE2 drops a node's service data when the chunk unloads first).
+     */
+    public @Nullable CompoundTag jobsFor(ITwinStarHost host) {
+        IGridNode node = jobsNode();
+        if (node == null || hosts.get(node) != host)
+            return null;
+        if (pendingJobs != null)
+            return pendingJobs.copy();      // not put back yet: keep it as it was
+        return saveJobs(node);
+    }
+
+    private @Nullable CompoundTag saveJobs(IGridNode node) {
+        if (hub.jobs().isEmpty() || node.getLevel() == null)
+            return null;
+        try {
+            return JobStore.save(hub, index, node.getLevel().registryAccess(), System.nanoTime(), job -> {
+                CompoundTag extra = new CompoundTag();
+                for (TwinStarCpu cpu : workingCpus)
+                    if (cpu.getJob() == job && cpu.getLink() != null) {
+                        CompoundTag link = new CompoundTag();
+                        cpu.getLink().writeToNBT(link);
+                        extra.put("link", link);
+                    }
+                return extra;
+            });
+        } catch (RuntimeException e) {
+            Twinstar.LOGGER.error("Twin-star engine could not save its jobs", e);
+            return null;
+        }
+    }
+
+    /** Puts saved jobs back once the hub works; their CPUs and crafting links come back with them. */
+    private void restoreJobs() {
+        CompoundTag tag = pendingJobs;
+        ITwinStarHost host = getHost();
+        if (tag == null || !(host instanceof net.minecraft.world.level.block.entity.BlockEntity be) || be.getLevel() == null)
+            return;
+        pendingJobs = null;
+        CraftingService crafting = (CraftingService) grid.getCraftingService();
+        List<JobStore.Loaded> loaded = JobStore.load(hub, tag, index, be.getLevel().registryAccess(), be.getLevel(),
+                compiler::newPatternId, units, System.nanoTime(), Twinstar.LOGGER::warn);
+        for (JobStore.Loaded l : loaded) {
+            TwinStarCpu cpu = new TwinStarCpu(this, l.job(), null);
+            if (l.extra().contains("link")) {
+                CraftingLink link = new CraftingLink(l.extra().getCompound("link"), cpu);
+                cpu.setLink(link);
+                crafting.addLink(link);
+                if (!link.isStandalone())
+                    l.job().setFinalSink((key, amount) -> link.insert(key, amount, Actionable.MODULATE));
+            }
+            workingCpus.add(cpu);
+        }
+        if (!loaded.isEmpty())
+            Twinstar.LOGGER.info("[雙星] 還原了 {} 個工作", loaded.size());
+    }
+
+    /**
+     * The hub block is broken (not unloaded): every job ends and what it holds goes back to network
+     * storage; items that do not fit drop with the block, anything else that does not fit is lost.
+     */
+    public void hostBroken(ITwinStarHost host, List<net.minecraft.world.item.ItemStack> drops) {
+        IGridNode node = null;
+        for (Map.Entry<IGridNode, ITwinStarHost> e : hosts.entrySet())
+            if (e.getValue() == host)
+                node = e.getKey();
+        if (node == null || node != jobsNode())
+            return;
+        pendingJobs = null;
+        hub.breakDown(env(), (key, amount) -> {
+            if (!(key instanceof appeng.api.stacks.AEItemKey item))
+                return;
+            int max = Math.max(1, item.getMaxStackSize());
+            BigInteger left = amount.bigValue();
+            // an astronomical remainder cannot become item entities: at most this many stacks
+            for (int i = 0; i < MAX_DROPPED_STACKS && left.signum() > 0; i++) {
+                int n = left.min(BigInteger.valueOf(max)).intValueExact();
+                drops.add(item.toStack(n));
+                left = left.subtract(BigInteger.valueOf(n));
+            }
+        });
+        for (TwinStarCpu cpu : workingCpus)
+            if (cpu.getLink() != null)
+                cpu.getLink().cancel();
+        workingCpus.clear();
+    }
+
+    private static final int MAX_DROPPED_STACKS = 4096;
 
     // ───────────────────────────── grid lifecycle ─────────────────────────────
 
@@ -148,6 +252,14 @@ public final class TwinStarService implements ITwinStarService, IGridServiceProv
     public void addNode(IGridNode node, @Nullable CompoundTag savedData) {
         if (node.getOwner() instanceof ITwinStarHost host) {
             hosts.put(node, host);
+            // jobs left with the hub when it last left a grid (a restart, a chunk reload, a split)
+            CompoundTag parked = host.takeParkedJobs();
+            if (parked != null) {
+                if (node == jobsNode() && hub.jobs().isEmpty() && pendingJobs == null)
+                    pendingJobs = parked;
+                else
+                    host.setParkedJobs(parked);     // a second hub on the grid: its jobs wait with it
+            }
         }
         if (node.getOwner() instanceof IBigStorage big)
             bigStorages.put(node, big);
@@ -157,6 +269,13 @@ public final class TwinStarService implements ITwinStarService, IGridServiceProv
 
     @Override
     public void removeNode(IGridNode node) {
+        if (node == jobsNode() && hosts.get(node) != null) {
+            // the hub leaves the grid (chunk unloaded, network split): its jobs go with its block
+            hosts.get(node).setParkedJobs(pendingJobs != null ? pendingJobs : saveJobs(node));
+            hub.forgetAll();
+            workingCpus.clear();
+            pendingJobs = null;
+        }
         hosts.remove(node);
         bigStorages.remove(node);
         machineAccess.remove(node);
@@ -167,6 +286,8 @@ public final class TwinStarService implements ITwinStarService, IGridServiceProv
         if (!hasHub())
             return;
         syncPatterns();
+        if (pendingJobs != null)
+            restoreJobs();
         if (++ticks % STOCK_SYNC_TICKS == 0)
             syncStock();
         hub.hubTick(env());

@@ -53,13 +53,13 @@ public final class HubState {
     public static final long STUCK_MIN_NANOS = 10_000_000_000L;
     public static final long STUCK_DEFAULT_NANOS = 60_000_000_000L;
 
-    private final List<Job> jobs = new ArrayList<>();
+    final List<Job> jobs = new ArrayList<>();
     /** returns waiting inside the hub; other devices on the network cannot take them */
-    private final AmountMap pool = new AmountMap();
-    private Amount used = Amount.ZERO;
+    final AmountMap pool = new AmountMap();
+    Amount used = Amount.ZERO;
     private final Map<WindowKey, Window> windows = new LinkedHashMap<>();
     private int rotate;
-    private long nextJobId = 1;
+    long nextJobId = 1;
     /** draws of the hub's own runs for outputs that come with a probability */
     private final RandomGenerator random = new SplittableRandom();
     /** the engine's detailed log (/twinstar debug), or null */
@@ -135,6 +135,84 @@ public final class HubState {
         return job;
     }
 
+    /**
+     * Someone offers the pattern now: for a hub pattern the hub itself, for any other pattern any
+     * provider. A pattern built from ids (tests) has no source and always counts as offered; a saved
+     * pattern that could not be decoded again never does.
+     */
+    private static boolean offered(Pattern pat, ExecutionEnv env) {
+        Object source = pat.source();
+        if (source == null)
+            return true;
+        if (!(source instanceof IPatternDetails details))
+            return false;
+        boolean hub = pat.where == PatternLocation.HUB_INTERNAL || pat.where == PatternLocation.HUB_MACHINE;
+        for (ICraftingProvider prov : env.providers().apply(details))
+            if (!hub || prov instanceof com.lumina.twinstar.host.ITwinStarHost)
+                return true;
+        return false;
+    }
+
+    // ───────────────────────────── save / load ─────────────────────────────
+
+    /** A job read back from a save ({@link JobStore}): it holds its capacity again and its tasks look for work. */
+    void restore(Job job, long nowNanos) {
+        jobs.add(job);
+        used = used.add(job.occupancy);
+        nextJobId = Math.max(nextJobId, job.id + 1);
+        for (int item : job.outstanding.keys())
+            job.outstandingSince.put(item, nowNanos);
+        for (Task t : job.tasks)
+            checkReady(job, t);
+    }
+
+    /**
+     * The hub is broken: every job ends and gives back what it holds (its inventory, the returns
+     * waiting in the hub, products of machines the network had no room for) to network storage;
+     * what does not fit goes to {@code left} (the block drops items; anything else is lost).
+     */
+    public void breakDown(ExecutionEnv env, java.util.function.BiConsumer<AEKey, Amount> left) {
+        AmountMap rest = new AmountMap();
+        for (Job job : jobs) {
+            returnInventory(job, env);
+            job.inventory.forEach(rest::add);
+        }
+        for (int item : pool.keys()) {
+            Amount a = pool.get(item);
+            rest.add(item, a.sub(insertAll(env, item, a)));
+        }
+        Map<AEKey, Long> loose = new LinkedHashMap<>(orphans);
+        for (MachineState m : machines.values())
+            m.overflow.forEach((k, n) -> loose.merge(k, n, Long::sum));
+        for (RestoredMachine r : restoring.values())
+            r.overflow().forEach((k, n) -> loose.merge(k, n, Long::sum));
+        loose.forEach((k, n) -> {
+            Amount a = Amount.of(n);
+            rest.add(env.index().idOf(k), a.sub(toNetwork(env, k, a)));
+        });
+        rest.forEach((item, a) -> {
+            AEKey k = env.index().keyOf(item);
+            if (k != null && a.signum() > 0)
+                left.accept(k, a);
+        });
+        forgetAll();
+    }
+
+    /**
+     * Forgets every job and what machines hold for them, without giving anything back: they were
+     * saved with the hub's node and come back with it (chunk unloaded, network split).
+     */
+    public void forgetAll() {
+        jobs.clear();
+        pool.clear();
+        used = Amount.ZERO;
+        machines.clear();
+        lostAt.clear();
+        orphans.clear();
+        restoring.clear();
+        windows.clear();
+    }
+
     // ───────────────────────────── tick ─────────────────────────────
 
     public void hubTick(ExecutionEnv env) {
@@ -194,6 +272,15 @@ public final class HubState {
             Amount n = contractCap(job, t, want.min(supported));
             if (n.signum() <= 0)
                 continue;                  // not this pattern's turn in the loop's contract; advancing it wakes it
+            if (!offered(pat, env)) {
+                // nobody offers the pattern now (taken out, or a saved job whose pattern is gone): it
+                // waits, like AE2's own CPUs, until it is back or the job is cancelled
+                if (job.waitingPatterns.add(t.pattern))
+                    noteTask(t, pat, "等樣板（沒有供應器提供這張樣板）");
+                retryNextTick(job, t);
+                continue;
+            }
+            job.waitingPatterns.remove(t.pattern);
             n = energyCap(pat, n, env);
             if (n.signum() <= 0) {
                 noteTask(t, pat, "能量不足，每次要 " + pat.energyPerRun.toDoubleSaturated() + " AE");
@@ -1014,10 +1101,17 @@ public final class HubState {
     }
 
     /** Runs lost with a machine that went away, kept by the machine's place until an interface is back on it. */
-    private final Map<GlobalPos, Map<Flight, Amount>> lostAt = new HashMap<>();
-    private final Map<IMachineAccess, MachineState> machines = new LinkedHashMap<>();
+    final Map<GlobalPos, Map<Flight, Amount>> lostAt = new HashMap<>();
+    final Map<IMachineAccess, MachineState> machines = new LinkedHashMap<>();
     /** products of interfaces taken off that the network had no room for yet */
-    private final Map<AEKey, Long> orphans = new LinkedHashMap<>();
+    final Map<AEKey, Long> orphans = new LinkedHashMap<>();
+    /** machines as a save left them, by place, until their interface is on the grid again ({@link JobStore}) */
+    final Map<GlobalPos, RestoredMachine> restoring = new HashMap<>();
+
+    /** What a saved machine was doing: put back on the interface found at its place. */
+    record RestoredMachine(@Nullable Feed feed, int lastPattern, @Nullable Pattern lastPat, Map<Flight, Amount> inFlight,
+                           Map<AEKey, Long> overflow) {
+    }
 
     /** Machine access interfaces added and gone since the last tick. */
     private void syncMachines(ExecutionEnv env) {
@@ -1087,6 +1181,14 @@ public final class HubState {
     /** An interface on a machine whose runs were lost: they are tracked again, late products are taken. */
     private void machineBack(MachineState m, ExecutionEnv env) {
         GlobalPos at = m.place = placeOf(m.access);
+        RestoredMachine saved = at == null ? null : restoring.remove(at);
+        if (saved != null) {
+            m.feed = saved.feed();
+            m.lastPattern = saved.lastPattern();
+            m.lastPat = saved.lastPat();
+            m.inFlight.putAll(saved.inFlight());
+            saved.overflow().forEach((k, v) -> m.overflow.merge(k, v, Long::sum));
+        }
         Map<Flight, Amount> lost = at == null ? null : lostAt.remove(at);
         if (lost == null)
             return;

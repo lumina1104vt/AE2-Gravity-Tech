@@ -2,6 +2,7 @@
   "gui.twinstar.infinite": "∞",
   "gui.twinstar.machine_lost": "机器被移除：%s 次的材料留在机器里",
   "gui.twinstar.chance_short": "概率产物不足：%s",
+  "gui.twinstar.waiting_pattern": "等样板：没有供应器提供做这项的样板",
   "gui.twinstar.infinite_drawing": "无限来源：执行中陆续取出（CPU 内现有 %s）",
   "message.twinstar.plan_needs_hub": "此计划由双星引擎计算，只能由双星调度中枢执行：请在 CPU 选择中改选中枢或「自动分配」。",
   "message.twinstar.hub_needs_own_plan": "双星调度中枢只能执行由它计算的计划：请返回重新计算。",

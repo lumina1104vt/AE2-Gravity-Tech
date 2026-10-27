@@ -112,6 +112,14 @@ public final class Plan {
         this.missingMachines = Map.copyOf(missingMachines);
     }
 
+    /** A running job's plan read back from a save (ids already those of the restored job). */
+    public static Plan restore(int target, Amount amount, AmountMap patternTimes, AmountMap pulled, AmountMap drawLater,
+                               AmountMap leftover, Amount usage, Map<Integer, CycleContract> contracts,
+                               Map<Integer, AmountMap> loopSeeds, List<Recycle> recycles, Map<Integer, ChanceNeed> chanceNeeds) {
+        return new Plan(-1, target, amount, patternTimes, pulled, drawLater, new AmountMap(), leftover, usage, contracts,
+                loopSeeds, recycles, chanceNeeds);
+    }
+
     /** This plan with the machines it lacks marked (it cannot run until they are there). */
     public Plan withMissingMachines(Map<Integer, Integer> missingMachines) {
         return new Plan(this, missingMachines);

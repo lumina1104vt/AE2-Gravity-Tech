@@ -21,7 +21,9 @@ import appeng.util.inv.AppEngInternalInventory;
 import appeng.util.inv.InternalInventoryHost;
 import appeng.util.inv.filter.IAEItemFilter;
 import com.lumina.ae2_gvt.blockentities.BlockEntities;
+import com.lumina.twinstar.api.ITwinStarService;
 import com.lumina.twinstar.host.ITwinStarHost;
+import com.lumina.twinstar.service.TwinStarService;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -59,6 +61,8 @@ public class DummyTwinStarCPUBlockEntity extends AENetworkedBlockEntity
     /** per stack: one change must not decode all 50,000 again (stacks keep their identity when moved up) */
     private Map<ItemStack, IPatternDetails> decodeCache = new IdentityHashMap<>();
     private final IItemHandler insertOnly = new InsertOnly();
+    /** jobs the engine left here while the hub is off a grid (chunk unloaded, network split) */
+    private @Nullable CompoundTag parkedJobs;
 
     public DummyTwinStarCPUBlockEntity(BlockPos pos, BlockState blockState) {
         super(BlockEntities.TWINSTAR_CPU.get(), pos, blockState);
@@ -230,6 +234,26 @@ public class DummyTwinStarCPUBlockEntity extends AENetworkedBlockEntity
         return CpuSelectionMode.ANY;
     }
 
+    // ── jobs saved with the hub ──
+
+    @Override
+    public void setParkedJobs(@Nullable CompoundTag jobs) {
+        parkedJobs = jobs;
+        saveChanges();
+    }
+
+    @Override
+    public @Nullable CompoundTag takeParkedJobs() {
+        CompoundTag jobs = parkedJobs;
+        parkedJobs = null;
+        return jobs;
+    }
+
+    private @Nullable TwinStarService service() {
+        IGrid grid = getMainNode().getGrid();
+        return grid != null && grid.getService(ITwinStarService.class) instanceof TwinStarService s ? s : null;
+    }
+
     @Override
     public void saveChangedInventory(AppEngInternalInventory inv) {
         // packing moves up to 50,000 stacks one by one: one save at the end, not one per move
@@ -298,7 +322,15 @@ public class DummyTwinStarCPUBlockEntity extends AENetworkedBlockEntity
         patterns.writeToNBT(data, "patterns", registries);
         data.putString("capacity", capacity.toString());
         data.putString("parallel", parallel.toString());
+        TwinStarService service = service();
+        CompoundTag jobs = service != null ? service.jobsFor(this) : null;
+        if (jobs == null)
+            jobs = parkedJobs;
+        if (jobs != null)
+            data.put(JOBS_TAG, jobs);
     }
+
+    private static final String JOBS_TAG = "twinstarJobs";
 
     @Override
     public void loadTag(CompoundTag data, HolderLookup.Provider registries) {
@@ -308,6 +340,7 @@ public class DummyTwinStarCPUBlockEntity extends AENetworkedBlockEntity
         decoded = null;
         capacity = readAmount(data, "capacity");
         parallel = readAmount(data, "parallel");
+        parkedJobs = data.contains(JOBS_TAG, Tag.TAG_COMPOUND) ? data.getCompound(JOBS_TAG).copy() : null;
     }
 
     /** Saved as a decimal string (any size); older saves stored a long. */
@@ -325,6 +358,11 @@ public class DummyTwinStarCPUBlockEntity extends AENetworkedBlockEntity
     @Override
     public void addAdditionalDrops(Level level, BlockPos pos, List<ItemStack> drops) {
         super.addAdditionalDrops(level, pos, drops);
+        // broken: every job ends and gives back what it holds; items the network has no room for drop
+        TwinStarService service = service();
+        if (service != null)
+            service.hostBroken(this, drops);
+        parkedJobs = null;
         for (int i = 0; i < stored; i++) {
             drops.add(patterns.getStackInSlot(i));
         }

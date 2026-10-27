@@ -360,7 +360,8 @@ public final class Pattern {
             return output(item, amount, byproduct, 1);
         }
 
-        private Builder output(int item, Amount amount, boolean byproduct, double chance) {
+        /** Any output as {@link #outputCount() a built pattern} lists it (restoring a saved pattern). */
+        public Builder output(int item, Amount amount, boolean byproduct, double chance) {
             if (amount.signum() <= 0)
                 throw new IllegalArgumentException("output amount must be positive");
             outItems.add(item);

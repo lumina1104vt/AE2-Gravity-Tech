@@ -70,6 +70,8 @@ public final class Job {
     final AmountMap chanceShort = new AmountMap();
     /** runs per pattern lost with a machine that was taken away (its products are no longer waited for) */
     final AmountMap machineLost = new AmountMap();
+    /** patterns that had work but nobody offered them at the last try (等樣板) */
+    final java.util.Set<Integer> waitingPatterns = new java.util.HashSet<>();
 
     boolean suspended;
     boolean unloaded;
@@ -133,6 +135,15 @@ public final class Job {
         }
     }
 
+    /** A job read back from a save: everything but the plan is filled in by {@link JobStore}. */
+    Job(long id, Plan plan, Snapshot snap, long startNanos, Amount occupancy) {
+        this.id = id;
+        this.plan = plan;
+        this.snap = snap;
+        this.startNanos = startNanos;
+        this.occupancy = occupancy;
+    }
+
     private static boolean inLoop(Scc s, int p) {
         for (int j = 0; j < s.patternCount(); j++)
             if (s.pattern(j) == p)
@@ -171,6 +182,11 @@ public final class Job {
     /** Per pattern: runs whose materials stayed in a machine that was taken away. */
     public AmountMap machineLosses() {
         return machineLost.copy();
+    }
+
+    /** Patterns waiting for someone to offer them again (taken out, or a restored job's pattern is gone). */
+    public java.util.Set<Integer> waitingPatterns() {
+        return java.util.Set.copyOf(waitingPatterns);
     }
 
     public List<StuckMark> stuckMarks() {

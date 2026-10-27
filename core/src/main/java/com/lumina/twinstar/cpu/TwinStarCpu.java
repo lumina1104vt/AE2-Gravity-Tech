@@ -132,6 +132,14 @@ public final class TwinStarCpu implements ICraftingCPU {
                     break;
                 }
         });
+        // patterns nobody offers now: shown on the item they make
+        java.util.Set<Integer> waiting = new java.util.HashSet<>();
+        for (int p : job.waitingPatterns()) {
+            Pattern pat = snap.pattern(p);
+            for (int o = 0; o < pat.outputCount(); o++)
+                if (!pat.isByproduct(o))
+                    waiting.add(pat.outputItem(o));
+        }
         AmountMap pending = new AmountMap();
         Amount remaining = Amount.ZERO;
         for (Task t : job.tasks()) {
@@ -175,7 +183,7 @@ public final class TwinStarCpu implements ICraftingCPU {
             // exact values beside AE2's longs; infinite = more of it is still drawn from an infinite source
             ((BigStatusEntry) entry).twinstar$setBig(new BigStatusAmounts(stored.get(id).bigValue(),
                     active.get(id).bigValue(), pending.get(id).bigValue(), later.get(id).signum() > 0,
-                    chanceShort.get(id).bigValue(), lost.get(id).bigValue()));
+                    chanceShort.get(id).bigValue(), lost.get(id).bigValue(), waiting.contains(id)));
             entries.add(entry);
         }
         return new CraftingStatus(true, System.nanoTime() - job.startNanos(), remaining.saturatedLong(),
