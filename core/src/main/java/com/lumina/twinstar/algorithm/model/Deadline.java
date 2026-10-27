@@ -19,6 +19,19 @@ public record Deadline(long startNanos, long softNanos, long hardNanos) {
         return softNanos != Long.MAX_VALUE && System.nanoTime() - startNanos > softNanos;
     }
 
+    /**
+     * A part of the work that may use at most {@code budgetNanos} of what is left before the soft
+     * limit; the hard limit stays where it is. No limit stays no limit.
+     */
+    public Deadline within(long budgetNanos) {
+        if (softNanos == Long.MAX_VALUE)
+            return this;
+        long now = System.nanoTime();
+        long softLeft = Math.max(0, startNanos + softNanos - now);
+        long hard = hardNanos == Long.MAX_VALUE ? Long.MAX_VALUE : Math.max(0, startNanos + hardNanos - now);
+        return new Deadline(now, Math.min(budgetNanos, softLeft), hard);
+    }
+
     public void checkHard() {
         if (hardNanos != Long.MAX_VALUE && System.nanoTime() - startNanos > hardNanos)
             throw new PlanTimeoutException();

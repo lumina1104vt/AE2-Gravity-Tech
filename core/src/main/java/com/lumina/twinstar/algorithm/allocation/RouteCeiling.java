@@ -9,6 +9,7 @@ import com.lumina.twinstar.algorithm.planning.Split;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * C1 — when an item has several routes: how much each route can make on its own, then a greedy
@@ -34,23 +35,75 @@ public final class RouteCeiling {
         for (int p : routes) {
             if (left.signum() <= 0)
                 break;
-            Amount m = routeCeiling(pass, p, x, left);
+            Amount m = routeCeiling(pass, p, x, left, out);
             if (m.signum() <= 0)
                 continue;
             out.add(new Split(p, pass.snapshot().pattern(p).runsFor(x, m), m));
             left = left.sub(m);
+        }
+        if (left.signum() > 0 && forceRest && routes.length > 1 && !pass.deadline().softPassed()) {
+            // the ceilings see raws and the stock of direct inputs only: before the first route
+            // takes the rest (and its raws come up missing), see whether another route makes it all
+            for (int p : routes) {
+                if (used(out, p) || pass.snapshot().unitLogCost(p, x) == LogMath.INF || !mayHideStock(pass, p))
+                    continue;
+                if (pass.leftoverTrial(out, x, left, p)) {
+                    out.add(new Split(p, pass.snapshot().pattern(p).runsFor(x, left), left));
+                    left = Amount.ZERO;
+                    break;
+                }
+                if (pass.deadline().softPassed())
+                    break;
+            }
         }
         if (left.signum() > 0 && forceRest)
             out = pass.mergeInto(out, routes[0], x, left);
         return out;
     }
 
+    /**
+     * A route whose direct inputs are all raws with no substitute in stock makes nothing its BOM
+     * does not show; one with an intermediate input may find stock further down.
+     */
+    private static boolean mayHideStock(DemandPass pass, int p) {
+        Snapshot snap = pass.snapshot();
+        Pattern pat = snap.pattern(p);
+        for (int s = 0; s < pat.inputCount(); s++) {
+            if (!snap.isRaw(pat.inputItem(s)))
+                return true;
+            for (int a = 0; a < pat.alternativeCount(s); a++)
+                if (pass.available(pat.alternative(s, a)).signum() > 0)
+                    return true;
+        }
+        return false;
+    }
+
+    private static boolean used(List<Split> splits, int p) {
+        for (Split sp : splits)
+            if (sp.pattern() == p)
+                return true;
+        return false;
+    }
+
     /** The most of {@code d} that route {@code p} can make alone with the stock and ledger left in this pass. */
     public static Amount routeCeiling(DemandPass pass, int p, int x, Amount d) {
+        return routeCeiling(pass, p, x, d, List.of());
+    }
+
+    /**
+     * The same after the routes already chosen for {@code x} ({@code prior}): what they take of the
+     * raws is not there for {@code p}.
+     */
+    static Amount routeCeiling(DemandPass pass, int p, int x, Amount d, List<Split> prior) {
         Snapshot snap = pass.snapshot();
         if (snap.unitLogCost(p, x) == LogMath.INF)
             return Amount.ZERO;
-        if (fastCheck(pass, p, x, d))
+        Map<Integer, Amount> reserved = reserved(snap, x, prior);
+        java.util.function.IntFunction<Amount> have = k -> {
+            Amount r = reserved.get(k);
+            return r == null ? pass.available(k) : pass.available(k).sub(r).clampNonNegative();
+        };
+        if (fastCheck(pass, p, x, d, have))
             return d;       // most orders stop here
         // past the soft limit: stop improving (design) - no more trial runs, whatever no route
         // proves goes to the first route (found with a real pack: trials alone took over 1 s)
@@ -58,7 +111,10 @@ public final class RouteCeiling {
             return Amount.ZERO;
         // the BOM gives the most the raws allow; check it with one B run, then step down a little
         // (fixed overheads and rounding make the estimate a bit high)
-        Amount m = bomEstimate(pass, p, x, d);
+        Amount m = bomEstimate(pass, p, x, d, have);
+        if (!prior.isEmpty())
+            return m;       // a later route: the estimate only (trials replaying the earlier routes cost too much;
+                            // what it misses is the leftover trial's in greedySplit)
         if (m.signum() <= 0)
             return stockedIntermediateInput(pass, p) ? fromIntermediates(pass, p, x, d) : Amount.ZERO;
         for (int step = 0; step < DOWN_STEPS && m.signum() > 0; step++) {
@@ -80,6 +136,22 @@ public final class RouteCeiling {
                 hi = mid;
         }
         return lo;
+    }
+
+    /** Raws the routes in {@code prior} take for their part of {@code x}, by their BOM (rounded up). */
+    private static Map<Integer, Amount> reserved(Snapshot snap, int x, List<Split> prior) {
+        Map<Integer, Amount> out = new java.util.HashMap<>();
+        for (Split sp : prior) {
+            double usedLog = sp.used().log10();
+            for (int k : snap.patBomItems(sp.pattern())) {
+                double per = snap.patBomUnitLog(sp.pattern(), x, k);
+                if (per == LogMath.ZERO)
+                    continue;
+                Amount a = Amount.floorOfLog10(per + usedLog + 1e-12).add(Amount.ONE);
+                out.merge(k, a, Amount::add);
+            }
+        }
+        return out;
     }
 
     /**
@@ -116,7 +188,8 @@ public final class RouteCeiling {
     }
 
     /**
-     * Is any direct input of p an intermediate (not raw) with stock or ledger left? Only then can a
+     * Is any direct input of p an intermediate (not raw) with stock or ledger left, or a substitute
+     * a slot takes with stock left (the raw estimate counts neither)? Only then can a
      * route whose raws allow nothing still make some: trying every such route cost a real pack
      * (30 levels, little stock) hundreds of trial runs per order. Stock deeper down is not seen;
      * that demand then goes to the first route.
@@ -128,6 +201,9 @@ public final class RouteCeiling {
             int y = pat.inputItem(s);
             if (!snap.isRaw(y) && pass.available(y).signum() > 0)
                 return true;
+            for (int a = 0; a < pat.alternativeCount(s); a++)
+                if (pass.available(pat.alternative(s, a)).signum() > 0)
+                    return true;
         }
         return false;
     }
@@ -148,20 +224,20 @@ public final class RouteCeiling {
     }
 
     /** min over raws k of available(k) ÷ (k per item through p), capped by d. */
-    private static Amount bomEstimate(DemandPass pass, int p, int x, Amount d) {
+    private static Amount bomEstimate(DemandPass pass, int p, int x, Amount d, java.util.function.IntFunction<Amount> have) {
         Snapshot snap = pass.snapshot();
         double best = d.log10();
         for (int k : snap.patBomItems(p)) {
             double per = snap.patBomUnitLog(p, x, k);
             if (per == LogMath.ZERO || pass.isInfinite(k))
                 continue;       // an infinite source sets no ceiling, however large the order
-            best = Math.min(best, pass.available(k).log10() - per);
+            best = Math.min(best, have.apply(k).log10() - per);
         }
         return Amount.floorOfLog10(best + 1e-12).min(d);
     }
 
     /** Every raw in bom_p × d is covered by what is left: no need to run B. */
-    private static boolean fastCheck(DemandPass pass, int p, int x, Amount d) {
+    private static boolean fastCheck(DemandPass pass, int p, int x, Amount d, java.util.function.IntFunction<Amount> have) {
         Snapshot snap = pass.snapshot();
         int[] ks = snap.patBomItems(p);
         double logD = d.log10();
@@ -169,7 +245,7 @@ public final class RouteCeiling {
             if (pass.isInfinite(k))
                 continue;
             double needLog = snap.patBomUnitLog(p, x, k) + logD;
-            double haveLog = pass.available(k).log10();
+            double haveLog = have.apply(k).log10();
             if (needLog > haveLog + FAST_CHECK_SLACK)
                 return false;
         }

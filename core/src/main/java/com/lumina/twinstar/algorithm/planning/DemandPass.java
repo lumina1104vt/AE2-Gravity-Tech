@@ -43,6 +43,13 @@ public final class DemandPass {
     final Deadline dl;
     /** C1 trial runs: always the first route (the policy), no splitting, no repair. */
     final boolean policyOnly;
+    /** a leftover trial ({@link #leftoverTrial}): runs none of its own and stops at the soft limit */
+    private boolean nested;
+    /** leftover trials this pass ran; each is a pass over the whole tree below an item */
+    private int leftoverTrials;
+    private static final int MAX_LEFTOVER_TRIALS = 2;
+    /** each may use this much of the time before the soft limit */
+    private static final long LEFTOVER_TRIAL_NANOS = 50_000_000L;
     /** C2 repair results: item → fixed allocation over routes. */
     final Map<Integer, List<Split>> forced;
     /** C1 trial runs: the route the trial starts with for its target. */
@@ -164,6 +171,41 @@ public final class DemandPass {
     }
 
     /**
+     * C1, what no route's own ceiling covered: the whole order below {@code x} with every route, not
+     * only the policy, after the routes already chosen. It sees stock deeper down than the ceilings
+     * do (blocks of compressed blocks in storage). Not run inside another leftover trial, and at
+     * most {@link #MAX_LEFTOVER_TRIALS} per pass, each within {@link #LEFTOVER_TRIAL_NANOS}.
+     */
+    public boolean leftoverTrial(List<Split> prior, int x, Amount n, int p) {
+        if (nested || policyOnly || leftoverTrials >= MAX_LEFTOVER_TRIALS)
+            return false;
+        leftoverTrials++;
+        DemandPass t = trialPass(prior, x, n, p, dl.within(LEFTOVER_TRIAL_NANOS));
+        t.nested = true;
+        try {
+            t.run();
+        } catch (TrialStopped e) {
+            return false;
+        }
+        return t.missing.isEmpty();
+    }
+
+    private DemandPass trialPass(List<Split> prior, int x, Amount n, int p, Deadline deadline) {
+        Map<Integer, AmountMap> lotsCopy = new HashMap<>();
+        lots.forEach((item, byPattern) -> lotsCopy.put(item, byPattern.copy()));
+        List<Split> all = new ArrayList<>(prior);
+        all.add(whole(p, x, n));
+        Amount total = n;
+        for (Split sp : prior)
+            total = total.add(sp.used());
+        DemandPass t = new DemandPass(snap, stock, avail.copy(), ledger.copy(), lotsCopy, overlay, deadline, false,
+                Map.of(x, all), -1, -1);
+        t.upstreamMemo = upstreamMemo;
+        t.push(x, total, ctx[x]);
+        return t;
+    }
+
+    /**
      * Trials only improve the split, so they stop at the soft limit like every improvement: one
      * trial on a deep tree can outlast it (a real pack: trial runs alone hit the 1 s hard limit).
      */
@@ -229,8 +271,10 @@ public final class DemandPass {
     void run() {
         while (!queue.isEmpty()) {
             dl.checkHard();
-            if (policyOnly && dl.softPassed())
+            if ((policyOnly || nested) && dl.softPassed())
                 throw TrialStopped.INSTANCE;
+            if (nested && !missing.isEmpty())
+                throw TrialStopped.INSTANCE;    // a leftover trial fails at its first shortage
             int x = queue.poll();
             inQueue.clear(x);
             if (++pops > popLimit) {

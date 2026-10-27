@@ -54,6 +54,28 @@ class PlannerTest {
         assertEquals(Amount.of(7), p.patternTimes.get(0));
     }
 
+    /**
+     * Two routes on the same ore and one that takes compressed blocks in storage apart (the diamond
+     * of a real pack): the second ore route gets only what the first leaves, and the rest comes from
+     * the blocks, though their stock is two steps below the route.
+     */
+    @Test
+    void laterRouteGetsWhatEarlierLeaveAndDeepStockTakesTheRest() {
+        final int D = 10, B = 11, C = 12;
+        TestGraphs g = new TestGraphs();
+        g.pattern(b -> b.input(ORE, 1).output(D, 1));          // P0
+        g.pattern(b -> b.input(ORE, 1).output(D, 1));          // P1
+        g.pattern(b -> b.input(B, 1).output(D, 9));            // P2
+        g.pattern(b -> b.input(D, 9).output(B, 1));            // P3
+        g.pattern(b -> b.input(C, 1).output(B, 9));            // P4
+        g.pattern(b -> b.input(B, 9).output(C, 1));            // P5
+        g.stock(ORE, 10).stock(C, 1);
+        Plan p = plan(g, D, 50);
+        assertTrue(p.isComplete(), p.toString());
+        assertEquals(Amount.of(10), p.pulled.get(ORE));
+        assertEquals(Amount.ONE, p.pulled.get(C));
+    }
+
     /** Bug 10-23: 2 already in storage made an order for 100 craft only 98. The order is always crafted in full (as in AE2). */
     @Test
     void orderedItemInStorageIsNotCountedAsCrafted() {
