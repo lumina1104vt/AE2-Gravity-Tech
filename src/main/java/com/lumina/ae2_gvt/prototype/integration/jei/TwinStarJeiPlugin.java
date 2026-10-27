@@ -1,5 +1,6 @@
 package com.lumina.ae2_gvt.prototype.integration.jei;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +17,7 @@ import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.gui.ingredient.IRecipeSlotView;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
+import mezz.jei.api.ingredients.IIngredientType;
 import mezz.jei.api.ingredients.ITypedIngredient;
 import mezz.jei.api.neoforge.NeoForgeTypes;
 import mezz.jei.api.recipe.IRecipeManager;
@@ -39,7 +41,8 @@ import net.minecraft.world.item.crafting.RecipeHolder;
  * JEI's [+] for the Twin-Star Pattern Terminal: fills the recipe's inputs and outputs into the
  * pattern, and the machine slot with the recipe category's work block (its first crafting station), so
  * the player never has to say which machine a pattern is for; the recipe's id goes to the server,
- * which reads the probabilities of its outputs from the recipe.
+ * which reads the probabilities of its outputs from the recipe. Items and fluids are read directly,
+ * other ingredients (Mekanism's chemicals) through AE2 JEI Integration's converters when installed.
  */
 @JeiPlugin
 public class TwinStarJeiPlugin implements IModPlugin {
@@ -123,7 +126,8 @@ public class TwinStarJeiPlugin implements IModPlugin {
             if (item.isPresent()) {
                 return GenericStack.fromItemStack(item.get());
             }
-            return ingredient.getIngredient(NeoForgeTypes.FLUID_STACK).map(GenericStack::fromFluidStack).orElse(null);
+            Optional<GenericStack> fluid = ingredient.getIngredient(NeoForgeTypes.FLUID_STACK).map(GenericStack::fromFluidStack);
+            return fluid.isPresent() ? fluid.get() : Converters.convert(ingredient);
         }
 
         /** The category this recipe is shown in. */
@@ -162,6 +166,45 @@ public class TwinStarJeiPlugin implements IModPlugin {
 
         private static boolean lists(IRecipeManager recipes, RecipeType<?> type, Object recipe) {
             return recipes.createRecipeLookup(type).includeHidden().get().anyMatch(r -> r == recipe);
+        }
+    }
+
+    /**
+     * Other ingredient types (Mekanism's chemicals): the converters other mods register with AE2 JEI
+     * Integration (Applied Mekanistics does for chemicals), found by reflection so that mod stays
+     * optional. Without it only items and fluids come over.
+     */
+    private static final class Converters {
+        private static final String CLASS = "tamaized.ae2jeiintegration.api.integrations.jei.IngredientConverters";
+        private static @Nullable Method getConverter;
+        private static @Nullable Method toStack;
+        private static boolean looked;
+
+        static @Nullable GenericStack convert(ITypedIngredient<?> ingredient) {
+            if (!looked) {
+                looked = true;
+                try {
+                    Class<?> converters = Class.forName(CLASS);
+                    getConverter = converters.getMethod("getConverter", IIngredientType.class);
+                    toStack = Class.forName("tamaized.ae2jeiintegration.api.integrations.jei.IngredientConverter")
+                            .getMethod("getStackFromIngredient", Object.class);
+                } catch (ReflectiveOperationException | LinkageError e) {
+                    getConverter = null;    // AE2 JEI Integration is not installed
+                }
+            }
+            if (getConverter == null || toStack == null) {
+                return null;
+            }
+            try {
+                Object converter = getConverter.invoke(null, ingredient.getType());
+                if (converter == null) {
+                    return null;
+                }
+                return toStack.invoke(converter, ingredient.getIngredient()) instanceof GenericStack stack ? stack : null;
+            } catch (ReflectiveOperationException | RuntimeException e) {
+                AE2GravityTech.LOGGER.debug("AE2 JEI Integration could not convert {}", ingredient, e);
+                return null;
+            }
         }
     }
 }

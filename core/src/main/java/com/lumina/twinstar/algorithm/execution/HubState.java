@@ -1057,6 +1057,9 @@ public final class HubState {
      * for, and the job shows why it stopped. Nothing is made again on its own.
      */
     private void machineGone(MachineState m, ExecutionEnv env) {
+        ServerLevel gone = m.access.getMachineLevel();
+        if (gone != null)
+            MachineIO.forget(gone, m.access.getMachinePos());
         if (m.feed != null) {
             Feed f = m.feed;
             for (Part p : f.parts)
