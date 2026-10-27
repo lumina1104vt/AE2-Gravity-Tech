@@ -138,6 +138,7 @@ public final class HubState {
     // ───────────────────────────── tick ─────────────────────────────
 
     public void hubTick(ExecutionEnv env) {
+        envNow = env;
         syncMachines(env);
         machineTick(env);
         if (jobs.isEmpty())
@@ -182,6 +183,7 @@ public final class HubState {
             Pattern pat = job.snap.pattern(t.pattern);
             Amount supported = supportable(job, t, pat, true);
             if (supported.signum() <= 0) {
+                noteMaterials(job, t, pat);
                 waitFor(job, t, pat);      // materials taken first: an inventory change wakes it
                 continue;
             }
@@ -194,6 +196,7 @@ public final class HubState {
                 continue;                  // not this pattern's turn in the loop's contract; advancing it wakes it
             n = energyCap(pat, n, env);
             if (n.signum() <= 0) {
+                noteTask(t, pat, "能量不足，每次要 " + pat.energyPerRun.toDoubleSaturated() + " AE");
                 retryNextTick(job, t);     // no power right now
                 continue;
             }
@@ -201,6 +204,7 @@ public final class HubState {
                 drawLazily(job, pat, n, env);
                 n = n.min(supportable(job, t, pat, false));
                 if (n.signum() <= 0) {
+                    noteTask(t, pat, "無限來源沒拿到：" + lazyStatus(job, pat, env));
                     retryNextTick(job, t); // the infinite source did not deliver this tick
                     continue;
                 }
@@ -264,8 +268,10 @@ public final class HubState {
         if (supportable(job, t, pat, true).signum() > 0) {
             t.queued = true;
             job.ready.add(t);
-        } else
+        } else {
+            noteMaterials(job, t, pat);
             waitFor(job, t, pat);
+        }
     }
 
     private void waitFor(Job job, Task t, Pattern pat) {
@@ -1131,13 +1137,22 @@ public final class HubState {
                 m.place = GlobalPos.of(level.dimension(), pos);
             dropFeedOfEndedJob(m, env);
             flushOverflow(m, env);
+            boolean[] took = {false};
             MachineIO.extractOutputs(level, pos, (key, n) -> {
+                took[0] = true;
                 int id = env.index().idOf(key);
                 landed(m, id, Amount.of(n));
                 long rest = n - deliver(id, key, Amount.of(n), env).saturatedLong();
                 if (rest > 0)
                     m.overflow.merge(key, rest, Long::sum);
             });
+            if (debug != null && !took[0] && !m.inFlight.isEmpty() && m.feed == null) {
+                Amount runs = Amount.ZERO;
+                for (Amount r : m.inFlight.values())
+                    runs = runs.add(r);
+                note(outNotes, m, "[雙星] 機器產物 " + pos.toShortString() + "：等 " + runs + " 份的產物，這 tick 沒抽到東西；看到："
+                        + MachineIO.describe(level, pos));
+            }
             if (m.access.isAccessActive())
                 feed(m, level, pos);
             pruneFlights(m, env);
@@ -1219,19 +1234,75 @@ public final class HubState {
     }
 
     /** Puts in what the machine takes of its current run. */
-    private static void feed(MachineState m, ServerLevel level, BlockPos pos) {
+    private void feed(MachineState m, ServerLevel level, BlockPos pos) {
         Feed f = m.feed;
         if (f == null)
             return;
+        StringBuilder stuck = debug == null ? null : new StringBuilder();
         for (Part p : f.parts) {
             if (p.left <= 0)
                 continue;
             long in = MachineIO.insert(level, pos, p.faces, p.key, p.left);
             p.left -= in;
             f.fed += in;
+            if (stuck != null && p.left > 0)
+                stuck.append("\n    ").append(p.key.getDisplayName().getString()).append("（").append(p.key.getType().getDescription().getString())
+                        .append("）還剩 ").append(p.left).append("，這次放入 ").append(in).append("；")
+                        .append(MachineIO.describeInsert(level, pos, p.faces, p.key, p.left));
         }
         if (f.done())
             m.feed = null;
+        else if (stuck != null)
+            note(feedNotes, m, "[雙星] 機器放入 " + pos.toShortString() + "（放入方式 " + m.access.getInsertMode() + "，接口所在面 "
+                    + m.access.getMachineFace().getName() + "）：" + stuck);
+    }
+
+    // ───────────────────────────── debug notes ─────────────────────────────
+
+    private @Nullable ExecutionEnv envNow;
+    /** last line per thing, so a state that lasts is logged once, not every tick */
+    private final Map<Object, String> taskNotes = new java.util.WeakHashMap<>();
+    private final Map<Object, String> feedNotes = new java.util.WeakHashMap<>();
+    private final Map<Object, String> outNotes = new java.util.WeakHashMap<>();
+
+    private void note(Map<Object, String> last, Object about, String line) {
+        if (debug != null && !line.equals(last.put(about, line)))
+            debug.accept(line);
+    }
+
+    /** Why a machine pattern's task sends nothing (the paths that would otherwise be silent). */
+    private void noteTask(Task t, Pattern pat, String why) {
+        if (debug == null || pat.where != PatternLocation.HUB_MACHINE || envNow == null)
+            return;
+        note(taskNotes, t, "[雙星] 機器樣板 " + nameOf(pat, envNow) + " 沒有派送：" + why);
+    }
+
+    private void noteMaterials(Job job, Task t, Pattern pat) {
+        if (debug == null || pat.where != PatternLocation.HUB_MACHINE || envNow == null)
+            return;
+        StringBuilder sb = new StringBuilder("材料不夠");
+        for (int s = 0; s < pat.inputCount(); s++) {
+            int item = pat.inputItem(s);
+            AEKey key = envNow.index().keyOf(item);
+            sb.append("；").append(key == null ? "?" : key.getDisplayName().getString())
+                    .append(" 有 ").append(job.inventory.get(item)).append("（無限來源待拿 ").append(job.drawLater.get(item))
+                    .append("）、每次要 ").append(pat.inputAmount(s));
+        }
+        noteTask(t, pat, sb.toString());
+    }
+
+    private static String lazyStatus(Job job, Pattern pat, ExecutionEnv env) {
+        StringBuilder sb = new StringBuilder();
+        for (int s = 0; s < pat.inputCount(); s++) {
+            int item = pat.inputItem(s);
+            if (job.drawLater.get(item).signum() <= 0)
+                continue;
+            AEKey key = env.index().keyOf(item);
+            sb.append(sb.isEmpty() ? "" : "；").append(key == null ? "?" : key.getDisplayName().getString())
+                    .append(" 待拿 ").append(job.drawLater.get(item)).append("、已有 ").append(job.inventory.get(item))
+                    .append("、現在仍是無限來源=").append(key != null && env.store().isInfinite(key));
+        }
+        return sb.toString();
     }
 
     /**

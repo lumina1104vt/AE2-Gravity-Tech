@@ -228,4 +228,104 @@ final class MachineIO {
         }
         return amount - left;
     }
+
+    // ───────────────────────────── debug log ─────────────────────────────
+
+    private static String faceName(@Nullable Direction d) {
+        return d == null ? "不指定面" : d.getName();
+    }
+
+    private static String name(AEKey key) {
+        return key.getDisplayName().getString();
+    }
+
+    /**
+     * For the debug log: what the hub sees in the machine, face by face (no merging of handlers
+     * seen from several faces), and how it reads each slot, tank and other stack.
+     */
+    static String describe(ServerLevel level, BlockPos pos) {
+        StringBuilder sb = new StringBuilder();
+        for (Direction d : SIDES) {
+            IItemHandler h = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, d);
+            if (h != null)
+                for (int s = 0; s < h.getSlots(); s++) {
+                    ItemStack in = h.getStackInSlot(s);
+                    if (in.isEmpty())
+                        continue;
+                    int room = Math.min(h.getSlotLimit(s), in.getMaxStackSize()) - in.getCount();
+                    boolean refused = room > 0 && h.insertItem(s, in.copyWithCount(1), true).getCount() == 1;
+                    int canTake = h.extractItem(s, in.getCount(), true).getCount();
+                    sb.append("\n    物品 ").append(faceName(d)).append(" 格").append(s).append("：")
+                            .append(in.getHoverName().getString()).append("×").append(in.getCount())
+                            .append(" 接受=").append(h.isItemValid(s, in)).append(" 空間=").append(room)
+                            .append(" 模擬放入被拒=").append(refused).append(" → ")
+                            .append(isOutput(h, s, in) ? "輸出" : "輸入").append("，模擬抽出=").append(canTake);
+                }
+            IFluidHandler f = level.getCapability(Capabilities.FluidHandler.BLOCK, pos, d);
+            if (f != null)
+                for (int t = 0; t < f.getTanks(); t++) {
+                    FluidStack in = f.getFluidInTank(t);
+                    if (in.isEmpty())
+                        continue;
+                    sb.append("\n    流體 ").append(faceName(d)).append(" 槽").append(t).append("：")
+                            .append(in.getHoverName().getString()).append("×").append(in.getAmount())
+                            .append(" 接受=").append(f.isFluidValid(t, in)).append(" → ")
+                            .append(f.isFluidValid(t, in) ? "輸入" : "輸出").append("，模擬抽出=")
+                            .append(f.drain(in.copy(), IFluidHandler.FluidAction.SIMULATE).getAmount());
+                }
+        }
+        for (Direction d : Direction.values()) {
+            List<MEStorage> all = otherStorages(level, pos, false, d);
+            List<MEStorage> out = otherStorages(level, pos, true, d);
+            KeyCounter seen = new KeyCounter();
+            all.forEach(st -> st.getAvailableStacks(seen));
+            KeyCounter takeable = new KeyCounter();
+            out.forEach(st -> st.getAvailableStacks(takeable));
+            for (var e : seen)
+                sb.append("\n    其他 ").append(d.getName()).append("：").append(name(e.getKey())).append("×").append(e.getLongValue())
+                        .append(" 可從外抽=").append(takeable.get(e.getKey()));
+            if (all.isEmpty())
+                continue;
+            if (seen.isEmpty())
+                sb.append("\n    其他 ").append(d.getName()).append("：介面 ").append(all.size()).append(" 個，空的");
+        }
+        return sb.isEmpty() ? "（什麼都沒看到）" : sb.toString();
+    }
+
+    /** For the debug log: how much of {@code key} each face would take now (simulated). */
+    static String describeInsert(ServerLevel level, BlockPos pos, List<@Nullable Direction> faces, AEKey key, long amount) {
+        StringBuilder sb = new StringBuilder();
+        for (Direction face : faces) {
+            sb.append(sb.isEmpty() ? "" : "、").append(faceName(face)).append("：");
+            if (key instanceof AEItemKey item) {
+                IItemHandler h = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, face);
+                if (h == null) {
+                    sb.append("沒有物品介面");
+                    continue;
+                }
+                int n = (int) Math.min(item.getMaxStackSize(), amount);
+                ItemStack rest = ItemHandlerHelper.insertItemStacked(h, item.toStack(n), true);
+                sb.append("模擬放入 ").append(n - rest.getCount()).append("／").append(n).append("（").append(h.getSlots()).append(" 格）");
+            } else if (key instanceof AEFluidKey fluid) {
+                IFluidHandler h = level.getCapability(Capabilities.FluidHandler.BLOCK, pos, face);
+                if (h == null) {
+                    sb.append("沒有流體介面");
+                    continue;
+                }
+                int n = (int) Math.min(Integer.MAX_VALUE, amount);
+                sb.append("模擬放入 ").append(h.fill(fluid.toStack(n), IFluidHandler.FluidAction.SIMULATE)).append("／").append(n);
+            } else {
+                List<MEStorage> storages = otherStorages(level, pos, false, face);
+                if (storages.isEmpty()) {
+                    sb.append("沒有 ").append(key.getType().getDescription().getString()).append(" 介面");
+                    continue;
+                }
+                long took = 0;
+                for (MEStorage st : storages)
+                    took += st.insert(key, amount, Actionable.SIMULATE, IActionSource.empty());
+                sb.append("模擬放入 ").append(took).append("／").append(amount).append("（介面 ").append(storages.size()).append(" 個）");
+            }
+        }
+        return sb.toString();
+    }
 }
