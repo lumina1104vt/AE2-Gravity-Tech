@@ -41,7 +41,8 @@ import java.util.function.BiConsumer;
  * <p>
  * Other kinds of stacks (Mekanism's chemicals, through Applied Mekanistics) go through AE2's
  * external storage strategies of their key type on every face: what can be taken out from
- * outside is an output.
+ * outside is an output, but only what the runs in the machine make is taken (some packs make FE
+ * a key type too: a battery's charge can be taken from outside).
  * Server thread only.
  */
 final class MachineIO {
@@ -78,8 +79,17 @@ final class MachineIO {
     private static boolean isOutput(IItemHandler h, int s, ItemStack in) {
         if (!h.isItemValid(s, in))
             return true;
-        int room = Math.min(h.getSlotLimit(s), in.getMaxStackSize()) - in.getCount();
-        return room > 0 && h.insertItem(s, in.copyWithCount(1), true).getCount() == 1;
+        return room(h, s, in) > 0 && h.insertItem(s, in.copyWithCount(1), true).getCount() == 1;
+    }
+
+    /**
+     * Room left in slot {@code s} for more of {@code in}: up to a stack, or up to the slot's limit
+     * when it already holds more than a stack (Mekanism's slots do). A full stack in an ordinary
+     * slot has no room, so refusing one more says nothing about it.
+     */
+    private static int room(IItemHandler h, int s, ItemStack in) {
+        int cap = in.getCount() > in.getMaxStackSize() ? h.getSlotLimit(s) : Math.min(h.getSlotLimit(s), in.getMaxStackSize());
+        return cap - in.getCount();
     }
 
     /**
@@ -127,8 +137,12 @@ final class MachineIO {
         return out;
     }
 
-    /** Takes everything out of the output slots and tanks; each amount taken goes to {@code taken}. */
-    static void extractOutputs(ServerLevel level, BlockPos pos, BiConsumer<AEKey, Long> taken) {
+    /**
+     * Takes everything out of the output slots and tanks, and of other key types what can be taken
+     * from outside among {@code wantOther} only (an energy key type would otherwise drain a battery);
+     * each amount taken goes to {@code taken}.
+     */
+    static void extractOutputs(ServerLevel level, BlockPos pos, Set<AEKey> wantOther, BiConsumer<AEKey, Long> taken) {
         for (IItemHandler h : itemHandlers(level, pos))
             for (int s = 0; s < h.getSlots(); s++) {
                 ItemStack in = h.getStackInSlot(s);
@@ -147,8 +161,12 @@ final class MachineIO {
                 if (!got.isEmpty())
                     taken.accept(AEFluidKey.of(got), (long) got.getAmount());
             }
+        if (wantOther.isEmpty())
+            return;
         for (MEStorage storage : otherStorages(level, pos, true, null))
             for (var e : storage.getAvailableStacks()) {
+                if (!wantOther.contains(e.getKey()))
+                    continue;
                 long got = storage.extract(e.getKey(), e.getLongValue(), Actionable.MODULATE, IActionSource.empty());
                 if (got > 0)
                     taken.accept(e.getKey(), got);
@@ -252,7 +270,7 @@ final class MachineIO {
                     ItemStack in = h.getStackInSlot(s);
                     if (in.isEmpty())
                         continue;
-                    int room = Math.min(h.getSlotLimit(s), in.getMaxStackSize()) - in.getCount();
+                    int room = room(h, s, in);
                     boolean refused = room > 0 && h.insertItem(s, in.copyWithCount(1), true).getCount() == 1;
                     int canTake = h.extractItem(s, in.getCount(), true).getCount();
                     sb.append("\n    物品 ").append(faceName(d)).append(" 格").append(s).append("：")

@@ -1124,7 +1124,7 @@ public final class HubState {
             dropFeedOfEndedJob(m, env);
             flushOverflow(m, env);
             boolean[] took = {false};
-            MachineIO.extractOutputs(level, pos, (key, n) -> {
+            MachineIO.extractOutputs(level, pos, otherOutputs(m, env), (key, n) -> {
                 took[0] = true;
                 int id = env.index().idOf(key);
                 landed(m, id, Amount.of(n));
@@ -1167,6 +1167,20 @@ public final class HubState {
             if (!sure && !(m.feed != null && m.feed.job == f.job() && m.feed.pattern == f.pattern()) && !holds(m, pat, env))
                 it.remove();
         }
+    }
+
+    /** The outputs of the runs in machine {@code m} that are neither items nor fluids (chemicals). */
+    private static Set<AEKey> otherOutputs(MachineState m, ExecutionEnv env) {
+        Set<AEKey> out = new HashSet<>();
+        for (Flight f : m.inFlight.keySet()) {
+            Pattern pat = f.job().snap.pattern(f.pattern());
+            for (int o = 0; o < pat.outputCount(); o++) {
+                AEKey k = env.index().keyOf(pat.outputItem(o));
+                if (k != null && !(k instanceof AEItemKey) && !(k instanceof appeng.api.stacks.AEFluidKey))
+                    out.add(k);
+            }
+        }
+        return out;
     }
 
     /** A cancelled job's run that is not all in: what is left goes to network storage, not into the machine. */
