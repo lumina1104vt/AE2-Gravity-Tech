@@ -465,7 +465,7 @@ public final class TheoryLayer {
         bomLog[x] = new double[]{0};
     }
 
-    /** Route order: possible routes first, then provider priority, then cost, location, id. */
+    /** Route order: possible routes first, then provider priority, cost, processing steps, the current best, location, id. */
     private int compareRoutes(int a, int b, int x) {
         double ca = unitCost(a, x);
         double cb = unitCost(b, x);
@@ -478,6 +478,10 @@ public final class TheoryLayer {
         if (pa.priority != pb.priority)
             return pa.priority > pb.priority ? -1 : 1;
         int c = Double.compare(ca, cb);
+        if (c != 0)
+            return c;
+        // same cost: fewer processing steps first (costs count only raws, not the steps)
+        c = Integer.compare(maxInputLevel(a, x), maxInputLevel(b, x));
         if (c != 0)
             return c;
         // a tie keeps the current best first: reversible recipes (block ⇄ 9 ingots) cost exactly the

@@ -59,6 +59,29 @@ class TheoryLayerTest {
     }
 
     @Test
+    void sameCostFewerStepsWinsWhicheverCameFirst() {
+        // ore → gear directly, or ore → plate → gear: the same raws, one step more
+        TestGraphs longFirst = new TestGraphs();
+        longFirst.pattern(b -> b.input(ORE, 1).output(PLATE, 1));
+        longFirst.pattern(b -> b.input(PLATE, 1).output(GEAR, 1));
+        longFirst.stock(ORE, 100);
+        longFirst.flush();
+        int direct = longFirst.pattern(b -> b.input(ORE, 1).output(GEAR, 1));
+        Snapshot s = longFirst.flush();
+        assertEquals(s.logCost(ORE), s.logCost(GEAR), 1e-9);
+        assertEquals(direct, s.best(GEAR), "the shorter route added later takes over");
+        assertEquals(1, s.level(GEAR));
+
+        TestGraphs directFirst = new TestGraphs();
+        int first = directFirst.pattern(b -> b.input(ORE, 1).output(GEAR, 1));
+        directFirst.stock(ORE, 100);
+        directFirst.flush();
+        directFirst.pattern(b -> b.input(ORE, 1).output(PLATE, 1));
+        directFirst.pattern(b -> b.input(PLATE, 1).output(GEAR, 1));
+        assertEquals(first, directFirst.flush().best(GEAR), "the longer route added later does not");
+    }
+
+    @Test
     void growthLoopIsAPolicyCycle() {
         int seed = 20, dirt = 21;
         TestGraphs g = new TestGraphs();
