@@ -836,23 +836,9 @@ public final class HubState {
         Rational per = pat.energyPerRun;
         if (per.signum() <= 0 || n.signum() <= 0)
             return n;
-        Rational want = per.mul(Rational.of(n));
-        Rational have = Rational.ZERO;
-        if (env.hubEnergy() != null)
-            have = env.hubEnergy().extractEnergy(want, true);
-        if (have.compareTo(want) < 0) {
-            double rest = want.sub(have).toDoubleSaturated();
-            double got = env.energy().extractAEPower(rest, Actionable.SIMULATE, PowerMultiplier.CONFIG);
-            // AE2 energy is a double: a need beyond its range is asked as Double.MAX_VALUE. A network
-            // that still gives all of that (creative energy cell) is infinite, like infinite item
-            // sources, and does not cap the runs
-            if (rest == Double.MAX_VALUE && got >= rest)
-                return n;
-            have = have.add(Rational.of(Double.isFinite(got) ? got : Double.MAX_VALUE));
-        }
-        if (have.compareTo(want) >= 0)
-            return n;
-        return n.min(Amount.of(have.div(per).floor()));
+        Rational fromHub = env.hubEnergy() == null ? Rational.ZERO : env.hubEnergy().extractEnergy(per.mul(Rational.of(n)), true);
+        return EnergyCap.poweredRuns(per, n, fromHub,
+                rest -> env.energy().extractAEPower(rest, Actionable.SIMULATE, PowerMultiplier.CONFIG));
     }
 
     private void payEnergy(Pattern pat, Amount n, ExecutionEnv env) {
