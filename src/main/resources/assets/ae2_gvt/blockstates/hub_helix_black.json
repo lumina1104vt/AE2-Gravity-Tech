@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "formed=false": {
+      "model": "ae2_gvt:block/hub_helix_black"
+    },
+    "formed=true": {
+      "model": "ae2_gvt:block/hub_helix_black_formed"
+    }
+  }
+}

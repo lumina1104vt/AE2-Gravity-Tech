@@ -1,0 +1,5 @@
+{
+  "loader": "ae2_gvt:joined_look",
+  "sheet": "ae2_gvt:block/paradox_block_joined",
+  "block": "ae2_gvt:paradox_block"
+}

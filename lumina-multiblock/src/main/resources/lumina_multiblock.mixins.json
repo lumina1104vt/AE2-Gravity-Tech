@@ -4,6 +4,7 @@
   "package": "com.lumina.lmb.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "LevelChunkMixin"
   ],
   "client": [
   ],

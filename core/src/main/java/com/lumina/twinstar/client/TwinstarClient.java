@@ -17,6 +17,7 @@ public final class TwinstarClient {
     @SubscribeEvent
     static void registerScreens(RegisterMenuScreensEvent event) {
         InitScreens.register(event, TwinstarContent.ORDER_MENU.get(), OrderScreen::new, "/screens/twinstar_order.json");
-        InitScreens.register(event, TwinstarContent.PLAN_MENU.get(), PlanScreen::new, "/screens/twinstar_plan.json");
+        // built with LDLib2, not AE2's screen styles
+        event.register(TwinstarContent.PLAN_MENU.get(), PlanScreen::new);
     }
 }

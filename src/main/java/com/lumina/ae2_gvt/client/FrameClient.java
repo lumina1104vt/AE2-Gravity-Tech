@@ -2,6 +2,7 @@ package com.lumina.ae2_gvt.client;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.client.model.ContainmentGlassModel;
+import com.lumina.ae2_gvt.client.model.JoinedLookModel;
 import com.lumina.ae2_gvt.client.model.StructureFrameModel;
 
 import net.neoforged.api.distmarker.Dist;
@@ -19,5 +20,6 @@ public final class FrameClient {
     static void registerLoaders(ModelEvent.RegisterGeometryLoaders event) {
         event.register(StructureFrameModel.ID, StructureFrameModel.LOADER);
         event.register(ContainmentGlassModel.ID, ContainmentGlassModel.LOADER);
+        event.register(JoinedLookModel.ID, JoinedLookModel.LOADER);
     }
 }

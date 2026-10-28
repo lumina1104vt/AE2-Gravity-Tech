@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "side": "ae2_gvt:block/hub_ring",
+    "end": "ae2_gvt:block/hub_ring_middle"
+  }
+}

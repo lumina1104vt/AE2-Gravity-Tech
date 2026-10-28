@@ -1,0 +1,5 @@
+{
+  "loader": "ae2_gvt:joined_look",
+  "sheet": "ae2_gvt:block/antigravity_block_joined",
+  "block": "ae2_gvt:antigravity_block"
+}

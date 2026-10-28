@@ -1,0 +1,100 @@
+{
+  "variants": {
+    "axis=y,formed=false,part=single": {
+      "model": "ae2_gvt:block/hub_ring_single"
+    },
+    "axis=y,formed=true,part=single": {
+      "model": "ae2_gvt:block/hub_ring_single_formed"
+    },
+    "axis=y,formed=false,part=low": {
+      "model": "ae2_gvt:block/hub_ring_low"
+    },
+    "axis=y,formed=true,part=low": {
+      "model": "ae2_gvt:block/hub_ring_low_formed"
+    },
+    "axis=y,formed=false,part=middle": {
+      "model": "ae2_gvt:block/hub_ring_middle"
+    },
+    "axis=y,formed=true,part=middle": {
+      "model": "ae2_gvt:block/hub_ring_middle"
+    },
+    "axis=y,formed=false,part=high": {
+      "model": "ae2_gvt:block/hub_ring_high"
+    },
+    "axis=y,formed=true,part=high": {
+      "model": "ae2_gvt:block/hub_ring_high_formed"
+    },
+    "axis=z,formed=false,part=single": {
+      "model": "ae2_gvt:block/hub_ring_single",
+      "x": 90
+    },
+    "axis=z,formed=true,part=single": {
+      "model": "ae2_gvt:block/hub_ring_single_formed",
+      "x": 90
+    },
+    "axis=z,formed=false,part=low": {
+      "model": "ae2_gvt:block/hub_ring_low",
+      "x": 90
+    },
+    "axis=z,formed=true,part=low": {
+      "model": "ae2_gvt:block/hub_ring_low_formed",
+      "x": 90
+    },
+    "axis=z,formed=false,part=middle": {
+      "model": "ae2_gvt:block/hub_ring_middle",
+      "x": 90
+    },
+    "axis=z,formed=true,part=middle": {
+      "model": "ae2_gvt:block/hub_ring_middle",
+      "x": 90
+    },
+    "axis=z,formed=false,part=high": {
+      "model": "ae2_gvt:block/hub_ring_high",
+      "x": 90
+    },
+    "axis=z,formed=true,part=high": {
+      "model": "ae2_gvt:block/hub_ring_high_formed",
+      "x": 90
+    },
+    "axis=x,formed=false,part=single": {
+      "model": "ae2_gvt:block/hub_ring_single",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,formed=true,part=single": {
+      "model": "ae2_gvt:block/hub_ring_single_formed",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,formed=false,part=low": {
+      "model": "ae2_gvt:block/hub_ring_low",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,formed=true,part=low": {
+      "model": "ae2_gvt:block/hub_ring_low_formed",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,formed=false,part=middle": {
+      "model": "ae2_gvt:block/hub_ring_middle",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,formed=true,part=middle": {
+      "model": "ae2_gvt:block/hub_ring_middle",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,formed=false,part=high": {
+      "model": "ae2_gvt:block/hub_ring_high",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,formed=true,part=high": {
+      "model": "ae2_gvt:block/hub_ring_high_formed",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

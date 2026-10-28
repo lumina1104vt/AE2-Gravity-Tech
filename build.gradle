@@ -99,6 +99,9 @@ dependencies {
     compileOnly "maven.modrinth:jei:${jei_version}"
     localRuntime "maven.modrinth:jei:${jei_version}"
 
+    // LDLib2: the twin-star lib's plan screen is built with its UI
+    localRuntime "maven.modrinth:ldlib:${ldlib_version}"
+
     // Jade (looking at a block shows what it is); compileOnly for a plugin later
     compileOnly "maven.modrinth:jade:${jade_version}"
     localRuntime "maven.modrinth:jade:${jade_version}"

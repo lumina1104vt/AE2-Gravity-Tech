@@ -17,7 +17,22 @@ neoForge {
     }
 }
 
+repositories {
+    mavenCentral()  // JUnit
+}
+
 dependencies {
+    // optional: the builder takes blocks from AE networks (com.lumina.lmb.compat, only loaded with AE2)
+    compileOnly "maven.modrinth:ae2:${ae2_version}"
+
+    // engine tests (com.lumina.lmb.core is plain Java over a generic block-state type)
+    testImplementation platform('org.junit:junit-bom:5.10.3')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
 }
 
 publishing {

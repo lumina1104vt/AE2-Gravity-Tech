@@ -5,8 +5,8 @@ package com.lumina.twinstar.algorithm.model;
  * Hard (1 s): abort and report a timeout.
  */
 public record Deadline(long startNanos, long softNanos, long hardNanos) {
-    public static final long DEFAULT_SOFT = 500_000_000L;
-    public static final long DEFAULT_HARD = 1_000_000_000L;
+    public static final long DEFAULT_SOFT = 1_000_000_000L;
+    public static final long DEFAULT_HARD = 2_000_000_000L;
 
     /** For tests and tools: never runs out. */
     public static final Deadline NONE = new Deadline(0, Long.MAX_VALUE, Long.MAX_VALUE);

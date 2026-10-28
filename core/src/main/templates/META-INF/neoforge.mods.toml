@@ -32,3 +32,11 @@ config="${mod_id}.mixins.json"
     versionRange="[19.2,20)"
     ordering="AFTER"
     side="BOTH"
+
+# the plan screen is built with LDLib2's UI (client only; servers do not need it)
+[[dependencies."${mod_id}"]]
+    modId="ldlib2"
+    type="required"
+    versionRange="[2.2.41,)"
+    ordering="NONE"
+    side="CLIENT"

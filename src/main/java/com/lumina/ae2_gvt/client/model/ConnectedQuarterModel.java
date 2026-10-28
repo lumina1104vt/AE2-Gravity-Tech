@@ -44,17 +44,24 @@ import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer;
  * ({@link #getModelData}); without them (an item) every quarter is open.
  */
 abstract class ConnectedQuarterModel implements IDynamicBakedModel {
-    private static final int INNER = 16, TILES = 17, VARIANTS = 4;
+    private static final int INNER = 16, TILES = 17;
     /** [0] = variant row, then 4 tiles per face in Direction order. */
     private static final ModelProperty<int[]> LAYOUT = new ModelProperty<>();
     private static final EnumMap<Direction, List<Vector3f>> CORNERS = faceCorners();
 
     private final TextureAtlasSprite sheet;
     private final ChunkRenderTypeSet renderTypes;
+    /** Columns in the sheet (grain variants); 1 for an animated sheet such as the joined crystals. */
+    private final int variants;
 
     ConnectedQuarterModel(TextureAtlasSprite sheet, RenderType renderType) {
+        this(sheet, renderType, 4);
+    }
+
+    ConnectedQuarterModel(TextureAtlasSprite sheet, RenderType renderType, int variants) {
         this.sheet = sheet;
         this.renderTypes = ChunkRenderTypeSet.of(renderType);
+        this.variants = variants;
     }
 
     /** The face on {@code side} continues onto the block at {@code pos}. */
@@ -150,10 +157,10 @@ abstract class ConnectedQuarterModel implements IDynamicBakedModel {
     }
 
     /** Which variant a block uses: fixed per position, so neighbours rarely share one. */
-    private static int variant(BlockPos pos) {
+    private int variant(BlockPos pos) {
         long h = pos.getX() * 3129871L ^ pos.getZ() * 116129781L ^ pos.getY();
         h = h * h * 42317861L + h * 11L;
-        return (int) Math.floorMod(h >> 16, (long) VARIANTS);
+        return (int) Math.floorMod(h >> 16, (long) variants);
     }
 
     /** The face's own up / right / down / left, matching how its texture is laid on (see faceCorners). */
@@ -188,7 +195,7 @@ abstract class ConnectedQuarterModel implements IDynamicBakedModel {
                 .add(new Vector3f(c.get(1)).sub(c.get(0)).mul(v));
         builder.addVertex(p.x(), p.y(), p.z());
         builder.setColor(255, 255, 255, 255);
-        builder.setUv(sheet.getU((row + u) / VARIANTS), sheet.getV((tile + v) / TILES));
+        builder.setUv(sheet.getU((row + u) / variants), sheet.getV((tile + v) / TILES));
         builder.setUv2(0, 0);
         builder.setNormal(side.getStepX(), side.getStepY(), side.getStepZ());
     }

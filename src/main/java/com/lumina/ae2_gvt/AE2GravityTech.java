@@ -47,6 +47,8 @@ public class AE2GravityTech {
 
     static {
         com.lumina.ae2_gvt.prototype.hub.HubUnits.init();   // registers the hub units with BLOCKS / ITEMS
+        com.lumina.ae2_gvt.prototype.hub.HubStructureBlocks.init();   // helix / pillar / ring blocks of the hexagram hub
+        com.lumina.ae2_gvt.prototype.hub.HexagramHub.register();   // the hexagram hub's lumina-multiblock definition
         com.lumina.ae2_gvt.prototype.quantum.QuantumController.init();   // quantum controller
         com.lumina.ae2_gvt.prototype.graviton.Gravitons.init();   // graviton storage type and cells
     }
@@ -71,6 +73,7 @@ public class AE2GravityTech {
                 output.accept(Items.MACHINE_FRAME);
                 output.accept(Items.STRUCTURE_FRAME);
                 com.lumina.ae2_gvt.prototype.hub.HubUnits.all().forEach(item -> output.accept(item.get()));
+                com.lumina.ae2_gvt.prototype.hub.HubStructureBlocks.all().forEach(item -> output.accept(item.get()));
                 output.accept(com.lumina.ae2_gvt.prototype.terminal.TwinStarTerminal.ITEM.get());
                 output.accept(Items.MACHINE_ACCESS_INTERFACE);
                 output.accept(com.lumina.ae2_gvt.prototype.quantum.QuantumController.ITEM.get());
@@ -115,6 +118,7 @@ public class AE2GravityTech {
         com.lumina.ae2_gvt.prototype.quantum.QuantumController.register(modEventBus);
         com.lumina.ae2_gvt.prototype.graviton.Gravitons.register(modEventBus);
         com.lumina.ae2_gvt.prototype.twinstar.TwinStarPreview.register(modEventBus);
+        com.lumina.ae2_gvt.prototype.hub.HubStructureBlocks.register(modEventBus);   // hexagram hub controller's block entity
 
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }

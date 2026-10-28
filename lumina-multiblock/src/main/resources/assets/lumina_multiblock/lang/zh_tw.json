@@ -1,0 +1,22 @@
+{
+  "item.lumina_multiblock.builder": "多方塊建造器",
+  "lumina_multiblock.builder.modes": "建造器模式",
+  "lumina_multiblock.builder.mode.deconstruct": "拆除",
+  "lumina_multiblock.builder.mode.mirror": "鏡像",
+  "lumina_multiblock.builder.mode.no_hatches": "無倉口",
+  "lumina_multiblock.builder.unlinked": "未綁定 AE 網路",
+  "lumina_multiblock.builder.linked": "已綁定 %s 的 AE 網路",
+  "lumina_multiblock.builder.hint": "右鍵控制器：建造。潛行右鍵：模式。右鍵空氣：停止。",
+  "lumina_multiblock.builder.not_controller": "這不是結構的控制器",
+  "lumina_multiblock.builder.cannot_mirror": "這個結構不能鏡像建造：蓋出來不會成形",
+  "lumina_multiblock.builder.no_suggestion": "沒有可放的方塊：%s 格沒有建議方塊",
+  "lumina_multiblock.builder.started": "開始建造：%s 個方塊",
+  "lumina_multiblock.builder.started_down": "開始拆除：%s 個方塊",
+  "lumina_multiblock.builder.stopped": "建造器已停止",
+  "lumina_multiblock.builder.link_unreachable": "連不到綁定的 AE 網路（超出範圍、未載入或已不存在），只用背包",
+  "lumina_multiblock.builder.done": "放置 %s 個，拆除 %s 個",
+  "lumina_multiblock.builder.in_the_way": "%s 格被其他方塊擋住（未動）：%s",
+  "lumina_multiblock.builder.refused": "%s 個方塊被拒絕（保護區）",
+  "lumina_multiblock.builder.no_item": "%s 個方塊沒有物品形式，無法放置",
+  "lumina_multiblock.builder.missing": "缺少：%s"
+}

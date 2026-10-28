@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "axis=y,formed=false": {
+      "model": "ae2_gvt:block/hub_pillar"
+    },
+    "axis=y,formed=true": {
+      "model": "ae2_gvt:block/hub_pillar_formed"
+    },
+    "axis=z,formed=false": {
+      "model": "ae2_gvt:block/hub_pillar",
+      "x": 90
+    },
+    "axis=z,formed=true": {
+      "model": "ae2_gvt:block/hub_pillar_formed",
+      "x": 90
+    },
+    "axis=x,formed=false": {
+      "model": "ae2_gvt:block/hub_pillar",
+      "x": 90,
+      "y": 90
+    },
+    "axis=x,formed=true": {
+      "model": "ae2_gvt:block/hub_pillar_formed",
+      "x": 90,
+      "y": 90
+    }
+  }
+}
