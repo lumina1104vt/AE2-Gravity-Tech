@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "ae2_gvt:machine_frame"
+    },
+    {
+      "item": "ae2:energy_acceptor"
+    }
+  ],
+  "result": {
+    "id": "ae2_gvt:energy_port",
+    "count": 1
+  }
+}

@@ -50,7 +50,7 @@ public class DummyCpuMenu extends AEBaseMenu {
     public DummyCpuMenu(MenuType<?> menuType, int id, Inventory playerInventory, DummyTwinStarCPUBlockEntity cpu) {
         super(menuType, id, playerInventory, cpu);
         this.cpu = cpu;
-        this.window = new PatternWindow(isServerSide() ? cpu.getPatterns() : null);
+        this.window = new PatternWindow(isServerSide() ? cpu.getPatterns() : null, WINDOW);
         for (int i = 0; i < WINDOW; i++) {
             RestrictedInputSlot slot = new RestrictedInputSlot(RestrictedInputSlot.PlacableItemType.ENCODED_PATTERN, window, i);
             slot.setStackLimit(1);
@@ -104,51 +104,7 @@ public class DummyCpuMenu extends AEBaseMenu {
             }
         } else {
             scrollRow = row;
-            window.offset = row * COLUMNS;
-        }
-    }
-
-    /**
-     * The visible slots. Server: a view of the block entity's patterns from {@code offset}. Client:
-     * its own slots, holding exactly what the server sent for each menu slot (the client's block
-     * entity has no patterns, and reading it at a moved offset would show stale items).
-     */
-    private static final class PatternWindow implements InternalInventory {
-        private final @Nullable InternalInventory patterns;
-        private final AppEngInternalInventory client = new AppEngInternalInventory(WINDOW);
-        int offset;
-
-        PatternWindow(@Nullable InternalInventory patterns) {
-            this.patterns = patterns;
-        }
-
-        @Override
-        public int size() {
-            return WINDOW;
-        }
-
-        @Override
-        public int getSlotLimit(int slot) {
-            return 1;
-        }
-
-        @Override
-        public ItemStack getStackInSlot(int slot) {
-            if (patterns == null)
-                return client.getStackInSlot(slot);
-            int i = offset + slot;
-            return i < patterns.size() ? patterns.getStackInSlot(i) : ItemStack.EMPTY;
-        }
-
-        @Override
-        public void setItemDirect(int slot, ItemStack stack) {
-            if (patterns == null) {
-                client.setItemDirect(slot, stack);
-                return;
-            }
-            int i = offset + slot;
-            if (i < patterns.size())
-                patterns.setItemDirect(i, stack);
+            window.setOffset(row * COLUMNS);
         }
     }
 

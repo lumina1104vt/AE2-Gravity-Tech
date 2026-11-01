@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GAG",
+    "AEA",
+    "GAG"
+  ],
+  "key": {
+    "G": {
+      "item": "ae2_gvt:gravity_crystal"
+    },
+    "A": {
+      "item": "ae2_gvt:antigravity_crystal"
+    },
+    "E": {
+      "tag": "c:ender_pearls"
+    }
+  },
+  "result": {
+    "id": "ae2_gvt:paradox_crystal_seed",
+    "count": 1
+  }
+}

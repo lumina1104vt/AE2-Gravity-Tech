@@ -1,6 +1,12 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:block/cube",
   "textures": {
-    "all": "ae2_gvt:block/twin_star_hub_off"
+    "particle": "ae2_gvt:block/twin_star_hub_off",
+    "up": "ae2_gvt:block/twin_star_hub_off",
+    "north": "ae2_gvt:block/machine_frame",
+    "south": "ae2_gvt:block/machine_frame",
+    "east": "ae2_gvt:block/machine_frame",
+    "west": "ae2_gvt:block/machine_frame",
+    "down": "ae2_gvt:block/machine_frame"
   }
 }

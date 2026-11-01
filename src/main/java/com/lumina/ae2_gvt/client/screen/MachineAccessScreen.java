@@ -39,6 +39,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
         super(menu, playerInventory, title, style);
         addToLeftToolbar(new BlockingButton());
         addToLeftToolbar(new InsertModeButton());
+        addToLeftToolbar(new GroupButton());
     }
 
     @Override
@@ -126,7 +127,38 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
         }
     }
 
-    /** Our own icons (16x16 at the right of the background texture): default, specified, any. */
+    /** The pairing number on the button: a machine spread over several blocks. */
+    private final class GroupButton extends IconButton {
+        GroupButton() {
+            super(btn -> menu.cycleGroup());
+        }
+
+        @Override
+        protected Icon getIcon() {
+            return null;    // the background only; the number is drawn on it
+        }
+
+        @Override
+        public void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+            super.renderWidget(g, mouseX, mouseY, partialTick);
+            if (!visible)
+                return;
+            String number = menu.group == 0 ? "-" : Integer.toString(menu.group);
+            g.pose().pushPose();
+            g.pose().translate(0, 0, 100);
+            g.drawString(font, number, getX() + (16 - font.width(number)) / 2, getY() + 5 + (isHovered() ? 1 : 0), 0xFFFFFFFF, true);
+            g.pose().popPose();
+        }
+
+        @Override
+        public List<Component> getTooltipMessage() {
+            return List.of(Component.translatable("gui.ae2_gvt.machine_access.group"),
+                    Component.translatable(menu.group == 0 ? "gui.ae2_gvt.machine_access.group_off" : "gui.ae2_gvt.machine_access.group_on", menu.group)
+                            .withStyle(ChatFormatting.GRAY));
+        }
+    }
+
+    /** Our own icons (16x16 at the right of the background texture): default, specified, any, output only. */
     private final class InsertModeButton extends IconButton {
         InsertModeButton() {
             super(btn -> menu.cycleInsertMode());

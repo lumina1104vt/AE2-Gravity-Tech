@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "cxc",
+    "xmx",
+    "cxc"
+  ],
+  "key": {
+    "c": {
+      "item": "ae2_gvt:antigravity_processor"
+    },
+    "x": {
+      "item": "ae2_gvt:anti_singularity"
+    },
+    "m": {
+      "item": "ae2_gvt:blank_unit"
+    }
+  },
+  "result": {
+    "id": "ae2_gvt:singular_computing_unit",
+    "count": 1
+  }
+}

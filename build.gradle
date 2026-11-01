@@ -96,6 +96,7 @@ dependencies {
     localRuntime "maven.modrinth:geckolib:${geckolib_version}"
 
     // JEI (recipe lookup; the pattern terminal's [+] transfer will hook into it)
+    compileOnly "maven.modrinth:emi:${emi_version}"
     compileOnly "maven.modrinth:jei:${jei_version}"
     localRuntime "maven.modrinth:jei:${jei_version}"
 

@@ -1,0 +1,54 @@
+{
+  "includes": [
+    "common/common.json"
+  ],
+  "background": {
+    "texture": "guis/priority.png",
+    "srcRect": [
+      0,
+      0,
+      176,
+      125
+    ]
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.ae2_gvt.fusion.cap"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    },
+    "cap_unit": {
+      "text": {
+        "text": "FE/t"
+      },
+      "position": {
+        "left": 130,
+        "top": 57
+      }
+    }
+  },
+  "widgets": {
+    "back": {
+      "left": 152,
+      "top": -5,
+      "width": 20,
+      "height": 20
+    },
+    "cap": {
+      "left": 20,
+      "top": 30,
+      "width": 138,
+      "height": 62
+    },
+    "capInput": {
+      "left": 23,
+      "top": 55,
+      "width": 103,
+      "height": 12
+    }
+  }
+}

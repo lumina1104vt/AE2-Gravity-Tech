@@ -9,7 +9,7 @@ import org.joml.Vector3d;
 import org.joml.Vector3f;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
-import com.lumina.ae2_gvt.prototype.twinstar.TwinStarPreviewBlockEntity;
+import com.lumina.ae2_gvt.preview.TwinStarPreviewBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 

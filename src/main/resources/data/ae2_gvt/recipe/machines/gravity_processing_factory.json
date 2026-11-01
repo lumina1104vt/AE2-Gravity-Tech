@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "III",
+    "PSP",
+    "BBB"
+  ],
+  "key": {
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "P": {
+      "item": "ae2_gvt:gravity_processor"
+    },
+    "S": {
+      "item": "ae2:inscriber"
+    },
+    "B": {
+      "item": "ae2_gvt:gravity_block"
+    }
+  },
+  "result": {
+    "id": "ae2_gvt:gravity_processing_factory",
+    "count": 1
+  }
+}

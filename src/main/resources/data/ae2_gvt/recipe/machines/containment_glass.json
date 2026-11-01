@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GGG",
+    "GDG",
+    "GGG"
+  ],
+  "key": {
+    "G": {
+      "item": "ae2:quartz_glass"
+    },
+    "D": {
+      "item": "ae2_gvt:antigravity_dust"
+    }
+  },
+  "result": {
+    "id": "ae2_gvt:containment_glass",
+    "count": 8
+  }
+}

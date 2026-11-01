@@ -1,0 +1,50 @@
+{
+  "type": "ae2_gvt:fusion",
+  "ingredients": [
+    {
+      "item": "ae2_gvt:graviton_storage_cell_256k",
+      "count": 8
+    },
+    {
+      "item": "ae2_gvt:planck_computing_unit",
+      "count": 4
+    },
+    {
+      "item": "ae2_gvt:white_hole_core",
+      "count": 4
+    },
+    {
+      "item": "ae2_gvt:chaos_matter",
+      "count": 64
+    },
+    {
+      "item": "ae2_gvt:paradox_quantum_entangled_singularity",
+      "count": 64
+    },
+    {
+      "item": "ae2_gvt:paradox_processor",
+      "count": 256
+    }
+  ],
+  "keys": [
+    {
+      "#t": "ae2_gvt:graviton",
+      "id": "graviton",
+      "#": 65536
+    },
+    {
+      "#t": "ae2_gvt:graviton",
+      "id": "antigraviton",
+      "#": 65536
+    }
+  ],
+  "results": [
+    {
+      "id": "ae2_gvt:white_hole_energy_cell",
+      "count": 1
+    }
+  ],
+  "temperature": 1000000,
+  "time": 600,
+  "power": 1.0
+}

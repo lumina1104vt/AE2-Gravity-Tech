@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.blockentities.cpu.DummyTwinStarCPUBlockEntity;
 import com.lumina.ae2_gvt.menus.DummyCpuMenu;
+import com.lumina.twinstar.client.TheoryScreen;
 
 import appeng.client.gui.AEBaseScreen;
 import appeng.client.gui.style.Blitter;
@@ -46,6 +47,8 @@ public class DummyCpuScreen extends AEBaseScreen<DummyCpuMenu> {
         this.scrollbar = widgets.addScrollBar("scrollbar", Scrollbar.DEFAULT);
         this.capacity = numberField("capacity", menu::setCapacity);
         this.parallel = numberField("parallel", menu::setParallel);
+        // the engine's theory layer for this hub's network; comes back to this screen
+        addToLeftToolbar(TheoryScreen.button(0, 0, () -> TheoryScreen.open(null, () -> this)));
     }
 
     /** Any size: plain digits, or units (K…Q) and scientific notation (3E, 2e18, 5K); empty = unlimited. */

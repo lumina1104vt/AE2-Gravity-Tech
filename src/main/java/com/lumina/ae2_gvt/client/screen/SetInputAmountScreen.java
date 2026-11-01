@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Locale;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
-import com.lumina.ae2_gvt.prototype.terminal.TwinStarPatternTermMenu;
+import com.lumina.ae2_gvt.terminal.TwinStarPatternTermMenu;
 
 import appeng.api.stacks.GenericStack;
 import appeng.client.gui.AESubScreen;

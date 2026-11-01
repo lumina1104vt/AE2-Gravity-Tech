@@ -46,11 +46,13 @@ public class AE2GravityTech {
     public static final CrystalLine PARADOX = CrystalLine.register("paradox", MapColor.COLOR_GRAY, 15);   // 15 is the maximum: light is stored in 4 bits
 
     static {
-        com.lumina.ae2_gvt.prototype.hub.HubUnits.init();   // registers the hub units with BLOCKS / ITEMS
-        com.lumina.ae2_gvt.prototype.hub.HubStructureBlocks.init();   // helix / pillar / ring blocks of the hexagram hub
-        com.lumina.ae2_gvt.prototype.hub.HexagramHub.register();   // the hexagram hub's lumina-multiblock definition
-        com.lumina.ae2_gvt.prototype.quantum.QuantumController.init();   // quantum controller
-        com.lumina.ae2_gvt.prototype.graviton.Gravitons.init();   // graviton storage type and cells
+        com.lumina.ae2_gvt.hub.HubUnits.init();   // registers the hub units with BLOCKS / ITEMS
+        com.lumina.ae2_gvt.hub.HubStructureBlocks.init();   // helix / pillar / ring blocks of the hexagram hub
+        com.lumina.ae2_gvt.structure.FusionStructure.register();   // the fusion chamber's lumina-multiblock definition
+        com.lumina.ae2_gvt.hub.HexagramHub.register();   // the hexagram hub's lumina-multiblock definition
+        com.lumina.ae2_gvt.quantum.QuantumController.init();   // quantum controller
+        com.lumina.ae2_gvt.graviton.Gravitons.init();   // graviton storage type and cells
+        com.lumina.ae2_gvt.storage.FeEnergy.init();     // FE on the network, without Applied Flux
     }
 
     // The mod's creative tab, placed after the combat tab
@@ -67,17 +69,18 @@ public class AE2GravityTech {
                 output.accept(Items.GRAVITY_CONSTRAINER);
                 output.accept(Items.ACCELERATION_DEVICE);
                 output.accept(Items.FUSION_CONTROLLER);
-                output.accept(Items.CONTAINMENT_GLASS);
-                output.accept(Items.MATTER_PORT);
                 output.accept(Items.ENERGY_PORT);
+                output.accept(Items.CONTAINMENT_GLASS);
                 output.accept(Items.MACHINE_FRAME);
                 output.accept(Items.STRUCTURE_FRAME);
-                com.lumina.ae2_gvt.prototype.hub.HubUnits.all().forEach(item -> output.accept(item.get()));
-                com.lumina.ae2_gvt.prototype.hub.HubStructureBlocks.all().forEach(item -> output.accept(item.get()));
-                output.accept(com.lumina.ae2_gvt.prototype.terminal.TwinStarTerminal.ITEM.get());
+                com.lumina.ae2_gvt.hub.HubUnits.all().forEach(item -> output.accept(item.get()));
+                com.lumina.ae2_gvt.hub.HubStructureBlocks.all().forEach(item -> output.accept(item.get()));
+                output.accept(com.lumina.ae2_gvt.terminal.TwinStarTerminal.ITEM.get());
                 output.accept(Items.MACHINE_ACCESS_INTERFACE);
-                output.accept(com.lumina.ae2_gvt.prototype.quantum.QuantumController.ITEM.get());
-                com.lumina.ae2_gvt.prototype.graviton.Gravitons.all().forEach(item -> output.accept(item.get()));
+                output.accept(com.lumina.ae2_gvt.quantum.QuantumController.ITEM.get());
+                com.lumina.ae2_gvt.graviton.Gravitons.all().forEach(item -> output.accept(item.get()));
+                output.accept(Items.BLACK_HOLE_STORAGE_CELL);
+                output.accept(Items.WHITE_HOLE_ENERGY_CELL);
                 output.accept(Items.GRAVITON_COLLECTOR);
                 for (CrystalLine line : List.of(GRAVITY, ANTIGRAVITY, PARADOX)) {
                     line.all().forEach(item -> output.accept(item.get()));
@@ -89,6 +92,8 @@ public class AE2GravityTech {
                 output.accept(Items.DAMAGED_BUDDING_PARADOX);
                 output.accept(Items.PARADOX_CRYSTAL_SEED);
                 output.accept(Items.CHAOS_MATTER);
+                output.accept(com.lumina.ae2_gvt.hole.GravityHole.BLACK_HOLE_ITEM);
+                output.accept(com.lumina.ae2_gvt.hole.GravityHole.WHITE_HOLE_ITEM);
                 output.accept(Items.ANTIGRAVITY_ARMOR_HELMET);
                 output.accept(Items.ANTIGRAVITY_ARMOR_CHESTPLATE);
                 output.accept(Items.ANTIGRAVITY_ARMOR_LEGGINGS);
@@ -106,25 +111,43 @@ public class AE2GravityTech {
         CREATIVE_MODE_TABS.register(modEventBus);
         DataComponents.register(modEventBus);
         Menus.register(modEventBus);
+        com.lumina.ae2_gvt.recipes.Recipes.register(modEventBus);
+        // AE2 upgrade cards our machines take (registered once the items exist)
+        modEventBus.addListener((net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent e) -> e.enqueueWork(
+                com.lumina.ae2_gvt.storage.BlackHoleCell::registerHandler));
+        modEventBus.addListener((net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent e) -> e.enqueueWork(
+                com.lumina.ae2_gvt.storage.FeEnergy::registerStrategies));
+        modEventBus.addListener((net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent e) -> e.enqueueWork(
+                com.lumina.ae2_gvt.graviton.InfiniteGravitonCell::registerHandler));
+        modEventBus.addListener((net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent e) -> e.enqueueWork(() ->
+                appeng.api.upgrades.Upgrades.add(appeng.core.definitions.AEItems.SPEED_CARD,
+                        com.lumina.ae2_gvt.blocks.Blocks.GRAVITY_FACTORY.get(),
+                        com.lumina.ae2_gvt.blockentities.GravityFactoryBlockEntity.MAX_SPEED_CARDS)));
         // which machine a synthesis pattern is for, for the twin-star engine
         com.lumina.twinstar.api.PatternMachines.setReader(definition -> {
-            var machine = definition.get(com.lumina.ae2_gvt.prototype.terminal.TwinStarTerminal.PATTERN_MACHINE.get());
+            var machine = definition.get(com.lumina.ae2_gvt.terminal.TwinStarTerminal.PATTERN_MACHINE.get());
             return machine == null ? null : machine.value();
         });
         BlockEntities.register(modEventBus);
         AntigravityArmor.register(modEventBus);
-        com.lumina.ae2_gvt.prototype.terminal.TwinStarTerminal.register(modEventBus);
-        com.lumina.ae2_gvt.prototype.hole.GravityHole.register(modEventBus);
-        com.lumina.ae2_gvt.prototype.quantum.QuantumController.register(modEventBus);
-        com.lumina.ae2_gvt.prototype.graviton.Gravitons.register(modEventBus);
-        com.lumina.ae2_gvt.prototype.twinstar.TwinStarPreview.register(modEventBus);
-        com.lumina.ae2_gvt.prototype.hub.HubStructureBlocks.register(modEventBus);   // hexagram hub controller's block entity
+        com.lumina.ae2_gvt.terminal.TwinStarTerminal.register(modEventBus);
+        com.lumina.ae2_gvt.hole.GravityHole.register(modEventBus);
+        com.lumina.ae2_gvt.hole.BlackHoleCrater.register(modEventBus);   // natural black holes
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(com.lumina.ae2_gvt.structure.FusionCommands::register);
+        com.lumina.ae2_gvt.rift.SpaceRift.register(modEventBus);   // the tear of an annihilation TNT, 破碎星空
+        com.lumina.ae2_gvt.quantum.QuantumController.register(modEventBus);
+        com.lumina.ae2_gvt.graviton.Gravitons.register(modEventBus);
+        com.lumina.ae2_gvt.storage.FeEnergy.register(modEventBus);
+        com.lumina.ae2_gvt.preview.TwinStarPreview.register(modEventBus);
+        com.lumina.ae2_gvt.hub.HubStructureBlocks.register(modEventBus);   // hexagram hub controller's block entity
 
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
 
     @SubscribeEvent
     static void payloadRegister(RegisterPayloadHandlersEvent event) {
-        event.registrar("1").playToServer(OpenArmorModulesPayload.TYPE, OpenArmorModulesPayload.STREAM_CODEC, OpenArmorModulesPayload::handle);
+        event.registrar("1").playToServer(OpenArmorModulesPayload.TYPE, OpenArmorModulesPayload.STREAM_CODEC, OpenArmorModulesPayload::handle)
+                .playToClient(com.lumina.ae2_gvt.payload.HoleBurstPayload.TYPE, com.lumina.ae2_gvt.payload.HoleBurstPayload.STREAM_CODEC,
+                        com.lumina.ae2_gvt.payload.HoleBurstPayload::handle);
     }
 }

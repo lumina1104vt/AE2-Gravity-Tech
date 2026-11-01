@@ -7,50 +7,67 @@ import com.lumina.ae2_gvt.client.renderer.FusionPlasmaRenderer;
 import com.lumina.ae2_gvt.blockentities.FusionControllerBlockEntity;
 import com.lumina.ae2_gvt.menus.FusionControllerMenu;
 
+import appeng.api.stacks.GenericStack;
 import appeng.client.gui.AEBaseScreen;
-import appeng.client.gui.NumberEntryType;
+import appeng.client.gui.Icon;
 import appeng.client.gui.style.Blitter;
 import appeng.client.gui.style.ScreenStyle;
-import appeng.client.gui.widgets.NumberEntryWidget;
+import appeng.client.gui.widgets.ProgressBar;
+import appeng.client.gui.widgets.TabButton;
+import appeng.menu.slot.FakeSlot;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
- * 核融合控制器 GUI, laid out like AE2's own screens. Background: assets/ae2_gvt/textures/gui/
- * fusion_controller.png (tools/fusion_gui_texture.py); positions: assets/ae2/screens/
- * fusion_controller.json. Almost no text: values are in tooltips.
+ * 核融合控制器 GUI, laid out like an AE2 machine: slots, progress bar, player inventory. Background:
+ * assets/ae2_gvt/textures/gui/fusion_controller.png (tools/fusion_gui_texture.py); positions:
+ * assets/ae2/screens/fusion_controller.json. Almost no text: values are in tooltips.
  * <ul>
- *   <li>top: the energy-input cap, AE2's own number entry placed as on its level emitter</li>
+ *   <li>top right: a tab to the energy-input cap ({@link FusionCapScreen}), as AE2's priority</li>
  *   <li>temperature bar: the plasma's colour path on a log scale, lit up to the current
  *       temperature; white line = current, dashed = where the cap will settle it, triangle = what
  *       the reaction needs</li>
  *   <li>energy in / out: two bars that look the same (AE2's vibration-chamber bar, lying down,
  *       log scale); tooltips tell them apart</li>
- *   <li>a status lamp beside the title</li>
+ *   <li>a status mark beside the title, told apart by its shape (the player can't rely on colour)</li>
  * </ul>
  */
 public class FusionControllerScreen extends AEBaseScreen<FusionControllerMenu> {
-    private static final int TX0 = 12, TX1 = 163, TY0 = 89, TY1 = 99;
-    private static final int[] BAR_X = {12, 90};
-    private static final int BAR_Y = 110, BAR_W = 72, BAR_H = 6;
-    private static final int LAMP_X = 162, LAMP_Y = 7;
-    private static final double LO = 1500, HI = 80000;
-    private static final int[] LAMP = {0xFF6E7386, 0xFFE6A01E, 0xFF3CC85A, 0xFFDC3232};
+    private static final int TX0 = 12, TX1 = 219, TY0 = 19, TY1 = 28;
+    private static final int[] BAR_X = {12, 122};
+    private static final int BAR_Y = 34, BAR_W = 96, BAR_H = 6;
+    private static final int LAMP_X = 200, LAMP_Y = 6;
+    private static final double LO = 1500, HI = 1_100_000;
+    /** Status marks: colour, and shape: a hollow square, an arrow up, a full diamond, a cross. */
+    private static final int[] LAMP = {0xFF6E7386, 0xFFE6A01E, 0xFF3C8CE0, 0xFFE6A01E};
+    private static final String[][] MARKS = {
+            {"#####", "#...#", "#...#", "#...#", "#####"},
+            {"..#..", ".###.", "#.#.#", "..#..", "..#.."},
+            {"..#..", ".###.", "#####", ".###.", "..#.."},
+            {"#...#", ".#.#.", "..#..", ".#.#.", "#...#"}};
     private static final String[] STATUS = {"idle", "heating", "running", "too_cold"};
-    private static final Blitter SEGMENT = Blitter.texture(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/fusion_controller.png")).src(176, 0, 18, BAR_H);
-
-    private final NumberEntryWidget cap;
+    private static final Blitter SEGMENT = Blitter.texture(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/fusion_controller.png")).src(232, 0, 18, BAR_H);
 
     public FusionControllerScreen(FusionControllerMenu menu, Inventory playerInventory, Component title, ScreenStyle style) {
         super(menu, playerInventory, title, style);
-        cap = widgets.addNumberEntryWidget("cap", NumberEntryType.UNITLESS);
-        cap.setTextFieldStyle(style.getWidget("capInput"));
-        cap.setMinValue(0);
-        cap.setMaxValue(FusionControllerBlockEntity.MAX_CAP);
-        cap.setLongValue(menu.energyCap);
-        cap.setOnChange(() -> cap.getLongValue().ifPresent(menu::setEnergyCap));
+        widgets.add("setCap", new TabButton(Icon.LEVEL_ENERGY, Component.translatable("gui.ae2_gvt.fusion.cap"),
+                btn -> switchToScreen(new FusionCapScreen(this))));
+        widgets.add("progressBar", new ProgressBar(menu, style.getImage("progressBar"), ProgressBar.Direction.VERTICAL));
+    }
+
+    /** Middle click on a marked slot: how much of it, as on an ME interface. */
+    @Override
+    public boolean mouseClicked(double x, double y, int button) {
+        if (button == 2 && hoveredSlot instanceof FakeSlot slot && hoveredSlot.hasItem()) {
+            GenericStack mark = GenericStack.fromItemStack(slot.getItem());
+            if (mark != null) {
+                switchToScreen(new FusionMarkScreen(this, slot.getSlotIndex(), mark));
+                return true;
+            }
+        }
+        return super.mouseClicked(x, y, button);
     }
 
     /** Bar column for a temperature, on a log scale. */
@@ -62,7 +79,7 @@ public class FusionControllerScreen extends AEBaseScreen<FusionControllerMenu> {
     @Override
     public void drawBG(GuiGraphics g, int ox, int oy, int mouseX, int mouseY, float partialTicks) {
         super.drawBG(g, ox, oy, mouseX, mouseY, partialTicks);
-        int temp = menu.temperature;
+        long temp = menu.temperature;
 
         // temperature: the colour path, lit up to the current temperature
         for (int x = TX0; x <= TX1; x++) {
@@ -90,7 +107,14 @@ public class FusionControllerScreen extends AEBaseScreen<FusionControllerMenu> {
         bar(g, ox + BAR_X[0], oy + BAR_Y, logFrac(menu.energyIn));
         bar(g, ox + BAR_X[1], oy + BAR_Y, logFrac(menu.energyOut));
 
-        g.fill(ox + LAMP_X, oy + LAMP_Y, ox + LAMP_X + 5, oy + LAMP_Y + 5, LAMP[menu.status()]);
+        String[] mark = MARKS[menu.status()];
+        for (int y = 0; y < 5; y++) {
+            for (int x = 0; x < 5; x++) {
+                if (mark[y].charAt(x) == '#') {
+                    g.fill(ox + LAMP_X + x, oy + LAMP_Y + y, ox + LAMP_X + x + 1, oy + LAMP_Y + y + 1, LAMP[menu.status()]);
+                }
+            }
+        }
     }
 
     private static double logFrac(long fePerTick) {

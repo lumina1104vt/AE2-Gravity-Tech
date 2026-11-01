@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " C ",
+    "EKE",
+    " C "
+  ],
+  "key": {
+    "C": {
+      "item": "ae2:charged_certus_quartz_crystal"
+    },
+    "E": {
+      "item": "minecraft:ender_pearl"
+    },
+    "K": {
+      "item": "minecraft:compass"
+    }
+  },
+  "result": {
+    "id": "ae2_gvt:gravity_wave_detector",
+    "count": 1
+  }
+}

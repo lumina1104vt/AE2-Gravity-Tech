@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.client.renderer.TwinStarPreviewRenderer;
-import com.lumina.ae2_gvt.prototype.twinstar.TwinStarPreview;
+import com.lumina.ae2_gvt.preview.TwinStarPreview;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 
 import net.minecraft.client.renderer.ShaderInstance;

@@ -27,9 +27,10 @@ public class Items {
     public static final DeferredItem<Item> PARADOX_QUANTUM_ENTANGLED_SINGULARITY =
             ITEMS.registerSimpleItem("paradox_quantum_entangled_singularity");
 
-    public static final DeferredItem<Item> PARADOX_CRYSTAL_SEED = ITEMS.registerSimpleItem("paradox_crystal_seed");
+    public static final DeferredItem<ParadoxSeedItem> PARADOX_CRYSTAL_SEED = ITEMS.registerItem("paradox_crystal_seed", ParadoxSeedItem::new);
 
-    public static final DeferredItem<Item> GRAVITY_WAVE_DETECTOR = ITEMS.registerSimpleItem("gravity_wave_detector", new Item.Properties().stacksTo(1));
+    public static final DeferredItem<GravityWaveDetectorItem> GRAVITY_WAVE_DETECTOR = ITEMS.registerItem("gravity_wave_detector",
+            GravityWaveDetectorItem::new, new Item.Properties().stacksTo(1));
 
     // block item
     public static final DeferredItem<BlockItem> GRAVITY_CONSTRAINER = ITEMS.registerSimpleBlockItem("gravity_constrainer", Blocks.GRAVITY_CONSTRAINER);
@@ -95,9 +96,13 @@ public class Items {
     public static final DeferredItem<BlockItem> GRAVITON_COLLECTOR = ITEMS.registerSimpleBlockItem("graviton_collector", Blocks.GRAVITON_COLLECTOR);
     public static final DeferredItem<BlockItem> GRAVITY_FACTORY = ITEMS.registerSimpleBlockItem("gravity_processing_factory", Blocks.GRAVITY_FACTORY);
     public static final DeferredItem<BlockItem> FUSION_CONTROLLER = ITEMS.registerSimpleBlockItem("fusion_controller", Blocks.FUSION_CONTROLLER);
-    public static final DeferredItem<BlockItem> CONTAINMENT_GLASS = ITEMS.registerSimpleBlockItem("containment_glass", Blocks.CONTAINMENT_GLASS);
-    public static final DeferredItem<BlockItem> MATTER_PORT = ITEMS.registerSimpleBlockItem("matter_port", Blocks.MATTER_PORT);
     public static final DeferredItem<BlockItem> ENERGY_PORT = ITEMS.registerSimpleBlockItem("energy_port", Blocks.ENERGY_PORT);
+    public static final DeferredItem<BlockItem> CONTAINMENT_GLASS = ITEMS.registerSimpleBlockItem("containment_glass", Blocks.CONTAINMENT_GLASS);
+
+    public static final DeferredItem<com.lumina.ae2_gvt.storage.BlackHoleCell> BLACK_HOLE_STORAGE_CELL =
+            ITEMS.registerItem("black_hole_storage_cell", com.lumina.ae2_gvt.storage.BlackHoleCell::new);
+
+    public static final DeferredItem<BlockItem> WHITE_HOLE_ENERGY_CELL = ITEMS.registerSimpleBlockItem("white_hole_energy_cell", Blocks.WHITE_HOLE_ENERGY_CELL);
 
     // dummy
     public static final DeferredItem<BlockItem> TWINSTAR_CPU = ITEMS.registerSimpleBlockItem("dummy_twinstar_cpu", Blocks.TWINSTAR_CPU);

@@ -1,0 +1,10 @@
+{
+  "type": "ae2_gvt:shattered_starfield",
+  "generator": {
+    "type": "ae2_gvt:shattered_starfield",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "ae2_gvt:shattered_starfield"
+    }
+  }
+}

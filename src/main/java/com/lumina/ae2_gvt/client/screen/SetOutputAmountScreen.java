@@ -7,7 +7,7 @@ import java.util.Locale;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.lumina.ae2_gvt.prototype.terminal.TwinStarPatternTermMenu;
+import com.lumina.ae2_gvt.terminal.TwinStarPatternTermMenu;
 
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AmountFormat;

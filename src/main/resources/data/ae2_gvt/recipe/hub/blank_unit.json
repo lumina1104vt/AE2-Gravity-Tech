@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "cxc",
+    "xmx",
+    "cxc"
+  ],
+  "key": {
+    "c": {
+      "item": "ae2_gvt:gravity_alloy_ingot"
+    },
+    "x": {
+      "item": "ae2_gvt:antigravity_alloy_ingot"
+    },
+    "m": {
+      "item": "ae2:crafting_unit"
+    }
+  },
+  "result": {
+    "id": "ae2_gvt:blank_unit",
+    "count": 1
+  }
+}

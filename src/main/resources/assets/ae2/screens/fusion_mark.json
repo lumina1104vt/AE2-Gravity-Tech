@@ -1,0 +1,45 @@
+{
+  "includes": [
+    "common/common.json"
+  ],
+  "background": {
+    "texture": "guis/priority.png",
+    "srcRect": [
+      0,
+      0,
+      176,
+      125
+    ]
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.ae2_gvt.fusion.mark_amount"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    }
+  },
+  "widgets": {
+    "back": {
+      "left": 152,
+      "top": -5,
+      "width": 20,
+      "height": 20
+    },
+    "amount": {
+      "left": 20,
+      "top": 30,
+      "width": 138,
+      "height": 62
+    },
+    "amountInput": {
+      "left": 23,
+      "top": 55,
+      "width": 130,
+      "height": 12
+    }
+  }
+}

@@ -3,7 +3,7 @@ package com.lumina.ae2_gvt.blocks;
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.blocks.budding.BuddingParadox;
 import com.lumina.ae2_gvt.blocks.cpu.DummyTwinStarCPU;
-import com.lumina.ae2_gvt.prototype.AnnihilationTntBlock;
+import com.lumina.ae2_gvt.annihilation.AnnihilationTntBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -55,9 +55,12 @@ public final class Blocks {
                     .isRedstoneConductor((s, l, p) -> false)
                     .isSuffocating((s, l, p) -> false)
                     .isViewBlocking((s, l, p) -> false));
-    public static final DeferredBlock<Block> MATTER_PORT = BLOCKS.registerSimpleBlock("matter_port",
-            BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.2f, 11f).sound(SoundType.METAL));
+
     public static final DeferredBlock<Block> ENERGY_PORT = BLOCKS.registerSimpleBlock("energy_port",
+            BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.2f, 11f).sound(SoundType.METAL));
+
+    public static final DeferredBlock<com.lumina.ae2_gvt.storage.WhiteHoleEnergyCellBlock> WHITE_HOLE_ENERGY_CELL = BLOCKS.registerBlock(
+            "white_hole_energy_cell", com.lumina.ae2_gvt.storage.WhiteHoleEnergyCellBlock::new,
             BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.2f, 11f).sound(SoundType.METAL));
 
     public static final DeferredBlock<DummyTwinStarCPU> TWINSTAR_CPU = Blocks.BLOCKS.registerBlock(

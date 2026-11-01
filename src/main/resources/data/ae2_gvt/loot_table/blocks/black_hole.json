@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "ae2_gvt:chaos_matter"
+        }
+      ]
+    }
+  ],
+  "random_sequence": "ae2_gvt:blocks/black_hole"
+}

@@ -30,6 +30,10 @@ public class Menus {
             () -> MenuTypeBuilder.create(DummyCpuMenu::new, DummyTwinStarCPUBlockEntity.class)
                     .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "dummy_twinstar_cpu")));
 
+    public static final DeferredHolder<MenuType<?>, MenuType<HubControllerMenu>> TWIN_STAR_HUB = MENUS.register("twin_star_hub",
+            () -> MenuTypeBuilder.create(HubControllerMenu::new, com.lumina.ae2_gvt.hub.TwinStarHubBlockEntity.class)
+                    .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "twin_star_hub")));
+
     public static final DeferredHolder<MenuType<?>, MenuType<MachineAccessMenu>> MACHINE_ACCESS = MENUS.register("machine_access_interface",
             () -> MenuTypeBuilder.create(MachineAccessMenu::new, MachineAccessInterface.class)
                     .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "machine_access_interface")));

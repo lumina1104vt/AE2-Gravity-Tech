@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "cxc",
+    "xmx",
+    "cxc"
+  ],
+  "key": {
+    "c": {
+      "item": "ae2_gvt:antigravity_alloy_ingot"
+    },
+    "x": {
+      "item": "ae2_gvt:anti_singularity"
+    },
+    "m": {
+      "item": "ae2_gvt:chaos_matter"
+    }
+  },
+  "result": {
+    "id": "ae2_gvt:white_hole_core",
+    "count": 1
+  }
+}

@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.client.renderer.HexagramHubRenderer;
-import com.lumina.ae2_gvt.prototype.hub.HubStructureBlocks;
+import com.lumina.ae2_gvt.hub.HubStructureBlocks;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 

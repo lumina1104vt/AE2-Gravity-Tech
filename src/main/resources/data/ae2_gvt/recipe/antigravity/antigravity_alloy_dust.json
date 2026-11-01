@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "ae2_gvt:antigravity_dust"
+    },
+    {
+      "tag": "c:ingots/gold"
+    },
+    {
+      "tag": "c:dusts/redstone"
+    },
+    {
+      "tag": "c:obsidians"
+    }
+  ],
+  "result": {
+    "id": "ae2_gvt:antigravity_alloy_dust",
+    "count": 1
+  }
+}

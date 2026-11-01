@@ -1,6 +1,12 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:block/cube",
   "textures": {
-    "all": "ae2_gvt:block/fusion_controller"
+    "particle": "ae2_gvt:block/fusion_controller",
+    "north": "ae2_gvt:block/fusion_controller",
+    "south": "ae2_gvt:block/machine_frame",
+    "east": "ae2_gvt:block/machine_frame",
+    "west": "ae2_gvt:block/machine_frame",
+    "up": "ae2_gvt:block/machine_frame",
+    "down": "ae2_gvt:block/machine_frame"
   }
 }

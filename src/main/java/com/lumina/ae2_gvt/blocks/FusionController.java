@@ -20,12 +20,16 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
 
 public class FusionController extends Block implements EntityBlock {
     public static final BooleanProperty FORMED = BooleanProperty.create("formed");
+    /** The way its front looks: out of the chamber's wall. */
+    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
     public FusionController(Properties properties) {
         super(properties);
@@ -33,12 +37,12 @@ public class FusionController extends Block implements EntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FORMED);
+        builder.add(FORMED, FACING);
     }
 
     @Override
     public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState().setValue(FORMED, false);
+        return defaultBlockState().setValue(FORMED, false).setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
     @Override
@@ -54,6 +58,9 @@ public class FusionController extends Block implements EntityBlock {
 
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof FusionControllerBlockEntity controller) {
+            controller.dropContents();
+        }
         super.onRemove(state, level, pos, newState, movedByPiston);
         // the controller is gone: the chamber's frames lose their formed look
         if (!state.is(newState.getBlock()) && level instanceof ServerLevel server) {

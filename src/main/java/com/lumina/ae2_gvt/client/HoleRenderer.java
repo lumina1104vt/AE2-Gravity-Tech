@@ -6,8 +6,8 @@ import java.util.List;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import com.lumina.ae2_gvt.prototype.hole.GravityHole;
-import com.lumina.ae2_gvt.prototype.hole.GravityHoleEntity;
+import com.lumina.ae2_gvt.hole.GravityHole;
+import com.lumina.ae2_gvt.hole.GravityHoleBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
@@ -16,7 +16,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -26,7 +25,7 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import com.lumina.ae2_gvt.AE2GravityTech;
 
 /**
- * Draws every black / white hole near the camera, after the world (translucent particles) so the
+ * Draws every black / white hole block near the camera (in the middle of its cell), after the world (translucent particles) so the
  * lensing has the finished scene to bend:
  * <ol>
  *   <li>copy the frame so far ({@link SceneSnapshot}) - again for every hole, far to near, so a
@@ -36,14 +35,16 @@ import com.lumina.ae2_gvt.AE2GravityTech;
  *   <li>the hole: a starfield sphere (inverted for the white hole)</li>
  *   <li>the accretion disc, tilted per hole: matter glowing as it spirals in, or dark matter
  *       thrown out (opposite spin)</li>
+ *   <li>its small gravitational-wave ripple ({@link HoleRipples}), over another copy</li>
  * </ol>
+ * Then the big ripples of holes blown up.
  * Vertex colour flags (red = white hole, green = disc layer) and UV0 (position in hole radii) carry
  * the per-vertex data to the shaders.
  */
 @EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
 public final class HoleRenderer {
     /** Lens panel half-size and accretion disc radii, in hole radii. */
-    static final float LENS = 4.5f, DISC_IN = 1.25f, DISC_OUT = 2.7f;
+    static final float LENS = 7f, DISC_IN = 1.25f, DISC_OUT = 2.7f;
     private static final double RANGE = 96;
     private static final int LATS = 24, LONS = 32, DISC_SEGMENTS = 64;
     /** Holes drawn per frame (each costs a copy of the frame). */
@@ -63,31 +64,33 @@ public final class HoleRenderer {
         }
         Camera camera = event.getCamera();
         Vec3 cam = camera.getPosition();
-        float pt = event.getPartialTick().getGameTimeDeltaPartialTick(false);
-        List<GravityHoleEntity> holes = new ArrayList<>();
-        for (Entity e : mc.level.entitiesForRendering()) {
-            if (e instanceof GravityHoleEntity hole && hole.position().distanceToSqr(cam) < RANGE * RANGE) {
+        List<GravityHoleBlockEntity> holes = new ArrayList<>();
+        for (GravityHoleBlockEntity hole : GravityHoleBlockEntity.CLIENT_HOLES) {
+            if (hole.getLevel() == mc.level && !hole.isRemoved() && centre(hole).distanceToSqr(cam) < RANGE * RANGE) {
                 holes.add(hole);
             }
         }
+        MultiBufferSource.BufferSource buffers = SceneSnapshot.BUFFERS;
+        double now = mc.level.getGameTime() + mc.getTimer().getGameTimeDeltaPartialTick(true);
         if (holes.isEmpty()) {
+            HoleRipples.bursts(buffers, cam, now);
             return;
         }
         // far to near, each with a fresh copy of the frame: a nearer hole then bends the farther
         // ones (their discs, rings and all) like the rest of the scene. One copy per hole, so only
         // the nearest few are drawn.
-        holes.sort(java.util.Comparator.comparingDouble((GravityHoleEntity h) -> h.position().distanceToSqr(cam)).reversed());
+        holes.sort(java.util.Comparator.comparingDouble((GravityHoleBlockEntity h) -> centre(h).distanceToSqr(cam)).reversed());
         if (holes.size() > MAX_HOLES) {
             holes = holes.subList(holes.size() - MAX_HOLES, holes.size());
         }
-        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         PoseStack.Pose pose = new PoseStack().last();
         Vector3f right = new Vector3f(camera.getLeftVector()).negate();
         Vector3f up = new Vector3f(camera.getUpVector());
         float r = GravityHole.RADIUS;
-        for (GravityHoleEntity hole : holes) {
+        for (GravityHoleBlockEntity hole : holes) {
             SceneSnapshot.capture(mc.getMainRenderTarget());
-            Vector3f c = centre(hole, pt, cam);
+            Vec3 at = centre(hole).subtract(cam);
+            Vector3f c = new Vector3f((float) at.x, (float) at.y, (float) at.z);
             int white = hole.isWhite() ? 255 : 0;
 
             VertexConsumer lens = buffers.getBuffer(HoleRenderTypes.LENS);
@@ -102,17 +105,34 @@ public final class HoleRenderer {
 
             disc(buffers.getBuffer(HoleRenderTypes.DISC), pose, c, r, white, tilt(hole));
             buffers.endBatch(HoleRenderTypes.DISC);
+
+            SceneSnapshot.capture(mc.getMainRenderTarget());
+            HoleRipples.ambient(buffers, cam, hole, now);
         }
+        HoleRipples.bursts(buffers, cam, now);
     }
 
-    private static Vector3f centre(GravityHoleEntity hole, float pt, Vec3 cam) {
-        Vec3 p = hole.getPosition(pt).add(0, GravityHole.RADIUS, 0).subtract(cam);
-        return new Vector3f((float) p.x, (float) p.y, (float) p.z);
+    /** The white flash of an 湮滅 TNT, over everything. */
+    @SubscribeEvent
+    static void flash(net.neoforged.neoforge.client.event.RenderGuiEvent.Post event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null)
+            return;
+        float partial = mc.getTimer().getGameTimeDeltaPartialTick(true);
+        float white = HoleRipples.flash(mc.gameRenderer.getMainCamera().getPosition(), mc.level.getGameTime() + partial);
+        if (white > 0)
+            event.getGuiGraphics().fill(0, 0, event.getGuiGraphics().guiWidth(), event.getGuiGraphics().guiHeight(),
+                    (int) (white * 255) << 24 | 0xFFFFFF);
     }
 
-    /** Each hole's disc leans its own way (fixed by its id). */
-    private static Quaternionf tilt(GravityHoleEntity hole) {
-        int id = hole.getId();
+    /** The middle of the hole's block. */
+    private static Vec3 centre(GravityHoleBlockEntity hole) {
+        return net.minecraft.world.phys.Vec3.atCenterOf(hole.getBlockPos());
+    }
+
+    /** Each hole's disc leans its own way (fixed by where it is). */
+    private static Quaternionf tilt(GravityHoleBlockEntity hole) {
+        int id = Math.floorMod(hole.getBlockPos().hashCode(), 100_000);
         return new Quaternionf().rotateY((float) Math.toRadians((id * 47) % 360)).rotateX((float) Math.toRadians(18 + (id * 13) % 22));
     }
 

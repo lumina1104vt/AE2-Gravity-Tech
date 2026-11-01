@@ -32,6 +32,14 @@ public final class BlockEntities {
                 return type;
             });
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<com.lumina.ae2_gvt.storage.WhiteHoleEnergyCellBlockEntity>> WHITE_HOLE_ENERGY_CELL =
+            BLOCK_ENTITIES.register("white_hole_energy_cell", () -> {
+                var type = BlockEntityType.Builder.of(com.lumina.ae2_gvt.storage.WhiteHoleEnergyCellBlockEntity::new, Blocks.WHITE_HOLE_ENERGY_CELL.get()).build(null);
+                Blocks.WHITE_HOLE_ENERGY_CELL.get().setBlockEntity(com.lumina.ae2_gvt.storage.WhiteHoleEnergyCellBlockEntity.class, type, null, null);
+                AEBaseBlockEntity.registerBlockEntityItem(type, Blocks.WHITE_HOLE_ENERGY_CELL.get().asItem());
+                return type;
+            });
+
     public static void register(IEventBus bus) {
         BLOCK_ENTITIES.register(bus);
         bus.addListener(BlockEntities::registerCapabilities);
@@ -44,6 +52,29 @@ public final class BlockEntities {
      */
     private static void registerCapabilities(RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, TWINSTAR_CPU.get(), (be, ctx) -> be);
+        event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, WHITE_HOLE_ENERGY_CELL.get(), (be, ctx) -> be);
+        // ME cables: the collector puts gravitons in, the factory takes them out
+        event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, GRAVITON_COLLECTOR.get(), (be, ctx) -> be);
+        event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, GRAVITY_FACTORY.get(), (be, ctx) -> be);
+        // 引力加工工廠: pipes put into its inputs and take from its outputs; FE cables power it (any side)
+        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, GRAVITY_FACTORY.get(),
+                (be, ctx) -> be.getPipeHandler());
+        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK, GRAVITY_FACTORY.get(),
+                (be, ctx) -> be.getEnergy());
+        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK, GRAVITY_FACTORY.get(),
+                (be, ctx) -> be.getFluidHandler());
+        event.registerBlockEntity(AECapabilities.GENERIC_INTERNAL_INV, GRAVITY_FACTORY.get(), (be, ctx) -> be.getInputs());
+        // the fusion controller: on the ME network; its inputs take anything, as an ME interface's storage
+        event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, FUSION_CONTROLLER.get(), (be, ctx) -> be);
+        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, FUSION_CONTROLLER.get(),
+                (be, ctx) -> be.getPipeHandler());
+        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK, FUSION_CONTROLLER.get(),
+                (be, ctx) -> be.getFluidHandler());
+        event.registerBlockEntity(AECapabilities.ME_STORAGE, FUSION_CONTROLLER.get(), (be, ctx) -> be.getInputs());
+        event.registerBlockEntity(AECapabilities.GENERIC_INTERNAL_INV, FUSION_CONTROLLER.get(), (be, ctx) -> be.getInputs());
+        // FE cables on an energy port feed the controller of the chamber it is built into
+        event.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK,
+                (level, pos, state, be, ctx) -> FusionControllerBlockEntity.energyInput(level, pos), Blocks.ENERGY_PORT.get());
         // hoppers and pipes put encoded patterns in
         event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, TWINSTAR_CPU.get(),
                 (be, ctx) -> be.getInsertOnlyHandler());

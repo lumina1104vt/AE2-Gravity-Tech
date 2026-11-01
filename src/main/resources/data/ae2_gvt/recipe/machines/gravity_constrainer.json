@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "APA",
+    "PXP",
+    "APA"
+  ],
+  "key": {
+    "A": {
+      "item": "ae2_gvt:antigravity_alloy_ingot"
+    },
+    "P": {
+      "item": "ae2_gvt:antigravity_processor"
+    },
+    "X": {
+      "item": "ae2_gvt:anti_singularity"
+    }
+  },
+  "result": {
+    "id": "ae2_gvt:gravity_constrainer",
+    "count": 1
+  }
+}

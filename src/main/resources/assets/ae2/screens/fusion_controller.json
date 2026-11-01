@@ -1,15 +1,88 @@
 {
   "includes": [
-    "common/common.json"
+    "common/common.json",
+    "common/player_inventory.json"
   ],
   "background": {
     "texture": "ae2_gvt:textures/gui/fusion_controller.png",
     "srcRect": [
       0,
       0,
-      176,
-      136
+      232,
+      216
     ]
+  },
+  "slots": {
+    "FUSION_MARK_ROW_0": {
+      "left": 8,
+      "top": 47,
+      "grid": "HORIZONTAL"
+    },
+    "FUSION_MARK_ROW_1": {
+      "left": 8,
+      "top": 65,
+      "grid": "HORIZONTAL"
+    },
+    "FUSION_MARK_ROW_2": {
+      "left": 8,
+      "top": 83,
+      "grid": "HORIZONTAL"
+    },
+    "FUSION_MARK_ROW_3": {
+      "left": 8,
+      "top": 101,
+      "grid": "HORIZONTAL"
+    },
+    "FUSION_INPUT_ROW_0": {
+      "left": 66,
+      "top": 47,
+      "grid": "HORIZONTAL"
+    },
+    "FUSION_INPUT_ROW_1": {
+      "left": 66,
+      "top": 65,
+      "grid": "HORIZONTAL"
+    },
+    "FUSION_INPUT_ROW_2": {
+      "left": 66,
+      "top": 83,
+      "grid": "HORIZONTAL"
+    },
+    "FUSION_INPUT_ROW_3": {
+      "left": 66,
+      "top": 101,
+      "grid": "HORIZONTAL"
+    },
+    "FUSION_OUTPUT_ROW_0": {
+      "left": 136,
+      "top": 47,
+      "grid": "HORIZONTAL"
+    },
+    "FUSION_OUTPUT_ROW_1": {
+      "left": 136,
+      "top": 65,
+      "grid": "HORIZONTAL"
+    },
+    "FUSION_OUTPUT_ROW_2": {
+      "left": 136,
+      "top": 83,
+      "grid": "HORIZONTAL"
+    },
+    "FUSION_OUTPUT_ROW_3": {
+      "left": 136,
+      "top": 101,
+      "grid": "HORIZONTAL"
+    },
+    "PLAYER_INVENTORY": {
+      "left": 35,
+      "bottom": 84,
+      "grid": "BREAK_AFTER_9COLS"
+    },
+    "PLAYER_HOTBAR": {
+      "left": 35,
+      "bottom": 26,
+      "grid": "HORIZONTAL"
+    }
   },
   "text": {
     "dialog_title": {
@@ -21,28 +94,37 @@
         "top": 6
       }
     },
-    "cap_unit": {
+    "player_inventory_title": {
       "text": {
-        "text": "FE/t"
+        "translate": "container.inventory"
       },
       "position": {
-        "left": 130,
-        "top": 44
+        "left": 35,
+        "bottom": 95
       }
     }
   },
+  "images": {
+    "progressBar": {
+      "texture": "ae2_gvt:textures/gui/fusion_controller.png",
+      "srcRect": [
+        232,
+        8,
+        6,
+        18
+      ]
+    }
+  },
   "widgets": {
-    "cap": {
-      "left": 20,
-      "top": 17,
-      "width": 138,
-      "height": 62
+    "progressBar": {
+      "left": 124,
+      "top": 73
     },
-    "capInput": {
-      "left": 23,
-      "top": 42,
-      "width": 103,
-      "height": 12
+    "setCap": {
+      "left": 208,
+      "top": -5,
+      "width": 20,
+      "height": 20
     }
   }
 }

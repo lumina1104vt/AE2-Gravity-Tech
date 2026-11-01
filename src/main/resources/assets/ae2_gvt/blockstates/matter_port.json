@@ -1,7 +1,0 @@
-{
-  "variants": {
-    "": {
-      "model": "ae2_gvt:block/matter_port"
-    }
-  }
-}

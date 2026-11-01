@@ -19,7 +19,7 @@ import net.neoforged.neoforge.client.event.RegisterShadersEvent;
  */
 @EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
 public final class ClientShaders {
-    static ShaderInstance holeLens, holeBody, fusionPlasma, collectorLens;
+    static ShaderInstance holeLens, holeBody, holeRipple, fusionPlasma, collectorLens, spaceRift, starfieldSky, starfieldBake;
 
     private ClientShaders() {
     }
@@ -29,6 +29,10 @@ public final class ClientShaders {
         var provider = event.getResourceProvider();
         event.registerShader(new ShaderInstance(provider, id("hole_lens"), DefaultVertexFormat.NEW_ENTITY), s -> holeLens = s);
         event.registerShader(new ShaderInstance(provider, id("hole_body"), DefaultVertexFormat.NEW_ENTITY), s -> holeBody = s);
+        event.registerShader(new ShaderInstance(provider, id("hole_ripple"), DefaultVertexFormat.NEW_ENTITY), s -> holeRipple = s);
+        event.registerShader(new ShaderInstance(provider, id("space_rift"), DefaultVertexFormat.NEW_ENTITY), s -> spaceRift = s);
+        event.registerShader(new ShaderInstance(provider, id("starfield_sky"), DefaultVertexFormat.NEW_ENTITY), s -> starfieldSky = s);
+        event.registerShader(new ShaderInstance(provider, id("starfield_bake"), DefaultVertexFormat.NEW_ENTITY), s -> starfieldBake = s);
         event.registerShader(new ShaderInstance(provider, id("fusion_plasma"), DefaultVertexFormat.NEW_ENTITY), s -> fusionPlasma = s);
         event.registerShader(new ShaderInstance(provider, id("collector_lens"), DefaultVertexFormat.NEW_ENTITY), s -> collectorLens = s);
     }

@@ -2,8 +2,8 @@ package com.lumina.ae2_gvt.client;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.items.Items;
-import com.lumina.ae2_gvt.prototype.graviton.Gravitons;
-import com.lumina.ae2_gvt.prototype.terminal.TwinStarTerminal;
+import com.lumina.ae2_gvt.graviton.Gravitons;
+import com.lumina.ae2_gvt.terminal.TwinStarTerminal;
 
 import appeng.api.util.AEColor;
 import appeng.client.render.StaticItemColor;

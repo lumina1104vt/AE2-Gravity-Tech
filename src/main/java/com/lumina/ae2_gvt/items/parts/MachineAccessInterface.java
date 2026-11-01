@@ -1,5 +1,15 @@
 package com.lumina.ae2_gvt.items.parts;
 
+import appeng.api.config.Actionable;
+import appeng.api.networking.IGridNode;
+import appeng.api.networking.security.IActionSource;
+import appeng.api.networking.ticking.IGridTickable;
+import appeng.api.networking.ticking.TickRateModulation;
+import appeng.api.networking.ticking.TickingRequest;
+import appeng.api.storage.MEStorage;
+import com.lumina.ae2_gvt.storage.FeEnergy;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.energy.IEnergyStorage;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -39,17 +49,21 @@ import net.minecraft.world.phys.Vec3;
  *   <li>a machine it also stands for, besides the block it is on (a ghost slot, empty by default:
  *   for a multiblock's port or another tier of the same machine);</li>
  *   <li>blocking: another pattern's materials wait until the previous one's are gone (default off);</li>
- *   <li>how materials go in: through its own face, the faces the pattern gives, or no face.</li>
+ *   <li>how materials go in: through its own face, the faces the pattern gives, no face, or not at all
+ *   (it only takes products out);</li>
+ *   <li>a pairing number: interfaces standing for the same machine with the same number count as one
+ *   machine spread over several blocks, a multiblock's input and output hatches.</li>
  * </ul>
  */
-public class MachineAccessInterface extends AEBasePart implements IMachineAccess, InternalInventoryHost {
+public class MachineAccessInterface extends AEBasePart implements IMachineAccess, InternalInventoryHost, IGridTickable {
     private final AppEngInternalInventory machineInv = new AppEngInternalInventory(this, 1, 1);
     private boolean blocking;
     private InsertMode insertMode = InsertMode.DEFAULT;
+    private int group;
 
     public MachineAccessInterface(IPartItem<?> partItem) {
         super(partItem);
-        getMainNode().setFlags().setIdlePowerUsage(10);
+        getMainNode().setFlags().setIdlePowerUsage(10).addService(IGridTickable.class, this);
     }
 
     private static final ResourceLocation MODEL_BASE =
@@ -126,6 +140,16 @@ public class MachineAccessInterface extends AEBasePart implements IMachineAccess
     }
 
     @Override
+    public int getGroup() {
+        return group;
+    }
+
+    public void setGroup(int group) {
+        this.group = group;
+        getHost().markForSave();
+    }
+
+    @Override
     public @Nullable ServerLevel getMachineLevel() {
         return getLevel() instanceof ServerLevel level ? level : null;
     }
@@ -146,6 +170,36 @@ public class MachineAccessInterface extends AEBasePart implements IMachineAccess
         return getMainNode().isActive();
     }
 
+    // ── FE ──
+
+    @Override
+    public TickingRequest getTickingRequest(IGridNode node) {
+        return new TickingRequest(1, 1, false);
+    }
+
+    /** Keeps the machine charged from the FE on the network (a white hole energy cell, Applied Flux's cells). */
+    @Override
+    public TickRateModulation tickingRequest(IGridNode node, int ticksSinceLastCall) {
+        ServerLevel level = getMachineLevel();
+        if (level == null || insertMode == InsertMode.OUTPUT || !node.isActive())
+            return TickRateModulation.SAME;
+        IEnergyStorage machine = level.getCapability(Capabilities.EnergyStorage.BLOCK, getMachinePos(), getMachineFace());
+        if (machine == null || !machine.canReceive())
+            return TickRateModulation.SAME;
+        int wanted = machine.receiveEnergy(Integer.MAX_VALUE, true);
+        if (wanted <= 0)
+            return TickRateModulation.SAME;
+        MEStorage network = node.getGrid().getStorageService().getInventory();
+        IActionSource source = IActionSource.ofMachine(this);
+        long available = network.extract(FeEnergy.key(), wanted, Actionable.SIMULATE, source);
+        if (available > 0) {
+            int taken = machine.receiveEnergy((int) available, false);
+            if (taken > 0)
+                network.extract(FeEnergy.key(), taken, Actionable.MODULATE, source);
+        }
+        return TickRateModulation.SAME;
+    }
+
     // ── saving ──
 
     @Override
@@ -162,6 +216,7 @@ public class MachineAccessInterface extends AEBasePart implements IMachineAccess
         super.readFromNBT(tag, registries);
         machineInv.readFromNBT(tag, "machine", registries);
         blocking = tag.getBoolean("blocking");
+        group = tag.getInt("group");
         try {
             insertMode = InsertMode.valueOf(tag.getString("insertMode"));
         } catch (IllegalArgumentException e) {
@@ -174,6 +229,7 @@ public class MachineAccessInterface extends AEBasePart implements IMachineAccess
         super.writeToNBT(tag, registries);
         machineInv.writeToNBT(tag, "machine", registries);
         tag.putBoolean("blocking", blocking);
+        tag.putInt("group", group);
         tag.putString("insertMode", insertMode.name());
     }
 

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "ae2:interface"
+    },
+    {
+      "item": "ae2_gvt:gravity_processor"
+    }
+  ],
+  "result": {
+    "id": "ae2_gvt:machine_access_interface",
+    "count": 1
+  }
+}

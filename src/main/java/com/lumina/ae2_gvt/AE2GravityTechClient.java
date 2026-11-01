@@ -1,7 +1,7 @@
 package com.lumina.ae2_gvt;
 
 import com.lumina.ae2_gvt.items.parts.MachineAccessInterface;
-import com.lumina.ae2_gvt.prototype.terminal.TwinStarPatternTerminalPart;
+import com.lumina.ae2_gvt.terminal.TwinStarPatternTerminalPart;
 
 import appeng.api.parts.PartModels;
 import appeng.items.parts.PartModelsHelper;

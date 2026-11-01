@@ -1,0 +1,26 @@
+{
+  "type": "ae2_gvt:gravity_processing",
+  "ingredients": [
+    {
+      "item": "ae2_gvt:antigravity_crystal",
+      "count": 64
+    },
+    {
+      "item": "ae2_gvt:anti_singularity",
+      "count": 64
+    },
+    {
+      "tag": "c:ingots/gold",
+      "count": 64
+    }
+  ],
+  "results": [
+    {
+      "id": "ae2_gvt:antigravity_circuit",
+      "count": 128
+    }
+  ],
+  "time": 20,
+  "energy": 20000,
+  "antigravitons": 16
+}

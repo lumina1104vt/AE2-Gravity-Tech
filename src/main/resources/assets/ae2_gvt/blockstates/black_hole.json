@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "ae2_gvt:block/black_hole"
+    }
+  }
+}

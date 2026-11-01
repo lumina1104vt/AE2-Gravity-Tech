@@ -1,0 +1,26 @@
+{
+  "type": "ae2_gvt:fusion",
+  "ingredients": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 256
+    },
+    {
+      "item": "ae2_gvt:antigravity_dust",
+      "count": 256
+    },
+    {
+      "item": "ae2_gvt:antigravity_alloy_ingot",
+      "count": 64
+    }
+  ],
+  "results": [
+    {
+      "id": "ae2_gvt:antigravity_alloy_ingot",
+      "count": 1024
+    }
+  ],
+  "temperature": 100000,
+  "time": 40,
+  "power": 2.0
+}

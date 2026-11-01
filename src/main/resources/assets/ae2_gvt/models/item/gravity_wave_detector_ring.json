@@ -1,0 +1,18 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "0": "ae2_gvt:item/gravity_wave_detector_ring",
+    "particle": "ae2_gvt:item/gravity_wave_detector_ring"
+  },
+  "elements": [
+    {
+      "name": "Ring",
+      "from": [5, 1.05, 5],
+      "to": [11, 1.05, 11],
+      "shade": false,
+      "faces": {
+        "up": {"uv": [0, 0, 16, 16], "texture": "#0"}
+      }
+    }
+  ]
+}

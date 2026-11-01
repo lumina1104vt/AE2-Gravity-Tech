@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "ae2_gvt:antigravity_block"
+    }
+  ],
+  "result": {
+    "id": "ae2_gvt:antigravity_crystal",
+    "count": 4
+  }
+}

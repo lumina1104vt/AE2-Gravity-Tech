@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IRI",
+    "IGI",
+    "IPI"
+  ],
+  "key": {
+    "I": {"tag": "c:ingots/iron"},
+    "R": {"item": "ae2:wireless_receiver"},
+    "G": {"item": "ae2:quartz_glass"},
+    "P": {"item": "ae2_gvt:gravity_processor"}
+  },
+  "result": {"id": "lumina_multiblock:builder", "count": 1}
+}

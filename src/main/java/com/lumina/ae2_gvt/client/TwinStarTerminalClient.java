@@ -5,7 +5,7 @@ import com.lumina.ae2_gvt.client.screen.ArmorModuleScreen;
 import com.lumina.ae2_gvt.client.screen.TwinStarPatternTermScreen;
 import com.lumina.ae2_gvt.menus.Menus;
 import com.lumina.ae2_gvt.payload.OpenArmorModulesPayload;
-import com.lumina.ae2_gvt.prototype.terminal.TwinStarTerminal;
+import com.lumina.ae2_gvt.terminal.TwinStarTerminal;
 
 import com.lumina.twinstar.algorithm.ae2.PatternChances;
 import com.lumina.twinstar.storage.TwinstarContent;

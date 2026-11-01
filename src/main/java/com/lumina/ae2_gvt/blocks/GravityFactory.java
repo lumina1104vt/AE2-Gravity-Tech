@@ -4,6 +4,7 @@ import appeng.menu.MenuOpener;
 import appeng.menu.SlotSemantic;
 import appeng.menu.SlotSemantics;
 import appeng.menu.locator.MenuLocators;
+import com.lumina.ae2_gvt.blockentities.BlockEntities;
 import com.lumina.ae2_gvt.blockentities.GravityFactoryBlockEntity;
 import com.lumina.ae2_gvt.menus.Menus;
 import net.minecraft.core.BlockPos;
@@ -15,6 +16,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -64,6 +67,12 @@ public class GravityFactory extends Block implements EntityBlock {
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState blockState) {
         return new GravityFactoryBlockEntity(pos, blockState);
+    }
+
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return level.isClientSide() || type != BlockEntities.GRAVITY_FACTORY.get() ? null
+                : (l, p, s, be) -> GravityFactoryBlockEntity.serverTick(l, p, s, (GravityFactoryBlockEntity) be);
     }
 
     @Override

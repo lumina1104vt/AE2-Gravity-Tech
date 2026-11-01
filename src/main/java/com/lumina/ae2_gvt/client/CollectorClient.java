@@ -77,7 +77,7 @@ public final class CollectorClient {
         if (towers.size() > MAX) {
             towers = towers.subList(towers.size() - MAX, towers.size());
         }
-        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        MultiBufferSource.BufferSource buffers = SceneSnapshot.BUFFERS;
         PoseStack.Pose pose = new PoseStack().last();
         Vector3f right = new Vector3f(camera.getLeftVector()).negate();
         Vector3f up = new Vector3f(camera.getUpVector());

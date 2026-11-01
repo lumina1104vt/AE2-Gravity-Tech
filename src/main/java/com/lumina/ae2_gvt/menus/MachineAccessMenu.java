@@ -24,6 +24,9 @@ public class MachineAccessMenu extends AEBaseMenu {
     public static final SlotSemantic MACHINE = SlotSemantics.register("AE2GVT_ACCESS_MACHINE", false);
     private static final String TOGGLE_BLOCKING = "toggleBlocking";
     private static final String CYCLE_MODE = "cycleInsertMode";
+    private static final String CYCLE_GROUP = "cycleGroup";
+    /** Pairing numbers: 0 (none) to this. */
+    private static final int MAX_GROUP = 16;
 
     private final MachineAccessInterface part;
 
@@ -45,6 +48,8 @@ public class MachineAccessMenu extends AEBaseMenu {
     public long runsIn;
     @GuiSync(17)
     public boolean chance;
+    @GuiSync(18)
+    public int group;
 
     public MachineAccessMenu(MenuType<?> menuType, int id, Inventory playerInventory, MachineAccessInterface part) {
         super(menuType, id, playerInventory, part);
@@ -55,6 +60,7 @@ public class MachineAccessMenu extends AEBaseMenu {
         createPlayerInventorySlots(playerInventory);
         registerClientAction(TOGGLE_BLOCKING, this::toggleBlocking);
         registerClientAction(CYCLE_MODE, this::cycleInsertMode);
+        registerClientAction(CYCLE_GROUP, this::cycleGroup);
     }
 
     public MachineAccessInterface getPart() {
@@ -83,9 +89,18 @@ public class MachineAccessMenu extends AEBaseMenu {
         part.setInsertMode(all[(part.getInsertMode().ordinal() + 1) % all.length]);
     }
 
+    public void cycleGroup() {
+        if (isClientSide()) {
+            sendClientAction(CYCLE_GROUP);
+            return;
+        }
+        part.setGroup((part.getGroup() + 1) % (MAX_GROUP + 1));
+    }
+
     @Override
     public void broadcastChanges() {
         if (isServerSide()) {
+            group = part.getGroup();
             blocking = part.isBlocking();
             insertMode = part.getInsertMode().ordinal();
             TwinStarService.MachineView view = TwinStarService.MachineView.of(TwinStarService.MachineState.NO_HUB);
