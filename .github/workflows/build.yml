@@ -11,6 +11,9 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          submodules: recursive
+          # core / lumina-multiblock are private repos: needs a PAT with read access to them
+          token: ${{ secrets.SUBMODULE_TOKEN || github.token }}
 
       - name: Setup JDK 25
         uses: actions/setup-java@v4
