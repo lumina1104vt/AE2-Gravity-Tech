@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "ae2_gvt:item/sensor_array"
+    "model": "ae2_gvt:item/sensor_core"
   }
 }

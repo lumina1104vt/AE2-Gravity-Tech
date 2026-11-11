@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "ae2_gvt:item/network_node"
+    "layer0": "ae2_gvt:item/impact_core"
   }
 }

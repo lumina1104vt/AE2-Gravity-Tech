@@ -1,12 +1,12 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/components.md
-  title: 網路節點
+  title: 網路核心
 item_ids:
-  - ae2_gvt:network_node
+  - ae2_gvt:network_core
 ---
 
-# 網路節點
+# 網路核心
 
 物流系統的核心元件。製作物流類模組卡時需要放入。
 

@@ -1,12 +1,12 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/components.md
-  title: 感測陣列
+  title: 感測核心
 item_ids:
-  - ae2_gvt:sensor_array
+  - ae2_gvt:sensor_core
 ---
 
-# 感測陣列
+# 感測核心
 
 感知系統的核心元件。製作感知類模組卡時需要放入。
 

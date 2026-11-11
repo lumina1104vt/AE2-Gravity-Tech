@@ -55,10 +55,10 @@ public class Items {
     public static final DeferredItem<Item> BASE_MODULE = ITEMS.registerSimpleItem("armor_module_base");
 
     public static final DeferredItem<Item> PROPULSION_CORE = ITEMS.registerSimpleItem("propulsion_core");
-    public static final DeferredItem<Item> SENSOR_ARRAY = ITEMS.registerSimpleItem("sensor_array");
+    public static final DeferredItem<Item> SENSOR_CORE = ITEMS.registerSimpleItem("sensor_core");
     public static final DeferredItem<Item> LIFE_CORE = ITEMS.registerSimpleItem("life_core");
-    public static final DeferredItem<Item> IMPACT_CRYSTAL = ITEMS.registerSimpleItem("impact_crystal");
-    public static final DeferredItem<Item> NETWORK_NODE = ITEMS.registerSimpleItem("network_node");
+    public static final DeferredItem<Item> IMPACT_CORE = ITEMS.registerSimpleItem("impact_core");
+    public static final DeferredItem<Item> NETWORK_CORE = ITEMS.registerSimpleItem("network_core");
 
     public static final DeferredItem<Item> MOVE_SPEED_MODULE = ArmorModules.module("move_speed", ArmorModules.LEGS, ArmorModules.ANTIGRAVITY);
     public static final DeferredItem<Item> JUMP_HEIGHT_MODULE = ArmorModules.module("jump_height", ArmorModules.FEET, ArmorModules.ANTIGRAVITY);

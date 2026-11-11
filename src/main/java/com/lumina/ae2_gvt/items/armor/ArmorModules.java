@@ -64,9 +64,9 @@ public class ArmorModules {
         result.add(Items.BASE_MODULE);
         result.add(Items.PROPULSION_CORE);
         result.add(Items.LIFE_CORE);
-        result.add(Items.IMPACT_CRYSTAL);
-        result.add(Items.SENSOR_ARRAY);
-        result.add(Items.NETWORK_NODE);
+        result.add(Items.IMPACT_CORE);
+        result.add(Items.SENSOR_CORE);
+        result.add(Items.NETWORK_CORE);
         result.addAll(RAW_MODULES);
         return result;
     }

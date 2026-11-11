@@ -1,12 +1,12 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/components.md
-  title: 衝擊晶體
+  title: 衝擊核心
 item_ids:
-  - ae2_gvt:impact_crystal
+  - ae2_gvt:impact_core
 ---
 
-# 衝擊晶體
+# 衝擊核心
 
 戰鬥系統的核心元件。製作戰鬥類模組卡時需要放入。
 
