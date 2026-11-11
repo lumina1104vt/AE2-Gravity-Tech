@@ -1,0 +1,30 @@
+{
+  "type": "ae2_gvt:gravity_processing",
+  "ingredients": [
+    {
+      "item": "ae2_gvt:armor_module_base",
+      "count": 1
+    },
+    {
+      "item": "ae2_gvt:sensor_array",
+      "count": 1
+    },
+    {
+      "item": "minecraft:sea_lantern",
+      "count": 4
+    },
+    {
+      "item": "minecraft:glow_ink_sac",
+      "count": 64
+    }
+  ],
+  "results": [
+    {
+      "id": "ae2_gvt:armor_module_night_vision",
+      "count": 1
+    }
+  ],
+  "time": 200,
+  "energy": 50000,
+  "antigravitons": 256
+}

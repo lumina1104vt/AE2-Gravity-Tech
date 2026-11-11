@@ -166,7 +166,7 @@ public class FusionJei implements IModPlugin {
             List<ItemStack> results = r.results();
             for (int i = 0; i < results.size() && i < 3 * ROWS; i++)
                 builder.addSlot(RecipeIngredientRole.OUTPUT, OUT_X + 1 + (i % 3) * SLOT, 1 + (i / 3) * SLOT)
-                        .setOutputSlotBackground()
+                        .setStandardSlotBackground()
                         .setCustomRenderer(VanillaTypes.ITEM_STACK, CountedItemRenderer.INSTANCE)
                         .addItemStacks(List.of(results.get(i)));
         }

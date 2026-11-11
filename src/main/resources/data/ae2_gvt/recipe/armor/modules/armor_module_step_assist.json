@@ -1,0 +1,30 @@
+{
+  "type": "ae2_gvt:gravity_processing",
+  "ingredients": [
+    {
+      "item": "ae2_gvt:armor_module_base",
+      "count": 1
+    },
+    {
+      "item": "ae2_gvt:propulsion_core",
+      "count": 1
+    },
+    {
+      "item": "minecraft:sticky_piston",
+      "count": 2
+    },
+    {
+      "item": "minecraft:stone_stairs",
+      "count": 2
+    }
+  ],
+  "results": [
+    {
+      "id": "ae2_gvt:armor_module_step_assist",
+      "count": 1
+    }
+  ],
+  "time": 200,
+  "energy": 50000,
+  "antigravitons": 256
+}

@@ -1,6 +1,8 @@
 package com.lumina.ae2_gvt.blockentities;
 
+import java.util.ArrayDeque;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,7 +30,6 @@ import appeng.helpers.externalstorage.GenericStackFluidStorage;
 import appeng.helpers.externalstorage.GenericStackItemStorage;
 import appeng.util.ConfigInventory;
 import appeng.util.inv.AppEngInternalInventory;
-import appeng.util.inv.InternalInventoryHost;
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.blocks.Blocks;
 import com.lumina.ae2_gvt.blocks.FusionController;
@@ -77,7 +78,7 @@ import org.jetbrains.annotations.Nullable;
  * controller asks whether it stands. {@link #chamber} is its low corner while formed (synced, so the
  * client draws the plasma at its centre).
  */
-public class FusionControllerBlockEntity extends AENetworkedBlockEntity implements InternalInventoryHost {
+public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
     /** A cold, unpowered chamber. */
     public static final double AMBIENT = 1500;
     /** Equilibrium Kelvin per FE/t of input. */
@@ -98,8 +99,10 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity implemen
 
     /** Products wait this long in the outputs for the hub, whose job needs to see them, before going to the network. */
     private static final int HUB_TAKES_TICKS = 40;
+    /** What an output slot holds: items. */
+    private static final long OUTPUT_SLOT_UNITS = 16_384;
     /** How often items move between the controller and the network, in ticks. */
-    private static final int TRANSFER_INTERVAL = 5;
+    private static final int TRANSFER_INTERVAL = 1;
     /** How often the chamber is checked, in ticks. */
     private static final int CHECK_INTERVAL = 20;
     /** Chambers whose controller was just removed, so its frames can be reset (see unformOnRemoval). */
@@ -111,10 +114,10 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity implemen
 
     private final ConfigInventory inputs = ConfigInventory.storage(12).allowOverstacking(true)
             .changeListener(this::onInputsChanged).build();
-    private final AppEngInternalInventory outputs = new AppEngInternalInventory(this, 20);   // a stack is 64: room for a reaction's 1024
+    private final ConfigInventory outputs = ConfigInventory.storage(20).allowOverstacking(true).changeListener(this::saveChanges).build();
     /** What each input slot is kept stocked with from the network. */
     private final ConfigInventory marks = ConfigInventory.configStacks(inputs.size()).allowOverstacking(true).changeListener(this::saveChanges).build();
-    private final IItemHandler pipes = new PipeHandler(new GenericStackItemStorage(inputs));
+    private final IItemHandler pipes = new PipeHandler(new GenericStackItemStorage(inputs), new GenericStackItemStorage(outputs));
     private final IFluidHandler fluidPipes = new GenericStackFluidStorage(inputs);
     /** A link to each hub port of the formed chamber. */
     private final Map<BlockPos, IGridConnection> links = new HashMap<>();
@@ -162,8 +165,8 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity implemen
     private @Nullable RecipeHolder<FusionRecipe> reaction;
     private int progress;
     private boolean recheck = true;
-    /** When the last reaction ended: the hub, if it sent that run, takes the products itself in the next ticks. */
-    private long madeAt;
+    /** Products of the last moments, which wait for the hub: the rest goes on, so a long run never backs up. */
+    private final Deque<Made> justMade = new ArrayDeque<>();
     /** Test only ({@code /gvt fusion free}): all the energy the cap lets it burn, for nothing; not saved. */
     private boolean free;
 
@@ -173,6 +176,7 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity implemen
         getMainNode().setVisualRepresentation(Blocks.FUSION_CONTROLLER.get());
         for (AEKeyType type : AEKeyTypes.getAll()) {
             inputs.setCapacity(type, type.getAmountPerUnit() * SLOT_UNITS);
+            outputs.setCapacity(type, type.getAmountPerUnit() * OUTPUT_SLOT_UNITS);
             marks.setCapacity(type, type.getAmountPerUnit() * SLOT_UNITS);
         }
     }
@@ -267,9 +271,10 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity implemen
         for (int i = 0; i < taken.length; i++)
             if (taken[i] > 0)
                 inputs.extract(i, inputs.getKey(i), taken[i], Actionable.MODULATE);
-        for (ItemStack out : r.results())
-            addStacks(outputs, out);
-        madeAt = level.getGameTime();
+        for (ItemStack out : r.results()) {
+            add(outputs, out);
+            justMade.addLast(new Made(level.getGameTime(), AEItemKey.of(out), out.getCount()));
+        }
     }
 
     /** The energy a reaction gives goes to the network; what it can't hold is lost. */
@@ -278,18 +283,31 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity implemen
             getMainNode().getGrid().getEnergyService().injectPower(PowerUnit.FE.convertTo(PowerUnit.AE, giving), Actionable.MODULATE);
     }
 
-    /** What was made goes into the network; what doesn't fit waits in the outputs. */
+    private record Made(long at, AEKey key, long amount) {
+    }
+
+    /** What was made goes into the network, but for what the hub may still come for; what doesn't fit waits in the outputs. */
     private void deliver() {
-        if (!getMainNode().isActive() || getMainNode().getGrid() == null || level.getGameTime() - madeAt < HUB_TAKES_TICKS)
+        long now = level.getGameTime();
+        while (!justMade.isEmpty() && now - justMade.peekFirst().at() >= HUB_TAKES_TICKS)
+            justMade.removeFirst();
+        if (!getMainNode().isActive() || getMainNode().getGrid() == null)
             return;
+        Map<AEKey, Long> keep = new HashMap<>();
+        for (Made made : justMade)
+            keep.merge(made.key(), made.amount(), Long::sum);
         var storage = getMainNode().getGrid().getStorageService().getInventory();
         for (int i = 0; i < outputs.size(); i++) {
-            ItemStack stack = outputs.getStackInSlot(i);
-            AEItemKey key = AEItemKey.of(stack);
-            if (key != null) {
-                long inserted = storage.insert(key, stack.getCount(), Actionable.MODULATE, source);
+            AEKey key = outputs.getKey(i);
+            if (key == null)
+                continue;
+            long kept = Math.min(keep.getOrDefault(key, 0L), outputs.getAmount(i));
+            keep.merge(key, -kept, Long::sum);
+            long give = outputs.getAmount(i) - kept;
+            if (give > 0) {
+                long inserted = storage.insert(key, give, Actionable.MODULATE, source);
                 if (inserted > 0)
-                    outputs.extractItem(i, (int) inserted, false);
+                    outputs.extract(i, key, inserted, Actionable.MODULATE);
             }
         }
     }
@@ -324,25 +342,20 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity implemen
     }
 
     private boolean resultsFit(FusionRecipe r) {
-        AppEngInternalInventory test = new AppEngInternalInventory(outputs.size());
+        ConfigInventory test = ConfigInventory.storage(outputs.size()).allowOverstacking(true).build();
+        for (AEKeyType type : AEKeyTypes.getAll())
+            test.setCapacity(type, outputs.getCapacity(type));
         for (int i = 0; i < outputs.size(); i++)
-            test.setItemDirect(i, outputs.getStackInSlot(i).copy());
+            test.setStack(i, outputs.getStack(i));
         for (ItemStack out : r.results())
-            if (!addStacks(test, out))
+            if (!add(test, out))
                 return false;
         return true;
     }
 
-    /** A result may be many stacks' worth: put in a stack at a time. False when it doesn't all fit. */
-    private static boolean addStacks(AppEngInternalInventory inv, ItemStack stack) {
-        int left = stack.getCount(), max = Math.max(1, stack.getMaxStackSize());
-        while (left > 0) {
-            int n = Math.min(max, left);
-            if (!inv.addItems(stack.copyWithCount(n)).isEmpty())
-                return false;
-            left -= n;
-        }
-        return true;
+    /** A result into the slots; false when it doesn't all fit. */
+    private boolean add(ConfigInventory slots, ItemStack result) {
+        return slots.insert(AEItemKey.of(result), result.getCount(), Actionable.MODULATE, source) == result.getCount();
     }
 
     private void checkChamber(ServerLevel level, BlockPos pos, BlockState state) {
@@ -463,8 +476,9 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity implemen
     public void dropContents() {
         if (level == null)
             return;
-        for (ItemStack stack : outputs)
-            drop(stack);
+        for (int i = 0; i < outputs.size(); i++)
+            if (outputs.getKey(i) instanceof AEItemKey item)
+                drop(item.toStack((int) Math.min(outputs.getAmount(i), Integer.MAX_VALUE)));
         // what isn't an item (fluids, gravitons) has nothing to fall as, and is lost, as from an ME interface
         for (int i = 0; i < inputs.size(); i++)
             if (inputs.getKey(i) instanceof AEItemKey item)
@@ -480,17 +494,6 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity implemen
     @Override
     public boolean isClientSide() {
         return level != null && level.isClientSide();
-    }
-
-    @Override
-    public void saveChangedInventory(AppEngInternalInventory inv) {
-        saveChanges();
-    }
-
-    @Override
-    public void onChangeInventory(AppEngInternalInventory inv, int slot) {
-        recheck = true;
-        saveChanges();
     }
 
     @Override
@@ -560,7 +563,7 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity implemen
         return inputs;
     }
 
-    public AppEngInternalInventory getOutputs() {
+    public ConfigInventory getOutputs() {
         return outputs;
     }
 
@@ -623,7 +626,7 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity implemen
         }
         inputs.writeToChildTag(tag, "inputs", registries);
         marks.writeToChildTag(tag, "marks", registries);
-        outputs.writeToNBT(tag, "outputs", registries);
+        outputs.writeToChildTag(tag, "output_stacks", registries);
         tag.putInt("progress", progress);
     }
 
@@ -636,27 +639,29 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity implemen
         chamber = tag.contains("chamber") ? BlockPos.of(tag.getLong("chamber")) : null;
         inputs.readFromChildTag(tag, "inputs", registries);
         marks.readFromChildTag(tag, "marks", registries);
-        outputs.readFromNBT(tag, "outputs", registries);
+        outputs.readFromChildTag(tag, "output_stacks", registries);
+        // controllers saved with plain item slots
+        if (tag.contains("outputs")) {
+            AppEngInternalInventory old = new AppEngInternalInventory(outputs.size());
+            old.readFromNBT(tag, "outputs", registries);
+            for (ItemStack stack : old)
+                if (!stack.isEmpty())
+                    add(outputs, stack);
+        }
         progress = tag.getInt("progress");
         recheck = true;
     }
 
     /** The inputs as they are, then the outputs, refusing anything put in, which is how the hub tells outputs. */
-    private final class PipeHandler implements IItemHandler {
-        private final IItemHandler in;
-
-        PipeHandler(IItemHandler in) {
-            this.in = in;
-        }
-
+    private record PipeHandler(IItemHandler in, IItemHandler out) implements IItemHandler {
         @Override
         public int getSlots() {
-            return in.getSlots() + outputs.size();
+            return in.getSlots() + out.getSlots();
         }
 
         @Override
         public ItemStack getStackInSlot(int slot) {
-            return slot < in.getSlots() ? in.getStackInSlot(slot) : outputs.getStackInSlot(slot - in.getSlots());
+            return slot < in.getSlots() ? in.getStackInSlot(slot) : out.getStackInSlot(slot - in.getSlots());
         }
 
         @Override
@@ -666,12 +671,12 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity implemen
 
         @Override
         public ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return slot < in.getSlots() ? ItemStack.EMPTY : outputs.extractItem(slot - in.getSlots(), amount, simulate);
+            return slot < in.getSlots() ? ItemStack.EMPTY : out.extractItem(slot - in.getSlots(), amount, simulate);
         }
 
         @Override
         public int getSlotLimit(int slot) {
-            return slot < in.getSlots() ? in.getSlotLimit(slot) : outputs.getSlotLimit(slot - in.getSlots());
+            return slot < in.getSlots() ? in.getSlotLimit(slot) : out.getSlotLimit(slot - in.getSlots());
         }
 
         @Override

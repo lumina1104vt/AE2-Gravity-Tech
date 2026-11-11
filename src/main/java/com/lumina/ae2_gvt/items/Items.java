@@ -34,7 +34,6 @@ public class Items {
 
     // block item
     public static final DeferredItem<BlockItem> GRAVITY_CONSTRAINER = ITEMS.registerSimpleBlockItem("gravity_constrainer", Blocks.GRAVITY_CONSTRAINER);
-    public static final DeferredItem<BlockItem> ACCELERATION_DEVICE = ITEMS.registerSimpleBlockItem("acceleration_device", Blocks.ACCELERATION_DEVICE);
     public static final DeferredItem<BlockItem> ANNIHILATION_TNT = ITEMS.registerSimpleBlockItem("annihilation_tnt", Blocks.ANNIHILATION_TNT);
     public static final DeferredItem<BlockItem> MACHINE_FRAME = ITEMS.registerSimpleBlockItem("machine_frame", Blocks.MACHINE_FRAME);
     public static final DeferredItem<BlockItem> STRUCTURE_FRAME = ITEMS.registerSimpleBlockItem("structure_frame", Blocks.STRUCTURE_FRAME);
@@ -43,6 +42,10 @@ public class Items {
     public static final DeferredItem<PartItem<MachineAccessInterface>> MACHINE_ACCESS_INTERFACE = ITEMS.registerItem(
             "machine_access_interface", p -> new PartItem<>(p, MachineAccessInterface.class, MachineAccessInterface::new));
 
+    public static final DeferredItem<BlockItem> MACHINE_ACCESS_BLOCK = ITEMS.registerSimpleBlockItem("machine_access_block", Blocks.MACHINE_ACCESS_BLOCK);
+    public static final DeferredItem<com.lumina.ae2_gvt.items.tools.MachineLinkTool> MACHINE_LINK_TOOL =
+            ITEMS.registerItem("machine_link_tool", com.lumina.ae2_gvt.items.tools.MachineLinkTool::new);
+
     // Armor
     public static final DeferredItem<AntigravityArmorItem> ANTIGRAVITY_ARMOR_HELMET = AntigravityArmor.register("antigravity_helmet", ArmorItem.Type.HELMET);
     public static final DeferredItem<AntigravityArmorItem> ANTIGRAVITY_ARMOR_CHESTPLATE = AntigravityArmor.register("antigravity_chestplate", ArmorItem.Type.CHESTPLATE);
@@ -50,6 +53,12 @@ public class Items {
     public static final DeferredItem<AntigravityArmorItem> ANTIGRAVITY_ARMOR_BOOTS = AntigravityArmor.register("antigravity_boots", ArmorItem.Type.BOOTS);
 
     public static final DeferredItem<Item> BASE_MODULE = ITEMS.registerSimpleItem("armor_module_base");
+
+    public static final DeferredItem<Item> PROPULSION_CORE = ITEMS.registerSimpleItem("propulsion_core");
+    public static final DeferredItem<Item> SENSOR_ARRAY = ITEMS.registerSimpleItem("sensor_array");
+    public static final DeferredItem<Item> LIFE_CORE = ITEMS.registerSimpleItem("life_core");
+    public static final DeferredItem<Item> IMPACT_CRYSTAL = ITEMS.registerSimpleItem("impact_crystal");
+    public static final DeferredItem<Item> NETWORK_NODE = ITEMS.registerSimpleItem("network_node");
 
     public static final DeferredItem<Item> MOVE_SPEED_MODULE = ArmorModules.module("move_speed", ArmorModules.LEGS, ArmorModules.ANTIGRAVITY);
     public static final DeferredItem<Item> JUMP_HEIGHT_MODULE = ArmorModules.module("jump_height", ArmorModules.FEET, ArmorModules.ANTIGRAVITY);

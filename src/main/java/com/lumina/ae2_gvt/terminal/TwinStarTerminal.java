@@ -2,6 +2,8 @@ package com.lumina.ae2_gvt.terminal;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
 
+import java.util.List;
+
 import appeng.api.crafting.PatternDetailsHelper;
 import appeng.crafting.pattern.AEProcessingPattern;
 import appeng.items.parts.PartItem;
@@ -23,7 +25,8 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 /**
  * The Twin-Star Pattern Terminal: AE2's pattern encoding terminal with one extra slot, at the
- * top-left of the recipe grid, that marks the machine the recipe runs in. It has no mode tabs -
+ * top-left of the recipe grid, that marks the machine the recipe runs in, and under it the
+ * sub-machines: blocks near it that some materials go into instead (an altar's pedestals). It has no mode tabs -
  * there is only the one combined pattern type.
  */
 public final class TwinStarTerminal {
@@ -31,6 +34,10 @@ public final class TwinStarTerminal {
 
     /** The machine slot. Registered here so it exists before AE2 validates our screen style. */
     public static final SlotSemantic MACHINE_SLOT = SlotSemantics.register("TWIN_STAR_MACHINE", false);
+    /** The sub-machine slots, shown in their own dialog ({@code SubMachineScreen}). */
+    public static final SlotSemantic SUB_MACHINE_SLOTS = SlotSemantics.register("TWIN_STAR_SUB_MACHINES", false);
+    /** How many sub-machines a pattern can name. */
+    public static final int SUB_MACHINES = 9;
 
     private static final DeferredRegister.DataComponents COMPONENTS = DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE,
             AE2GravityTech.MODID);
@@ -42,6 +49,15 @@ public final class TwinStarTerminal {
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Holder<Item>>> PATTERN_MACHINE = COMPONENTS
             .registerComponentType("pattern_machine", builder -> builder.persistent(BuiltInRegistries.ITEM.holderByNameCodec())
                     .networkSynchronized(ByteBufCodecs.holderRegistry(Registries.ITEM)));
+
+    /**
+     * On a synthesis pattern with a machine: the kinds of block near it that materials set to go to
+     * sub-machines go into, in this order.
+     */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<List<Holder<Item>>>> PATTERN_SUB_MACHINES = COMPONENTS
+            .registerComponentType("pattern_sub_machines", builder -> builder
+                    .persistent(BuiltInRegistries.ITEM.holderByNameCodec().listOf())
+                    .networkSynchronized(ByteBufCodecs.holderRegistry(Registries.ITEM).apply(ByteBufCodecs.list())));
 
     /**
      * 合成處理樣板: what the terminal encodes. Works like AE2's processing pattern (same data, same

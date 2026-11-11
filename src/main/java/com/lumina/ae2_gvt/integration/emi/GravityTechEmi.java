@@ -5,6 +5,8 @@ import java.util.List;
 import appeng.api.stacks.GenericStack;
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.blocks.Blocks;
+import com.lumina.ae2_gvt.hole.GravityHole;
+import com.lumina.ae2_gvt.integration.WorldInteraction;
 import com.lumina.ae2_gvt.items.Items;
 import com.lumina.ae2_gvt.graviton.Gravitons;
 import com.lumina.lmb.compat.CountedEmiSlot;
@@ -37,6 +39,7 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
 public class GravityTechEmi implements EmiPlugin {
     private static final EmiRecipeCategory FACTORY = new EmiRecipeCategory(id("gravity_processing"), EmiStack.of(Blocks.GRAVITY_FACTORY.get()));
     private static final EmiRecipeCategory FUSION = new EmiRecipeCategory(id("fusion"), EmiStack.of(Blocks.FUSION_CONTROLLER.get()));
+    private static final EmiRecipeCategory WORLD = new EmiRecipeCategory(id("world_interaction"), EmiStack.of(GravityHole.BLACK_HOLE_ITEM.get()));
     private static final int SLOT = 18;
 
     private static ResourceLocation id(String path) {
@@ -47,6 +50,8 @@ public class GravityTechEmi implements EmiPlugin {
     public void register(EmiRegistry registry) {
         registry.addCategory(FACTORY);
         registry.addCategory(FUSION);
+        registry.addCategory(WORLD);
+        WorldInteraction.all().forEach(w -> registry.addRecipe(new World(w)));
         registry.addWorkstation(FACTORY, EmiStack.of(Blocks.GRAVITY_FACTORY.get()));
         registry.addWorkstation(FACTORY, EmiStack.of(Items.CHAOS_MATTER.get()));
         registry.addWorkstation(FUSION, EmiStack.of(Blocks.FUSION_CONTROLLER.get()));
@@ -113,6 +118,34 @@ public class GravityTechEmi implements EmiPlugin {
                 widgets.addDrawable(0, rows * SLOT + 2 + i * 10, getDisplayWidth(), 10,
                         (g, mouseX, mouseY, delta) -> RecipeNumbers.drawLine(g, line, 0, 0, getDisplayWidth(), 0xFF404040));
             }
+        }
+    }
+
+    /** What happens in the world ({@link WorldInteraction}), laid out as in JEI (WorldInteractionJei). */
+    private static final class World extends BasicEmiRecipe {
+        private static final int STEP = 20, INPUTS = 3, CONDITION_X = INPUTS * STEP + 4, ARROW_X = CONDITION_X + 2 * STEP + 2,
+                OUT_X = ARROW_X + 28, OUT_COLUMNS = 3, OUTPUTS = 6, TEXT_Y = 2 * STEP + 2;
+        private final WorldInteraction w;
+
+        World(WorldInteraction w) {
+            super(WORLD, w.id(), OUT_X + OUT_COLUMNS * STEP, TEXT_Y + 10);
+            this.w = w;
+            w.inputs().forEach(s -> inputs.add(EmiStack.of(s, s.getCount())));
+            w.conditions().forEach(s -> catalysts.add(EmiStack.of(s)));
+            w.outputs().forEach(s -> outputs.add(EmiStack.of(s, s.getCount())));
+        }
+
+        @Override
+        public void addWidgets(WidgetHolder widgets) {
+            for (int i = 0; i < inputs.size() && i < INPUTS; i++)
+                widgets.add(new CountedEmiSlot(inputs.get(i), i * STEP, 0));
+            for (int i = 0; i < catalysts.size() && i < 2; i++)
+                widgets.add(new CountedEmiSlot(catalysts.get(i), CONDITION_X + i * STEP, 0));
+            widgets.addTexture(EmiTexture.EMPTY_ARROW, ARROW_X, (2 * STEP - 17) / 2);
+            for (int i = 0; i < outputs.size() && i < OUTPUTS; i++)
+                widgets.add(new CountedEmiSlot(outputs.get(i), OUT_X + i % OUT_COLUMNS * STEP, i / OUT_COLUMNS * STEP)).recipeContext(this);
+            widgets.addDrawable(0, TEXT_Y, getDisplayWidth(), 10,
+                    (g, mouseX, mouseY, delta) -> RecipeNumbers.drawLine(g, w.text(), 0, 0, getDisplayWidth(), 0xFF404040));
         }
     }
 }

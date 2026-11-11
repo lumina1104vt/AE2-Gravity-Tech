@@ -1,0 +1,22 @@
+{
+  "type": "ae2_gvt:gravity_processing",
+  "ingredients": [
+    {
+      "item": "ae2_gvt:antigravity_alloy_ingot",
+      "count": 32
+    },
+    {
+      "item": "ae2_gvt:antigravity_processor",
+      "count": 4
+    }
+  ],
+  "results": [
+    {
+      "id": "ae2_gvt:propulsion_core",
+      "count": 1
+    }
+  ],
+  "time": 200,
+  "energy": 50000,
+  "antigravitons": 256
+}

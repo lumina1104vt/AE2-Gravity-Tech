@@ -1,0 +1,5 @@
+A gravity-themed addon for Applied Energistics 2: black and white holes, a gravity processing factory, a fusion generator, upgradeable anti-gravity armor, and a twin-star crafting hub.
+
+----
+
+AE2 的引力主題附屬模組：黑白洞、引力加工工廠、融合發生器、可升級的反引力裝甲，以及雙星合成中樞。

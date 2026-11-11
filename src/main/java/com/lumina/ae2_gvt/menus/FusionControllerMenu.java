@@ -54,8 +54,9 @@ public class FusionControllerMenu extends AEBaseMenu implements IProgressProvide
         for (int i = 0; i < inputs.size(); i++) {
             addSlot(new AppEngSlot(inputs, i), INPUT_ROWS[i / 3]);
         }
-        for (int i = 0; i < controller.getOutputs().size(); i++) {
-            addSlot(new OutputSlot(controller.getOutputs(), i, null), OUTPUT_ROWS[i / 5]);
+        var outputs = controller.getOutputs().createMenuWrapper();
+        for (int i = 0; i < outputs.size(); i++) {
+            addSlot(new OutputSlot(outputs, i, null), OUTPUT_ROWS[i / 5]);
         }
         createPlayerInventorySlots(playerInventory);
     }

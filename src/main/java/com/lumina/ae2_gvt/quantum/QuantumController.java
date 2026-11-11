@@ -30,11 +30,11 @@ public final class QuantumController {
     public static final DeferredItem<BlockItem> ITEM = AE2GravityTech.ITEMS.registerSimpleBlockItem("quantum_controller", BLOCK);
 
     /** AE2's own controller block entity, under our block (that is what makes it a real controller). */
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<ControllerBlockEntity>> ENTITY = BLOCK_ENTITIES.register(
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<QuantumControllerBlockEntity>> ENTITY = BLOCK_ENTITIES.register(
             "quantum_controller", () -> {
-                BlockEntityType<ControllerBlockEntity>[] type = new BlockEntityType[1];
-                type[0] = BlockEntityType.Builder.of((pos, state) -> new ControllerBlockEntity(type[0], pos, state), BLOCK.get()).build(null);
-                BLOCK.get().setBlockEntity(ControllerBlockEntity.class, type[0], null, null);
+                BlockEntityType<QuantumControllerBlockEntity>[] type = new BlockEntityType[1];
+                type[0] = BlockEntityType.Builder.of((pos, state) -> new QuantumControllerBlockEntity(type[0], pos, state), BLOCK.get()).build(null);
+                ((appeng.block.AEBaseEntityBlock) BLOCK.get()).setBlockEntity((Class) QuantumControllerBlockEntity.class, (BlockEntityType) type[0], null, null);   // raw: the block is typed for AE2's own controller class
                 // The node's look in AE2's network status; without it the node shows as air and is left out
                 AEBaseBlockEntity.registerBlockEntityItem(type[0], BLOCK.get().asItem());
                 return type[0];

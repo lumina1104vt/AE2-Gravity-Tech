@@ -1,0 +1,65 @@
+{
+  "$schema": "schema.json",
+  "$comment": "AE2's interface.png with one plain row of slots: the sub-machines of the pattern, tried left to right",
+  "includes": [
+    "common/common.json",
+    "common/player_inventory.json"
+  ],
+  "background": {
+    "texture": "ae2_gvt:textures/gui/sub_machines.png",
+    "srcRect": [0, 0, 176, 207]
+  },
+  "slots": {
+    "TWIN_STAR_SUB_MACHINES": {
+      "left": 8,
+      "top": 53,
+      "grid": "HORIZONTAL"
+    }
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "ae2_gvt.sub_machines.title"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    },
+    "sub_machines_order": {
+      "text": {
+        "translate": "ae2_gvt.sub_machines.order"
+      },
+      "position": {
+        "left": 8,
+        "top": 24
+      }
+    },
+    "sub_machines_order2": {
+      "text": {
+        "translate": "ae2_gvt.sub_machines.order2"
+      },
+      "position": {
+        "left": 8,
+        "top": 37
+      }
+    },
+    "sub_machines_hint": {
+      "text": {
+        "translate": "ae2_gvt.sub_machines.hint"
+      },
+      "position": {
+        "left": 8,
+        "top": 76
+      }
+    }
+  },
+  "widgets": {
+    "back": {
+      "left": 152,
+      "top": -5,
+      "width": 20,
+      "height": 20
+    }
+  }
+}

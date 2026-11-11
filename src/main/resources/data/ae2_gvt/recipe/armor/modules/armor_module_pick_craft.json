@@ -1,0 +1,30 @@
+{
+  "type": "ae2_gvt:gravity_processing",
+  "ingredients": [
+    {
+      "item": "ae2_gvt:armor_module_base",
+      "count": 1
+    },
+    {
+      "item": "ae2_gvt:sensor_array",
+      "count": 1
+    },
+    {
+      "item": "ae2:engineering_processor",
+      "count": 16
+    },
+    {
+      "item": "ae2:blank_pattern",
+      "count": 1
+    }
+  ],
+  "results": [
+    {
+      "id": "ae2_gvt:armor_module_pick_craft",
+      "count": 1
+    }
+  ],
+  "time": 200,
+  "energy": 50000,
+  "antigravitons": 256
+}

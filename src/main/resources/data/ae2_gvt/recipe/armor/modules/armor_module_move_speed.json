@@ -1,0 +1,30 @@
+{
+  "type": "ae2_gvt:gravity_processing",
+  "ingredients": [
+    {
+      "item": "ae2_gvt:armor_module_base",
+      "count": 1
+    },
+    {
+      "item": "ae2_gvt:propulsion_core",
+      "count": 1
+    },
+    {
+      "item": "minecraft:sugar",
+      "count": 16
+    },
+    {
+      "item": "minecraft:blue_ice",
+      "count": 8
+    }
+  ],
+  "results": [
+    {
+      "id": "ae2_gvt:armor_module_move_speed",
+      "count": 1
+    }
+  ],
+  "time": 200,
+  "energy": 50000,
+  "antigravitons": 256
+}

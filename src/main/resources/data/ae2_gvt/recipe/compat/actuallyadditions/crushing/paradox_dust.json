@@ -1,0 +1,20 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "actuallyadditions"
+    }
+  ],
+  "type": "actuallyadditions:crushing",
+  "ingredient": {
+    "item": "ae2_gvt:paradox_crystal"
+  },
+  "result": [
+    {
+      "result": {
+        "count": 1,
+        "id": "ae2_gvt:paradox_dust"
+      }
+    }
+  ]
+}

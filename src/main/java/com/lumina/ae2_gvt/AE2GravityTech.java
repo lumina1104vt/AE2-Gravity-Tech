@@ -50,6 +50,7 @@ public class AE2GravityTech {
         com.lumina.ae2_gvt.hub.HubStructureBlocks.init();   // helix / pillar / ring blocks of the hexagram hub
         com.lumina.ae2_gvt.structure.FusionStructure.register();   // the fusion chamber's lumina-multiblock definition
         com.lumina.ae2_gvt.hub.HexagramHub.register();   // the hexagram hub's lumina-multiblock definition
+        com.lumina.ae2_gvt.elevator.SpaceElevator.register();   // the space elevator: controller block + lumina-multiblock definition
         com.lumina.ae2_gvt.quantum.QuantumController.init();   // quantum controller
         com.lumina.ae2_gvt.graviton.Gravitons.init();   // graviton storage type and cells
         com.lumina.ae2_gvt.storage.FeEnergy.init();     // FE on the network, without Applied Flux
@@ -67,7 +68,6 @@ public class AE2GravityTech {
                 output.accept(Items.ANNIHILATION_TNT);
                 output.accept(Items.GRAVITY_FACTORY);
                 output.accept(Items.GRAVITY_CONSTRAINER);
-                output.accept(Items.ACCELERATION_DEVICE);
                 output.accept(Items.FUSION_CONTROLLER);
                 output.accept(Items.ENERGY_PORT);
                 output.accept(Items.CONTAINMENT_GLASS);
@@ -75,8 +75,11 @@ public class AE2GravityTech {
                 output.accept(Items.STRUCTURE_FRAME);
                 com.lumina.ae2_gvt.hub.HubUnits.all().forEach(item -> output.accept(item.get()));
                 com.lumina.ae2_gvt.hub.HubStructureBlocks.all().forEach(item -> output.accept(item.get()));
+                com.lumina.ae2_gvt.elevator.SpaceElevator.items().forEach(item -> output.accept(item.get()));
                 output.accept(com.lumina.ae2_gvt.terminal.TwinStarTerminal.ITEM.get());
                 output.accept(Items.MACHINE_ACCESS_INTERFACE);
+                output.accept(Items.MACHINE_ACCESS_BLOCK);
+                output.accept(Items.MACHINE_LINK_TOOL);
                 output.accept(com.lumina.ae2_gvt.quantum.QuantumController.ITEM.get());
                 com.lumina.ae2_gvt.graviton.Gravitons.all().forEach(item -> output.accept(item.get()));
                 output.accept(Items.BLACK_HOLE_STORAGE_CELL);
@@ -111,6 +114,13 @@ public class AE2GravityTech {
         CREATIVE_MODE_TABS.register(modEventBus);
         DataComponents.register(modEventBus);
         Menus.register(modEventBus);
+        // what a machine pushes out into its machine access interface (as into an ME interface)
+        modEventBus.addListener((appeng.api.parts.RegisterPartCapabilitiesEvent e) -> {
+            e.register(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, (part, side) -> part.core().getReceivedItems(),
+                    com.lumina.ae2_gvt.items.parts.MachineAccessInterface.class);
+            e.register(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK, (part, side) -> part.core().getReceivedFluids(),
+                    com.lumina.ae2_gvt.items.parts.MachineAccessInterface.class);
+        });
         com.lumina.ae2_gvt.recipes.Recipes.register(modEventBus);
         // AE2 upgrade cards our machines take (registered once the items exist)
         modEventBus.addListener((net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent e) -> e.enqueueWork(
@@ -127,6 +137,10 @@ public class AE2GravityTech {
         com.lumina.twinstar.api.PatternMachines.setReader(definition -> {
             var machine = definition.get(com.lumina.ae2_gvt.terminal.TwinStarTerminal.PATTERN_MACHINE.get());
             return machine == null ? null : machine.value();
+        });
+        com.lumina.twinstar.api.PatternMachines.setSubMachineReader(definition -> {
+            var subs = definition.get(com.lumina.ae2_gvt.terminal.TwinStarTerminal.PATTERN_SUB_MACHINES.get());
+            return subs == null ? java.util.List.of() : subs.stream().map(net.minecraft.core.Holder::value).toList();
         });
         BlockEntities.register(modEventBus);
         AntigravityArmor.register(modEventBus);

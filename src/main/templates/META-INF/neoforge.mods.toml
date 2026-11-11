@@ -47,7 +47,7 @@ displayName="${mod_name}" #mandatory
 
 # The description text for the mod (multi line!) (#mandatory)
 description='''
-Example mod description.
+${mod_description}
 '''
 
 # The [[mixins]] block allows you to declare your mixin config to FML so that it gets loaded.
@@ -102,18 +102,26 @@ config="${mod_id}.mixins.json"
     ordering="AFTER"
     side="BOTH"
 
+# GuideME: item guide pages (G over an item)
+[[dependencies.${mod_id}]]
+    modId="guideme"
+    type="required"
+    versionRange="*"
+    ordering="AFTER"
+    side="BOTH"
+
 # The twin-star crafting engine lives in its own lib mod (separate download)
 [[dependencies.${mod_id}]]
     modId="twinstar"
     type="required"
-    versionRange="[0.0.1,)"
+    versionRange="[${twinstar_mod_version},)"
     ordering="AFTER"
     side="BOTH"
 
 [[dependencies.${mod_id}]]
     modId="lumina_multiblock"
     type="required"
-    versionRange="[0.0.1,)"
+    versionRange="[${lumina_multiblock_mod_version},)"
     ordering="AFTER"
     side="BOTH"
 

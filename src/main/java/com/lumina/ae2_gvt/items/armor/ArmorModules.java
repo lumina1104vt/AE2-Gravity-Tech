@@ -62,6 +62,11 @@ public class ArmorModules {
     public static List<DeferredItem<Item>> all() {
         var result = new ArrayList<DeferredItem<Item>>();
         result.add(Items.BASE_MODULE);
+        result.add(Items.PROPULSION_CORE);
+        result.add(Items.LIFE_CORE);
+        result.add(Items.IMPACT_CRYSTAL);
+        result.add(Items.SENSOR_ARRAY);
+        result.add(Items.NETWORK_NODE);
         result.addAll(RAW_MODULES);
         return result;
     }

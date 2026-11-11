@@ -1,0 +1,30 @@
+{
+  "type": "ae2_gvt:gravity_processing",
+  "ingredients": [
+    {
+      "item": "ae2_gvt:armor_module_base",
+      "count": 1
+    },
+    {
+      "item": "ae2_gvt:propulsion_core",
+      "count": 1
+    },
+    {
+      "item": "minecraft:elytra",
+      "count": 8
+    },
+    {
+      "item": "ae2_gvt:paradox_crystal_seed",
+      "count": 4
+    }
+  ],
+  "results": [
+    {
+      "id": "ae2_gvt:armor_module_flight_drift",
+      "count": 1
+    }
+  ],
+  "time": 200,
+  "energy": 50000,
+  "antigravitons": 256
+}

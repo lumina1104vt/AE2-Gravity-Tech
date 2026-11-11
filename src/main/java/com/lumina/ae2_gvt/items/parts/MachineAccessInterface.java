@@ -1,35 +1,28 @@
 package com.lumina.ae2_gvt.items.parts;
 
-import appeng.api.config.Actionable;
-import appeng.api.networking.IGridNode;
-import appeng.api.networking.security.IActionSource;
-import appeng.api.networking.ticking.IGridTickable;
-import appeng.api.networking.ticking.TickRateModulation;
-import appeng.api.networking.ticking.TickingRequest;
-import appeng.api.storage.MEStorage;
-import com.lumina.ae2_gvt.storage.FeEnergy;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.energy.IEnergyStorage;
 import java.util.List;
+import java.util.Set;
+import java.util.function.BiConsumer;
 
 import org.jetbrains.annotations.Nullable;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
+import com.lumina.ae2_gvt.items.tools.MachineLinkTool;
 import com.lumina.ae2_gvt.menus.Menus;
 import com.lumina.twinstar.api.IMachineAccess;
 
-import appeng.api.inventories.InternalInventory;
+import appeng.api.networking.IManagedGridNode;
+import appeng.api.networking.security.IActionHost;
 import appeng.api.parts.IPartCollisionHelper;
 import appeng.api.parts.IPartItem;
 import appeng.api.parts.IPartModel;
+import appeng.api.stacks.AEKey;
 import appeng.api.util.AECableType;
 import appeng.items.parts.PartModels;
 import appeng.menu.MenuOpener;
 import appeng.menu.locator.MenuLocators;
 import appeng.parts.AEBasePart;
 import appeng.parts.PartModel;
-import appeng.util.inv.AppEngInternalInventory;
-import appeng.util.inv.InternalInventoryHost;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -39,31 +32,25 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 /**
  * Machine access interface: put on a machine, it lets the hub run that machine's synthesis patterns
- * on it ({@link IMachineAccess}; the hub does the work through the machine's capabilities). Set in
- * its screen:
- * <ul>
- *   <li>a machine it also stands for, besides the block it is on (a ghost slot, empty by default:
- *   for a multiblock's port or another tier of the same machine);</li>
- *   <li>blocking: another pattern's materials wait until the previous one's are gone (default off);</li>
- *   <li>how materials go in: through its own face, the faces the pattern gives, no face, or not at all
- *   (it only takes products out);</li>
- *   <li>a pairing number: interfaces standing for the same machine with the same number count as one
- *   machine spread over several blocks, a multiblock's input and output hatches.</li>
- * </ul>
+ * on it. All of its settings and work are {@link MachineAccessCore}'s (shared with the wireless block);
+ * this is the cable part around it: its look, its box, its screen, and the grid node.
  */
-public class MachineAccessInterface extends AEBasePart implements IMachineAccess, InternalInventoryHost, IGridTickable {
-    private final AppEngInternalInventory machineInv = new AppEngInternalInventory(this, 1, 1);
-    private boolean blocking;
-    private InsertMode insertMode = InsertMode.DEFAULT;
-    private int group;
+public class MachineAccessInterface extends AEBasePart implements IMachineAccess, MachineAccessHost, MachineAccessCore.Host {
+    private final MachineAccessCore core = new MachineAccessCore(this);
 
     public MachineAccessInterface(IPartItem<?> partItem) {
         super(partItem);
-        getMainNode().setFlags().setIdlePowerUsage(10).addService(IGridTickable.class, this);
+        core.setup(getMainNode());
+    }
+
+    @Override
+    public MachineAccessCore core() {
+        return core;
     }
 
     private static final ResourceLocation MODEL_BASE =
@@ -107,134 +94,132 @@ public class MachineAccessInterface extends AEBasePart implements IMachineAccess
         return true;
     }
 
-    public InternalInventory getMachineInv() {
-        return machineInv;
-    }
-
-    public void setBlocking(boolean blocking) {
-        this.blocking = blocking;
-        getHost().markForSave();
-    }
-
-    public void setInsertMode(InsertMode insertMode) {
-        this.insertMode = insertMode;
-        getHost().markForSave();
-    }
-
-    // ── IMachineAccess ──
-
+    /** The 機器連結器, sneaking: pick this interface as the one the linker sets up (again: let go of it). */
     @Override
-    public @Nullable Item getMachine() {
-        ItemStack s = machineInv.getStackInSlot(0);
-        return s.isEmpty() ? null : s.getItem();
-    }
-
-    @Override
-    public boolean isBlocking() {
-        return blocking;
-    }
-
-    @Override
-    public InsertMode getInsertMode() {
-        return insertMode;
-    }
-
-    @Override
-    public int getGroup() {
-        return group;
-    }
-
-    public void setGroup(int group) {
-        this.group = group;
-        getHost().markForSave();
-    }
-
-    @Override
-    public @Nullable ServerLevel getMachineLevel() {
-        return getLevel() instanceof ServerLevel level ? level : null;
-    }
-
-    @Override
-    public BlockPos getMachinePos() {
+    public boolean onUseItemOn(ItemStack stack, Player player, net.minecraft.world.InteractionHand hand, Vec3 pos) {
+        if (!(stack.getItem() instanceof MachineLinkTool) || !player.isShiftKeyDown())
+            return false;
+        if (isClientSide())
+            return true;
         var host = getBlockEntity();
-        return host == null ? BlockPos.ZERO : host.getBlockPos().relative(getSide());
+        if (host == null || getLevel() == null)
+            return true;
+        MachineLinkTool.pick(stack, player, new MachineLinkTool.Link(getLevel().dimension(), host.getBlockPos(), getSide()));
+        return true;
+    }
+
+    // ── MachineAccessCore.Host ──
+
+    @Override
+    public @Nullable Level level() {
+        return getLevel();
     }
 
     @Override
-    public Direction getMachineFace() {
-        return getSide().getOpposite();
+    public @Nullable BlockPos pos() {
+        var host = getBlockEntity();
+        return host == null ? null : host.getBlockPos();
     }
 
     @Override
-    public boolean isAccessActive() {
-        return getMainNode().isActive();
-    }
-
-    // ── FE ──
-
-    @Override
-    public TickingRequest getTickingRequest(IGridNode node) {
-        return new TickingRequest(1, 1, false);
-    }
-
-    /** Keeps the machine charged from the FE on the network (a white hole energy cell, Applied Flux's cells). */
-    @Override
-    public TickRateModulation tickingRequest(IGridNode node, int ticksSinceLastCall) {
-        ServerLevel level = getMachineLevel();
-        if (level == null || insertMode == InsertMode.OUTPUT || !node.isActive())
-            return TickRateModulation.SAME;
-        IEnergyStorage machine = level.getCapability(Capabilities.EnergyStorage.BLOCK, getMachinePos(), getMachineFace());
-        if (machine == null || !machine.canReceive())
-            return TickRateModulation.SAME;
-        int wanted = machine.receiveEnergy(Integer.MAX_VALUE, true);
-        if (wanted <= 0)
-            return TickRateModulation.SAME;
-        MEStorage network = node.getGrid().getStorageService().getInventory();
-        IActionSource source = IActionSource.ofMachine(this);
-        long available = network.extract(FeEnergy.key(), wanted, Actionable.SIMULATE, source);
-        if (available > 0) {
-            int taken = machine.receiveEnergy((int) available, false);
-            if (taken > 0)
-                network.extract(FeEnergy.key(), taken, Actionable.MODULATE, source);
-        }
-        return TickRateModulation.SAME;
-    }
-
-    // ── saving ──
-
-    @Override
-    public void saveChangedInventory(AppEngInternalInventory inv) {
-        getHost().markForSave();
+    public @Nullable Direction side() {
+        return getSide();
     }
 
     @Override
-    public void onChangeInventory(AppEngInternalInventory inv, int slot) {
+    public IManagedGridNode node() {
+        return getMainNode();
+    }
+
+    @Override
+    public IActionHost actionHost() {
+        return this;
+    }
+
+    @Override
+    public void save() {
+        if (getHost() != null)
+            getHost().markForSave();
+    }
+
+    @Override
+    public void update() {
+        if (getHost() != null)
+            getHost().markForUpdate();
+    }
+
+    @Override
+    public void notifyNeighbors() {
+        getHost().notifyNeighbors();
+    }
+
+    // ── IMachineAccess: the node's owner is this part; the core does it all ──
+
+    @Override public @Nullable Item getMachine() { return core.getMachine(); }
+    @Override public boolean isBlocking() { return core.isBlocking(); }
+    @Override public BlockMode getBlockMode() { return core.getBlockMode(); }
+    @Override public InsertMode getInsertMode() { return core.getInsertMode(); }
+    @Override public @Nullable ServerLevel getMachineLevel() { return core.getMachineLevel(); }
+    @Override public BlockPos getMachinePos() { return core.getMachinePos(); }
+    @Override public Direction getMachineFace() { return core.getMachineFace(); }
+    @Override public int getGroup() { return core.getGroup(); }
+    @Override public int getSubRange() { return core.getSubRange(); }
+    @Override public void onRunFed() { core.onRunFed(); }
+    @Override public Set<AEKey> getStockedKeys() { return core.getStockedKeys(); }
+    @Override public void takeReceived(BiConsumer<AEKey, Long> taken) { core.takeReceived(taken); }
+    @Override public boolean isAccessActive() { return core.isAccessActive(); }
+    @Override public List<IMachineAccess> accessPoints() { return core.accessPoints(); }
+
+    @Override
+    public boolean canConnectRedstone() {
+        return core.canConnectRedstone();
+    }
+
+    @Override
+    public int isProvidingStrongPower() {
+        return core.isProvidingStrongPower();
+    }
+
+    @Override
+    public int isProvidingWeakPower() {
+        return core.isProvidingWeakPower();
+    }
+
+    // ── to the client, saving ──
+
+    @Override
+    public void writeToStream(net.minecraft.network.RegistryFriendlyByteBuf data) {
+        super.writeToStream(data);
+        core.writeStream(data);
+    }
+
+    @Override
+    public boolean readFromStream(net.minecraft.network.RegistryFriendlyByteBuf data) {
+        super.readFromStream(data);
+        core.readStream(data);
+        return true;
     }
 
     @Override
     public void readFromNBT(CompoundTag tag, HolderLookup.Provider registries) {
         super.readFromNBT(tag, registries);
-        machineInv.readFromNBT(tag, "machine", registries);
-        blocking = tag.getBoolean("blocking");
-        group = tag.getInt("group");
-        try {
-            insertMode = InsertMode.valueOf(tag.getString("insertMode"));
-        } catch (IllegalArgumentException e) {
-            insertMode = InsertMode.DEFAULT;
-        }
+        core.read(tag, registries);
     }
 
     @Override
     public void writeToNBT(CompoundTag tag, HolderLookup.Provider registries) {
         super.writeToNBT(tag, registries);
-        machineInv.writeToNBT(tag, "machine", registries);
-        tag.putBoolean("blocking", blocking);
-        tag.putInt("group", group);
-        tag.putString("insertMode", insertMode.name());
+        core.write(tag, registries);
     }
 
     @Override
     public void addAdditionalDrops(List<ItemStack> drops, boolean wrenched) {
-        // the machine slot is a ghost slot: nothing to drop
+        core.drops(drops);
+    }
+
+    @Override
+    public void clearContent() {
+        super.clearContent();
+        core.clear();
     }
 }

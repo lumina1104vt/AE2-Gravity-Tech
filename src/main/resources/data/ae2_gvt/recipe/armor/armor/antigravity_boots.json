@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "P P",
+    "PCP"
+  ],
+  "key": {
+    "P": {
+      "item": "ae2_gvt:paradox_alloy_plate"
+    },
+    "C": {
+      "item": "ae2_gvt:antigravity_processor"
+    }
+  },
+  "result": {
+    "id": "ae2_gvt:antigravity_boots",
+    "count": 1
+  }
+}

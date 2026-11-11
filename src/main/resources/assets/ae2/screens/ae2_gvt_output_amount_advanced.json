@@ -1,0 +1,101 @@
+{
+  "$schema": "schema.json",
+  "$comment": "Advanced: the probability of the output",
+  "includes": [
+    "common/common.json"
+  ],
+  "background": {
+    "texture": "ae2_gvt:textures/gui/output_amount.png",
+    "srcRect": [
+      0,
+      0,
+      176,
+      166
+    ]
+  },
+  "slots": {
+    "MACHINE_OUTPUT": {
+      "left": 23,
+      "top": 53
+    }
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "translate": "gui.ae2.SelectAmount"
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    },
+    "chance_label": {
+      "text": {
+        "translate": "ae2_gvt.pattern.chance"
+      },
+      "position": {
+        "left": 8,
+        "top": 122
+      }
+    },
+    "percent": {
+      "text": {
+        "text": "%"
+      },
+      "position": {
+        "left": 101,
+        "top": 122
+      }
+    }
+  },
+  "widgets": {
+    "save": {
+      "left": 120,
+      "top": 51,
+      "width": 38,
+      "height": 20
+    },
+    "back": {
+      "left": 152,
+      "top": -5,
+      "width": 20,
+      "height": 20
+    },
+    "amountToStock": {
+      "left": 20,
+      "top": 30,
+      "width": 138,
+      "height": 62
+    },
+    "amountToStockInput": {
+      "left": 48,
+      "top": 55,
+      "width": 66,
+      "height": 12
+    },
+    "advanced": {
+      "left": 8,
+      "top": 97,
+      "width": 72,
+      "height": 14
+    },
+    "chance": {
+      "left": 48,
+      "top": 120,
+      "width": 50,
+      "height": 12
+    },
+    "recipeChance": {
+      "left": 120,
+      "top": 118,
+      "width": 38,
+      "height": 16
+    },
+    "ignoreNbt": {
+      "left": 8,
+      "top": 150,
+      "width": 160,
+      "height": 12
+    }
+  }
+}

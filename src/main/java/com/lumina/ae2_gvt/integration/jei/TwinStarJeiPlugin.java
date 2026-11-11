@@ -105,6 +105,8 @@ public class TwinStarJeiPlugin implements IModPlugin {
             EncodingHelper.encodeProcessingRecipe(menu, inputs, outputs);
             IRecipeCategory<?> category = findCategory(recipe);
             menu.getMachineSlot().setFilterTo(machineOf(category));   // an empty stack clears the slot
+            // also puts in the sub-machines last used with that machine. Not the category's other stations:
+            // those are other machines that do the same alone (every modded crafting table), not parts of one
             menu.setRecipeChances(idOf(category, recipe));
             return null;
         }

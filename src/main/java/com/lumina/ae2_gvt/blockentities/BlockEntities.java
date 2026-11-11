@@ -20,6 +20,8 @@ public final class BlockEntities {
             "graviton_collector", () -> BlockEntityType.Builder.of(GravitonCollector::new, Blocks.GRAVITON_COLLECTOR.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<GravityFactoryBlockEntity>> GRAVITY_FACTORY = BLOCK_ENTITIES.register(
             "gravity_processing_factory", () -> BlockEntityType.Builder.of(GravityFactoryBlockEntity::new, Blocks.GRAVITY_FACTORY.get()).build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<MachineAccessBlockEntity>> MACHINE_ACCESS_BLOCK = BLOCK_ENTITIES.register(
+            "machine_access_block", () -> BlockEntityType.Builder.of(MachineAccessBlockEntity::new, Blocks.MACHINE_ACCESS_BLOCK.get()).build(null));
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<FusionControllerBlockEntity>> FUSION_CONTROLLER = BLOCK_ENTITIES.register(
             "fusion_controller", () -> BlockEntityType.Builder.of(FusionControllerBlockEntity::new, Blocks.FUSION_CONTROLLER.get()).build(null));
 
@@ -56,6 +58,12 @@ public final class BlockEntities {
         // ME cables: the collector puts gravitons in, the factory takes them out
         event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, GRAVITON_COLLECTOR.get(), (be, ctx) -> be);
         event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, GRAVITY_FACTORY.get(), (be, ctx) -> be);
+        // 機器接入方塊: on the ME network; what a machine pushes out into it, as with the cable part
+        event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, MACHINE_ACCESS_BLOCK.get(), (be, ctx) -> be);
+        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, MACHINE_ACCESS_BLOCK.get(),
+                (be, ctx) -> be.core().getReceivedItems());
+        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK, MACHINE_ACCESS_BLOCK.get(),
+                (be, ctx) -> be.core().getReceivedFluids());
         // 引力加工工廠: pipes put into its inputs and take from its outputs; FE cables power it (any side)
         event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, GRAVITY_FACTORY.get(),
                 (be, ctx) -> be.getPipeHandler());

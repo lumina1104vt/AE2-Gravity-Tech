@@ -23,12 +23,11 @@ public final class Blocks {
             "graviton_collector", GravitonCollector::new,
             BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(4f).sound(SoundType.METAL).noOcclusion().pushReaction(PushReaction.BLOCK));
 
-    public static final DeferredBlock<AccelerationDevice> ACCELERATION_DEVICE = BLOCKS.registerBlock(
-            "acceleration_device", AccelerationDevice::new,
-            BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.2f, 11f).sound(SoundType.METAL).noOcclusion());
-
     public static final DeferredBlock<AnnihilationTntBlock> ANNIHILATION_TNT = BLOCKS.registerBlock("annihilation_tnt", AnnihilationTntBlock::new,
             BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY).instabreak().sound(SoundType.GRASS).ignitedByLava());
+
+    public static final DeferredBlock<MachineAccessBlock> MACHINE_ACCESS_BLOCK = BLOCKS.registerBlock("machine_access_block", MachineAccessBlock::new,
+            BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.2f, 11f).sound(SoundType.METAL));
 
     public static final DeferredBlock<Block> MACHINE_FRAME = BLOCKS.registerSimpleBlock("machine_frame",
             BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.2f, 11f).sound(SoundType.METAL));

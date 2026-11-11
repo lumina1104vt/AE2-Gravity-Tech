@@ -1,0 +1,30 @@
+{
+  "type": "ae2_gvt:gravity_processing",
+  "ingredients": [
+    {
+      "item": "ae2_gvt:armor_module_base",
+      "count": 1
+    },
+    {
+      "item": "ae2_gvt:impact_crystal",
+      "count": 1
+    },
+    {
+      "item": "minecraft:redstone",
+      "count": 128
+    },
+    {
+      "item": "minecraft:beacon",
+      "count": 1
+    }
+  ],
+  "results": [
+    {
+      "id": "ae2_gvt:armor_module_attack_speed",
+      "count": 1
+    }
+  ],
+  "time": 200,
+  "energy": 50000,
+  "antigravitons": 256
+}

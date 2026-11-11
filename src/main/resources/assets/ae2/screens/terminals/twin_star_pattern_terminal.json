@@ -30,6 +30,12 @@
     "twinStarPanel": {
       "left": 8,
       "bottom": 165
+    },
+    "subMachines": {
+      "left": 11,
+      "bottom": 139,
+      "width": 18,
+      "height": 18
     }
   }
 }

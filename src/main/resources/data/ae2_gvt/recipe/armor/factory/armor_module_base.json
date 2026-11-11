@@ -1,0 +1,26 @@
+{
+  "type": "ae2_gvt:gravity_processing",
+  "ingredients": [
+    {
+      "item": "ae2_gvt:antigravity_circuit",
+      "count": 8
+    },
+    {
+      "item": "ae2_gvt:paradox_alloy_plate",
+      "count": 16
+    },
+    {
+      "item": "ae2:advanced_card",
+      "count": 1
+    }
+  ],
+  "results": [
+    {
+      "id": "ae2_gvt:armor_module_base",
+      "count": 1
+    }
+  ],
+  "time": 100,
+  "energy": 50000,
+  "antigravitons": 256
+}

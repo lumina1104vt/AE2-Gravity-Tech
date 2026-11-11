@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "ae2_gvt:machine_access_interface"
+    }
+  ],
+  "result": {
+    "id": "ae2_gvt:machine_access_block",
+    "count": 1
+  }
+}

@@ -4,9 +4,14 @@
   "package": "com.lumina.ae2_gvt.mixins",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "CraftingServiceMixins"
+    "CraftingServiceMixins",
+    "ControllerValidatorMixin",
+    "GridMixin",
+    "NetworkStatusMenuMixin",
+    "BlockStateBaseMixin"
   ],
   "client": [
+    "NetworkStatusScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

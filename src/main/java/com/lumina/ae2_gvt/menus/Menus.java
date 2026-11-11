@@ -5,7 +5,7 @@ import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.blockentities.FusionControllerBlockEntity;
 import com.lumina.ae2_gvt.blockentities.GravityFactoryBlockEntity;
 import com.lumina.ae2_gvt.blockentities.cpu.DummyTwinStarCPUBlockEntity;
-import com.lumina.ae2_gvt.items.parts.MachineAccessInterface;
+import com.lumina.ae2_gvt.items.parts.MachineAccessHost;
 import com.lumina.ae2_gvt.menus.host.ArmorMenuHost;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -35,8 +35,12 @@ public class Menus {
                     .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "twin_star_hub")));
 
     public static final DeferredHolder<MenuType<?>, MenuType<MachineAccessMenu>> MACHINE_ACCESS = MENUS.register("machine_access_interface",
-            () -> MenuTypeBuilder.create(MachineAccessMenu::new, MachineAccessInterface.class)
+            () -> MenuTypeBuilder.create(MachineAccessMenu::new, MachineAccessHost.class)
                     .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "machine_access_interface")));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<QuantumControllerMenu>> QUANTUM_CONTROLLER = MENUS.register("quantum_controller",
+            () -> MenuTypeBuilder.create(QuantumControllerMenu::new, com.lumina.ae2_gvt.quantum.QuantumControllerBlockEntity.class)
+                    .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "quantum_controller")));
 
     public static void register(IEventBus bus) {
         MENUS.register(bus);

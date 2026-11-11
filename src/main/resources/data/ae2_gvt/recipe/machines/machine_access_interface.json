@@ -3,10 +3,7 @@
   "category": "misc",
   "ingredients": [
     {
-      "item": "ae2:interface"
-    },
-    {
-      "item": "ae2_gvt:gravity_processor"
+      "item": "ae2_gvt:machine_access_block"
     }
   ],
   "result": {

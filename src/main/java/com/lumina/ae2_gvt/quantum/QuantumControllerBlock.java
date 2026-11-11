@@ -1,7 +1,6 @@
 package com.lumina.ae2_gvt.quantum;
 
 import appeng.block.networking.ControllerBlock;
-import appeng.core.definitions.AEBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
@@ -17,7 +16,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * controller on it like the quantum link chamber - not built yet.
  * <p>
  * AE2's controller picks its look (single / column / inside) by looking for AE2 controllers next to
- * it only; this does the same counting ours and AE2's alike, so mixed structures join up.
+ * it only; this does the same counting quantum controllers only: they do not join up with AE2's.
  */
 public class QuantumControllerBlock extends ControllerBlock {
     /** AE2 19's controller sets its own properties; the registration's are ignored. */
@@ -58,6 +57,6 @@ public class QuantumControllerBlock extends ControllerBlock {
 
     private static boolean isController(LevelReader level, int x, int y, int z) {
         BlockState s = level.getBlockState(new BlockPos(x, y, z));
-        return s.getBlock() instanceof QuantumControllerBlock || s.is(AEBlocks.CONTROLLER.block());
+        return s.getBlock() instanceof QuantumControllerBlock;
     }
 }

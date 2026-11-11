@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Locale;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
+import com.lumina.ae2_gvt.client.TwinStarTerminalClient;
+import com.lumina.twinstar.algorithm.ae2.PatternInputTargets;
 import com.lumina.ae2_gvt.terminal.TwinStarPatternTermMenu;
 
 import appeng.api.stacks.GenericStack;
@@ -13,6 +15,7 @@ import appeng.client.gui.Icon;
 import appeng.client.gui.NumberEntryType;
 import appeng.client.gui.me.common.ClientDisplaySlot;
 import appeng.client.gui.style.Blitter;
+import appeng.client.gui.widgets.AE2Button;
 import appeng.client.gui.widgets.NumberEntryWidget;
 import appeng.client.gui.widgets.TabButton;
 import appeng.core.localization.GuiText;
@@ -30,6 +33,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
@@ -37,24 +41,37 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * {@code SetProcessingPatternAmountScreen}) with the machine faces this material goes in through
  * under it, laid out as an unfolded cube around the north face: used when the machine access
  * interface is set to "specified" (any number; tried down, up, north, south, west, east; none = the
- * interface's own face). Positions from assets/ae2/screens/ae2_gvt_input_amount.json.
+ * interface's own face); under that where it goes: into the machine, into its sub-machines, or placed or
+ * dropped in front of its opening, so many blocks out. Positions from assets/ae2/screens/ae2_gvt_input_amount.json.
  */
 public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, TwinStarPatternTermScreen> {
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/input_faces.png");
-    private static final Blitter OFF = Blitter.texture(TEXTURE).src(0, 176, 24, 14);
-    private static final Blitter ON = Blitter.texture(TEXTURE).src(24, 176, 24, 14);
-    private static final int NET_X = 52, NET_Y = 100, STEP_X = 26, STEP_Y = 15;
+    private static final Blitter OFF = Blitter.texture(TEXTURE).src(0, 232, 24, 14);
+    private static final Blitter ON = Blitter.texture(TEXTURE).src(24, 232, 24, 14);
+    private static final int NET_X = 52, NET_Y = 118, STEP_X = 26, STEP_Y = 15;
 
     private final NumberEntryWidget amount;
     private final GenericStack currentStack;
     private final Slot slot;
     private final int inputIndex;
     private int faces;
+    /** where the material goes (PatternInputTargets) */
+    private int target;
+    private final boolean advanced;
+    private final @Nullable AE2Button targetButton, distanceLess, distanceMore;
     private final List<FaceToggle> toggles = new ArrayList<>();
 
     public SetInputAmountScreen(TwinStarPatternTermScreen parent, GenericStack currentStack, Slot slot, int inputIndex) {
-        super(parent, "/screens/ae2_gvt_input_amount.json");
+        this(parent, currentStack, slot, inputIndex, parent.getMenu().getInputFaces(inputIndex), parent.getMenu().getInputTarget(inputIndex),
+                false);
+    }
+
+    /** {@code faces} and {@code target}: as set so far (the menu may not have them back from the server yet). */
+    private SetInputAmountScreen(TwinStarPatternTermScreen parent, GenericStack currentStack, Slot slot, int inputIndex, int faces, int target,
+                                 boolean advanced) {
+        super(parent, advanced ? "/screens/ae2_gvt_input_amount_advanced.json" : "/screens/ae2_gvt_input_amount.json");
+        this.advanced = advanced;
         this.currentStack = currentStack;
         this.slot = slot;
         this.inputIndex = inputIndex;
@@ -69,7 +86,86 @@ public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, T
         amount.setHideValidationIcon(true);
         amount.setOnConfirm(this::confirm);
         addClientSideSlot(new ClientDisplaySlot(currentStack), SlotSemantics.MACHINE_OUTPUT);
-        faces = getMenu().getInputFaces(inputIndex);
+        this.faces = faces;
+        this.target = target;
+        widgets.addButton("advanced", Component.translatable(advanced ? "ae2_gvt.pattern.advanced.hide" : "ae2_gvt.pattern.advanced.show"),
+                this::toggleAdvanced);
+        if (advanced) {
+            targetButton = widgets.addButton("target", Component.empty(), this::nextTarget);
+            distanceLess = widgets.addButton("distanceLess", Component.literal("-"), () -> moveDistance(-1));
+            distanceMore = widgets.addButton("distanceMore", Component.literal("+"), () -> moveDistance(1));
+            showTarget();
+            IgnoreNbt.add(widgets, getMenu(), inputIndex, false);
+        } else {
+            targetButton = distanceLess = distanceMore = null;
+        }
+    }
+
+    /** The same dialog in its other layout, with the amount typed so far. */
+    private void toggleAdvanced() {
+        long value = amount.getLongValue().orElse(currentStack.amount());
+        GenericStack stack = new GenericStack(currentStack.what(), Math.max(1, value));
+        TwinStarPatternTermScreen parent = getParent();
+        returnToParent();
+        parent.openDialog(new SetInputAmountScreen(parent, stack, slot, inputIndex, faces, target, !advanced));
+    }
+
+    /** The next place: by default, machine, sub-machines, placed in front, dropped in front. */
+    private void nextTarget() {
+        int kind = PatternInputTargets.next(PatternInputTargets.kind(target));
+        target = PatternInputTargets.of(kind, PatternInputTargets.distance(target));
+        sendTarget();
+    }
+
+    private void moveDistance(int by) {
+        if (!PatternInputTargets.isFront(target)) {
+            return;
+        }
+        int d = Math.max(1, Math.min(PatternInputTargets.MAX_DISTANCE, PatternInputTargets.distance(target) + by));
+        target = PatternInputTargets.of(PatternInputTargets.kind(target), d);
+        sendTarget();
+    }
+
+    /** Kept at once, like the faces: leaving by the back tab or Esc must not lose it. */
+    private void sendTarget() {
+        getMenu().setInputTarget(inputIndex, target);
+        showTarget();
+    }
+
+    private void showTarget() {
+        if (targetButton == null || distanceLess == null || distanceMore == null) {
+            return;
+        }
+        boolean subs = getMenu().getSubMachineSlots().stream().anyMatch(Slot::hasItem);
+        // the first material is the first filled input slot, as the pattern lists them
+        int firstFilled = -1;
+        Slot[] ins = getMenu().getProcessingInputSlots();
+        for (int i = 0; i < ins.length && firstFilled < 0; i++) {
+            if (ins[i].hasItem()) {
+                firstFilled = i;
+            }
+        }
+        targetButton.setMessage(TwinStarTerminalClient.Game.targetName(target, subs, firstFilled == inputIndex));
+        targetButton.setTooltip(Tooltip.create(Component.translatable("ae2_gvt.pattern.target.hint."
+                + switch (PatternInputTargets.kind(target)) {
+                    case PatternInputTargets.DEFAULT -> "default";
+                    case PatternInputTargets.SUB -> "sub";
+                    case PatternInputTargets.FRONT_BLOCK, PatternInputTargets.FRONT_DROP -> "front";
+                    default -> "machine";
+                })));
+        boolean front = PatternInputTargets.isFront(target);
+        distanceLess.visible = front;
+        distanceMore.visible = front;
+    }
+
+    /** The distance between its buttons, for the front targets. */
+    @Override
+    public void drawFG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY) {
+        super.drawFG(guiGraphics, offsetX, offsetY, mouseX, mouseY);
+        if (advanced && PatternInputTargets.isFront(target)) {
+            Component d = Component.translatable("ae2_gvt.pattern.target.distance", PatternInputTargets.distance(target));
+            guiGraphics.drawString(font, d, 82 - font.width(d) / 2, 188, 0x404040, false);
+        }
     }
 
     @Override
@@ -77,6 +173,9 @@ public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, T
         super.init();
         setSlotsHidden(SlotSemantics.TOOLBOX, true);
         toggles.clear();
+        if (!advanced) {
+            return;
+        }
         // unfolded cube: up over north, then west, north, east, south, then down under north
         add(Direction.UP, 1, 0);
         add(Direction.WEST, 0, 1);
@@ -104,6 +203,7 @@ public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, T
                     GenericStack.wrapInItemStack(stack)));
             if (stack != null) {
                 getMenu().setInputFaces(inputIndex, faces);
+                getMenu().setInputTarget(inputIndex, target);
             }
             returnToParent();
         });
@@ -113,7 +213,7 @@ public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, T
         return 999999L * currentStack.what().getAmountPerUnit();
     }
 
-    /** One face of the cube: click to toggle; green when the material goes in through it. */
+    /** One face of the cube: click to toggle; lit when the material goes in through it. */
     private final class FaceToggle extends AbstractWidget {
         private final Direction face;
 
@@ -140,6 +240,8 @@ public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, T
         @Override
         public void onClick(double mouseX, double mouseY) {
             faces ^= 1 << face.get3DDataValue();
+            // kept at once: leaving by the back tab or Esc must not lose it, as it did when only Set sent it
+            getMenu().setInputFaces(inputIndex, faces);
         }
 
         @Override

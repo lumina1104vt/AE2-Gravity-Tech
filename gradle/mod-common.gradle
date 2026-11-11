@@ -70,6 +70,8 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
             mod_version            : mod_version,
             mod_authors            : mod_authors,
             mod_description        : mod_description,
+            twinstar_mod_version   : rootProject.twinstar_mod_version,
+            lumina_multiblock_mod_version: rootProject.lumina_multiblock_mod_version,
     ]
     inputs.properties replaceProperties
     expand replaceProperties

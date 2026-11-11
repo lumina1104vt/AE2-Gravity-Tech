@@ -11,6 +11,9 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.147'
 }
 
+// mod description: the text lives in description.txt (UTF-8, English then 繁體中文)
+ext.mod_description = file('description.txt').getText('UTF-8')
+
 apply from: rootProject.file('gradle/mod-common.gradle')
 
 tasks.named('wrapper', Wrapper).configure {
@@ -79,11 +82,15 @@ configurations {
 }
 
 dependencies {
-    // our lib mods: separate jars, not bundled into ae2_gvt
+    // our lib mods: compiled against here; bundled into the ae2_gvt jar by jarJar below
     compileOnly project(':core')
     localRuntime project(':core')
     compileOnly project(':lumina-multiblock')
     localRuntime project(':lumina-multiblock')
+
+    // bundled into the ae2_gvt jar (jar-in-jar); each lib keeps its own mod id
+    jarJar(project(':core'))
+    jarJar(project(':lumina-multiblock'))
 
     // AE2: we build against it (the terminal extends AE2's classes) and run it in the dev client
     compileOnly "maven.modrinth:ae2:${ae2_version}"

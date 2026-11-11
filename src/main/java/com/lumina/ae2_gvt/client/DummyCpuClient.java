@@ -23,5 +23,7 @@ public final class DummyCpuClient {
                 "/screens/twin_star_hub.json");
         InitScreens.register(event, Menus.MACHINE_ACCESS.get(), com.lumina.ae2_gvt.client.screen.MachineAccessScreen::new,
                 "/screens/machine_access_interface.json");
+        InitScreens.register(event, Menus.QUANTUM_CONTROLLER.get(), com.lumina.ae2_gvt.client.screen.QuantumControllerScreen::new,
+                "/screens/quantum_controller.json");
     }
 }

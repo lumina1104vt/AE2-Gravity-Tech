@@ -37,22 +37,32 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * {@code SetProcessingPatternAmountScreen}) with a probability row under it: the probability in
  * percent (empty or 100 = always comes), a [JEI] button that puts back the probability of the recipe
  * JEI filled the slots from, and a line saying what the probability means (or what is wrong with it;
- * then it cannot be set). Positions from assets/ae2/screens/ae2_gvt_output_amount.json.
+ * then it cannot be set). That row is the advanced part, shown or hidden by its button. Positions from assets/ae2/screens/ae2_gvt_output_amount.json.
  */
 public class SetOutputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, TwinStarPatternTermScreen> {
-    private static final int HINT_Y = 119;
+    private static final int HINT_Y = 137;
     private static final int TEXT = 0x404040, ERROR = 0xC03030;
 
     private final NumberEntryWidget amount;
     private final GenericStack currentStack;
     private final Slot slot;
     private final int outputIndex;
-    private final AETextField chance;
+    private final boolean advanced;
+    private final @Nullable AETextField chance;
     private final AE2Button save;
-    private final AE2Button fromRecipe;
+    private final @Nullable AE2Button fromRecipe;
+    /** the probability as typed, kept while the advanced part is hidden */
+    private String chanceText;
 
     public SetOutputAmountScreen(TwinStarPatternTermScreen parent, GenericStack currentStack, Slot slot, int outputIndex) {
-        super(parent, "/screens/ae2_gvt_output_amount.json");
+        this(parent, currentStack, slot, outputIndex, chanceTextOf(parent.getMenu().getOutputChance(outputIndex)), false);
+    }
+
+    private SetOutputAmountScreen(TwinStarPatternTermScreen parent, GenericStack currentStack, Slot slot, int outputIndex, String chanceText,
+                                  boolean advanced) {
+        super(parent, advanced ? "/screens/ae2_gvt_output_amount_advanced.json" : "/screens/ae2_gvt_output_amount.json");
+        this.advanced = advanced;
+        this.chanceText = chanceText;
         this.currentStack = currentStack;
         this.slot = slot;
         this.outputIndex = outputIndex;
@@ -68,13 +78,34 @@ public class SetOutputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, 
         amount.setOnConfirm(this::confirm);
         addClientSideSlot(new ClientDisplaySlot(currentStack), SlotSemantics.MACHINE_OUTPUT);
 
-        chance = widgets.addTextField("chance");
-        chance.setMaxLength(12);
-        chance.setFilter(s -> s.chars().allMatch(ch -> Character.isDigit(ch) || ch == '.'));
-        chance.setPlaceholder(Component.literal("100"));
-        double c = getMenu().getOutputChance(outputIndex);
-        chance.setValue(c < 1 ? percent(c) : "");
-        fromRecipe = widgets.addButton("recipeChance", Component.literal("JEI"), this::useRecipeChance);
+        widgets.addButton("advanced", Component.translatable(advanced ? "ae2_gvt.pattern.advanced.hide" : "ae2_gvt.pattern.advanced.show"),
+                this::toggleAdvanced);
+        if (advanced) {
+            chance = widgets.addTextField("chance");
+            chance.setMaxLength(12);
+            chance.setFilter(s -> s.chars().allMatch(ch -> Character.isDigit(ch) || ch == '.'));
+            chance.setPlaceholder(Component.literal("100"));
+            chance.setValue(chanceText);
+            chance.setResponder(t -> this.chanceText = t);
+            fromRecipe = widgets.addButton("recipeChance", Component.literal("JEI"), this::useRecipeChance);
+            IgnoreNbt.add(widgets, getMenu(), outputIndex, true);
+        } else {
+            chance = null;
+            fromRecipe = null;
+        }
+    }
+
+    private static String chanceTextOf(double c) {
+        return c < 1 ? percent(c) : "";
+    }
+
+    /** The same dialog in its other layout, with the amount and probability typed so far. */
+    private void toggleAdvanced() {
+        long value = amount.getLongValue().orElse(currentStack.amount());
+        GenericStack stack = new GenericStack(currentStack.what(), Math.max(1, value));
+        TwinStarPatternTermScreen parent = getParent();
+        returnToParent();
+        parent.openDialog(new SetOutputAmountScreen(parent, stack, slot, outputIndex, chanceText, !advanced));
     }
 
     @Override
@@ -86,18 +117,24 @@ public class SetOutputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, 
     @Override
     protected void updateBeforeRender() {
         super.updateBeforeRender();
+        save.active = parseChance(chanceText) != null;
+        if (chance == null || fromRecipe == null) {
+            return;
+        }
         Double recipe = getMenu().getRecipeChance(outputIndex);
         fromRecipe.active = recipe != null;
         fromRecipe.setTooltip(Tooltip.create(recipe == null ? Component.translatable("ae2_gvt.pattern.chance.no_recipe")
                 : Component.translatable("ae2_gvt.pattern.chance.recipe", recipe < 1 ? percent(recipe) + "%" : "100%")));
-        save.active = parseChance(chance.getValue()) != null;
         chance.setTextColor(save.active ? 0xFFFFFF : 0xFF6060);
     }
 
     @Override
     public void drawFG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY) {
         super.drawFG(guiGraphics, offsetX, offsetY, mouseX, mouseY);
-        Double p = parseChance(chance.getValue());
+        if (!advanced) {
+            return;
+        }
+        Double p = parseChance(chanceText);
         Component hint;
         if (p == null) {
             hint = Component.translatable("ae2_gvt.pattern.chance.invalid");
@@ -115,13 +152,13 @@ public class SetOutputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, 
 
     private void useRecipeChance() {
         Double recipe = getMenu().getRecipeChance(outputIndex);
-        if (recipe != null) {
+        if (recipe != null && chance != null) {
             chance.setValue(recipe < 1 ? percent(recipe) : "");
         }
     }
 
     private void confirm() {
-        Double p = parseChance(chance.getValue());
+        Double p = parseChance(chanceText);
         if (p == null) {
             return;
         }
