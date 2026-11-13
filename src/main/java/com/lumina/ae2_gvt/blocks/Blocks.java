@@ -55,7 +55,7 @@ public final class Blocks {
                     .isSuffocating((s, l, p) -> false)
                     .isViewBlocking((s, l, p) -> false));
 
-    public static final DeferredBlock<Block> ENERGY_PORT = BLOCKS.registerSimpleBlock("energy_port",
+    public static final DeferredBlock<EnergyPortBlock> ENERGY_PORT = BLOCKS.registerBlock("energy_port", EnergyPortBlock::new,
             BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.2f, 11f).sound(SoundType.METAL));
 
     public static final DeferredBlock<com.lumina.ae2_gvt.storage.WhiteHoleEnergyCellBlock> WHITE_HOLE_ENERGY_CELL = BLOCKS.registerBlock(

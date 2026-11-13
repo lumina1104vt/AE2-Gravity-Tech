@@ -236,6 +236,11 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
         return Math.max(MIN_FE_BUFFER, second);
     }
 
+    /** The controller of the chamber the energy port at pos is built into, or null. */
+    public static FusionControllerBlockEntity controllerOf(Level level, BlockPos pos) {
+        return ENERGY_PORTS.get(GlobalPos.of(level.dimension(), pos));
+    }
+
     /** What FE cables on the energy port at pos reach; null when it is not part of a formed chamber. */
     public static IEnergyStorage energyInput(Level level, BlockPos pos) {
         FusionControllerBlockEntity controller = ENERGY_PORTS.get(GlobalPos.of(level.dimension(), pos));

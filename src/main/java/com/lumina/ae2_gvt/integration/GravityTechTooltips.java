@@ -4,8 +4,10 @@ import appeng.api.integrations.igtooltip.ClientRegistration;
 import appeng.api.integrations.igtooltip.CommonRegistration;
 import appeng.api.integrations.igtooltip.TooltipProvider;
 import com.lumina.ae2_gvt.AE2GravityTech;
+import com.lumina.ae2_gvt.blockentities.EnergyPortBlockEntity;
 import com.lumina.ae2_gvt.blockentities.FusionControllerBlockEntity;
 import com.lumina.ae2_gvt.blockentities.PowerGeneratorBlockEntity;
+import com.lumina.ae2_gvt.blocks.EnergyPortBlock;
 import com.lumina.ae2_gvt.blocks.FusionController;
 import com.lumina.ae2_gvt.blocks.GeneratorBlock;
 import net.minecraft.network.chat.Component;
@@ -18,6 +20,7 @@ import net.minecraft.resources.ResourceLocation;
  */
 public class GravityTechTooltips implements TooltipProvider {
     private static final ResourceLocation GENERATOR = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "generator");
+    private static final ResourceLocation PORT = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "energy_port");
     private static final ResourceLocation FUSION = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "fusion");
 
     @Override
@@ -25,6 +28,15 @@ public class GravityTechTooltips implements TooltipProvider {
         registration.addBlockEntityData(GENERATOR, PowerGeneratorBlockEntity.class, (player, be, tag) -> {
             tag.putLong("output", be.lastOutput());
             tag.putInt("burn", be.burnTicks());
+        });
+        registration.addBlockEntityData(PORT, EnergyPortBlockEntity.class, (player, be, tag) -> {
+            var controller = be.getLevel() == null ? null : FusionControllerBlockEntity.controllerOf(be.getLevel(), be.getBlockPos());
+            if (controller != null) {
+                tag.putLong("out", controller.energyOut());
+                tag.putLong("stored_out", controller.outFe());
+                tag.putLong("in", controller.energyIn());
+                tag.putLong("stored", controller.storedFe());
+            }
         });
         registration.addBlockEntityData(FUSION, FusionControllerBlockEntity.class, (player, be, tag) -> {
             tag.putDouble("temperature", be.temperature());
@@ -45,6 +57,15 @@ public class GravityTechTooltips implements TooltipProvider {
             tooltip.addLine(data.getLong("output") > 0
                     ? Component.translatable("ae2_gvt.tooltip.generator.output", String.format("%,d", data.getLong("output")))
                     : Component.translatable("ae2_gvt.tooltip.generator.idle"));
+        });
+        registration.addBlockEntityBody(EnergyPortBlockEntity.class, EnergyPortBlock.class, PORT, (be, context, tooltip) -> {
+            var data = context.serverData();
+            if (!data.contains("out"))
+                return;
+            tooltip.addLine(Component.translatable("ae2_gvt.tooltip.fusion.out", String.format("%,d", data.getLong("out")),
+                    String.format("%,d", data.getLong("stored_out"))));
+            tooltip.addLine(Component.translatable("ae2_gvt.tooltip.fusion.in", String.format("%,d", data.getLong("in")),
+                    String.format("%,d", data.getLong("stored"))));
         });
         registration.addBlockEntityBody(FusionControllerBlockEntity.class, FusionController.class, FUSION, (be, context, tooltip) -> {
             var data = context.serverData();

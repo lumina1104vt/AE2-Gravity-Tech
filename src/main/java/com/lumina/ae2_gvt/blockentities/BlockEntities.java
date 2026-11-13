@@ -87,6 +87,9 @@ public final class BlockEntities {
         });
     }
 
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<EnergyPortBlockEntity>> ENERGY_PORT = BLOCK_ENTITIES.register(
+            "energy_port", () -> BlockEntityType.Builder.of(EnergyPortBlockEntity::new, Blocks.ENERGY_PORT.get()).build(null));
+
     public static void register(IEventBus bus) {
         BLOCK_ENTITIES.register(bus);
         bus.addListener(BlockEntities::registerCapabilities);
@@ -126,8 +129,8 @@ public final class BlockEntities {
         event.registerBlockEntity(AECapabilities.ME_STORAGE, FUSION_CONTROLLER.get(), (be, ctx) -> be.getInputs());
         event.registerBlockEntity(AECapabilities.GENERIC_INTERNAL_INV, FUSION_CONTROLLER.get(), (be, ctx) -> be.getInputs());
         // FE cables on an energy port feed the controller of the chamber it is built into
-        event.registerBlock(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK,
-                (level, pos, state, be, ctx) -> FusionControllerBlockEntity.energyInput(level, pos), Blocks.ENERGY_PORT.get());
+        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK, ENERGY_PORT.get(),
+                (be, ctx) -> FusionControllerBlockEntity.energyInput(be.getLevel(), be.getBlockPos()));
         // generators: on the ME network; the crystal one takes dust from hoppers
         for (var type : java.util.List.of(CRYSTAL_GENERATOR, GRAVITON_GENERATOR, ACCRETION_GENERATOR))
             event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, type.get(), (be, ctx) -> be);
