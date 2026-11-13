@@ -495,5 +495,8 @@
   "ae2_gvt.tooltip.generator.idle": "發電：待機",
   "ae2_gvt.tooltip.fusion.temperature": "溫度：%s K",
   "ae2_gvt.tooltip.fusion.in": "輸入：%s FE/t（緩衝 %s）",
-  "ae2_gvt.tooltip.fusion.out": "還電：%s FE/t（緩衝 %s）"
+  "ae2_gvt.tooltip.fusion.out": "還電：%s FE/t（緩衝 %s）",
+  "config.jade.plugin_ae2_gvt.generator": "發電機",
+  "config.jade.plugin_ae2_gvt.fusion": "核融合發生器",
+  "config.jade.plugin_ae2_gvt.energy_port": "能量接口"
 }
