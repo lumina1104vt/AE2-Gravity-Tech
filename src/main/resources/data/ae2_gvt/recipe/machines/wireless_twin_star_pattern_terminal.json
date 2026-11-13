@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "ae2:wireless_terminal"
+    },
+    {
+      "item": "ae2_gvt:twin_star_pattern_terminal"
+    }
+  ],
+  "result": {
+    "id": "ae2_gvt:wireless_twin_star_pattern_terminal",
+    "count": 1
+  }
+}

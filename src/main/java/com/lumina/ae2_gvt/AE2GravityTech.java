@@ -67,6 +67,9 @@ public class AE2GravityTech {
                 output.accept(Items.GRAVITY_WAVE_DETECTOR);
                 output.accept(Items.ANNIHILATION_TNT);
                 output.accept(Items.GRAVITY_FACTORY);
+                output.accept(Items.CRYSTAL_GENERATOR);
+                output.accept(Items.GRAVITON_GENERATOR);
+                output.accept(Items.ACCRETION_GENERATOR);
                 output.accept(Items.GRAVITY_CONSTRAINER);
                 output.accept(Items.FUSION_CONTROLLER);
                 output.accept(Items.ENERGY_PORT);
@@ -77,6 +80,7 @@ public class AE2GravityTech {
                 com.lumina.ae2_gvt.hub.HubStructureBlocks.all().forEach(item -> output.accept(item.get()));
                 com.lumina.ae2_gvt.elevator.SpaceElevator.items().forEach(item -> output.accept(item.get()));
                 output.accept(com.lumina.ae2_gvt.terminal.TwinStarTerminal.ITEM.get());
+                output.accept(com.lumina.ae2_gvt.terminal.TwinStarTerminal.WIRELESS_ITEM.get());
                 output.accept(Items.MACHINE_ACCESS_INTERFACE);
                 output.accept(Items.MACHINE_ACCESS_BLOCK);
                 output.accept(Items.MACHINE_LINK_TOOL);
@@ -129,6 +133,23 @@ public class AE2GravityTech {
                 com.lumina.ae2_gvt.storage.FeEnergy::registerStrategies));
         modEventBus.addListener((net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent e) -> e.enqueueWork(
                 com.lumina.ae2_gvt.graviton.InfiniteGravitonCell::registerHandler));
+        // the wireless terminal: what AE2 does for its own (energy card slots, linking to a network, charging)
+        modEventBus.addListener((net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent e) -> e.enqueueWork(() -> {
+            var wireless = com.lumina.ae2_gvt.terminal.TwinStarTerminal.WIRELESS_ITEM.get();
+            appeng.api.upgrades.Upgrades.add(appeng.core.definitions.AEItems.ENERGY_CARD, wireless, 2,
+                    appeng.core.localization.GuiText.WirelessTerminals.getTranslationKey());
+            appeng.api.features.GridLinkables.register(wireless, appeng.items.tools.powered.WirelessTerminalItem.LINKABLE_HANDLER);
+        }));
+        modEventBus.addListener((net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent e) -> e.enqueueWork(() -> {
+            for (var piece : java.util.List.of(Items.ANTIGRAVITY_ARMOR_HELMET, Items.ANTIGRAVITY_ARMOR_CHESTPLATE,
+                    Items.ANTIGRAVITY_ARMOR_LEGGINGS, Items.ANTIGRAVITY_ARMOR_BOOTS))
+                appeng.api.features.GridLinkables.register(piece.get(), com.lumina.ae2_gvt.items.armor.ArmorNetwork.LINKABLE_HANDLER);
+        }));
+        modEventBus.addListener((net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent e) -> {
+            var wireless = com.lumina.ae2_gvt.terminal.TwinStarTerminal.WIRELESS_ITEM.get();
+            e.registerItem(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM,
+                    (stack, ctx) -> new appeng.items.tools.powered.powersink.PoweredItemCapabilities(stack, wireless), wireless);
+        });
         modEventBus.addListener((net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent e) -> e.enqueueWork(() ->
                 appeng.api.upgrades.Upgrades.add(appeng.core.definitions.AEItems.SPEED_CARD,
                         com.lumina.ae2_gvt.blocks.Blocks.GRAVITY_FACTORY.get(),
@@ -141,6 +162,10 @@ public class AE2GravityTech {
         com.lumina.twinstar.api.PatternMachines.setSubMachineReader(definition -> {
             var subs = definition.get(com.lumina.ae2_gvt.terminal.TwinStarTerminal.PATTERN_SUB_MACHINES.get());
             return subs == null ? java.util.List.of() : subs.stream().map(net.minecraft.core.Holder::value).toList();
+        });
+        com.lumina.twinstar.api.PatternMachines.setToolReader(definition -> {
+            var tool = definition.get(com.lumina.ae2_gvt.terminal.TwinStarTerminal.PATTERN_TOOL.get());
+            return tool == null ? null : tool.value();
         });
         BlockEntities.register(modEventBus);
         AntigravityArmor.register(modEventBus);
@@ -161,6 +186,8 @@ public class AE2GravityTech {
     @SubscribeEvent
     static void payloadRegister(RegisterPayloadHandlersEvent event) {
         event.registrar("1").playToServer(OpenArmorModulesPayload.TYPE, OpenArmorModulesPayload.STREAM_CODEC, OpenArmorModulesPayload::handle)
+                .playToServer(com.lumina.ae2_gvt.payload.ArmorActionPayload.TYPE, com.lumina.ae2_gvt.payload.ArmorActionPayload.STREAM_CODEC,
+                        com.lumina.ae2_gvt.payload.ArmorActionPayload::handle)
                 .playToClient(com.lumina.ae2_gvt.payload.HoleBurstPayload.TYPE, com.lumina.ae2_gvt.payload.HoleBurstPayload.STREAM_CODEC,
                         com.lumina.ae2_gvt.payload.HoleBurstPayload::handle);
     }

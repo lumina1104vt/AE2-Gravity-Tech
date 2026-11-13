@@ -47,6 +47,7 @@ public final class TwinStarTerminalClient {
     static void registerScreens(RegisterMenuScreensEvent event) {
         InitScreens.register(event, TwinStarTerminal.MENU.get(), TwinStarPatternTermScreen::new,
                 "/screens/terminals/twin_star_pattern_terminal.json");
+        InitScreens.register(event, TwinStarTerminal.WIRELESS_MENU.get(), TwinStarPatternTermScreen::new, "/screens/terminals/twin_star_pattern_terminal.json");
         InitScreens.register(event, Menus.ARMOR_MODULE_MENU.get(), ArmorModuleScreen::new, "/screens/armor_modules.json");
     }
 
@@ -73,6 +74,11 @@ public final class TwinStarTerminalClient {
                 Component names = net.minecraft.network.chat.ComponentUtils.formatList(subs, Component.literal(" → "),
                         h -> h.value().getName(new ItemStack(h)));
                 event.getToolTip().add(Component.translatable("ae2_gvt.pattern.sub_machines", names).withStyle(ChatFormatting.GRAY));
+            }
+            Holder<Item> tool = event.getItemStack().get(TwinStarTerminal.PATTERN_TOOL.get());
+            if (tool != null) {
+                event.getToolTip().add(Component.translatable("ae2_gvt.pattern.tool", tool.value().getName(new ItemStack(tool)))
+                        .withStyle(ChatFormatting.GRAY));
             }
             PatternChances chances = event.getItemStack().get(TwinstarContent.PATTERN_CHANCES.get());
             if (chances != null) {
@@ -103,6 +109,26 @@ public final class TwinStarTerminalClient {
                             Component.literal("、"), d -> Component.translatable("ae2_gvt.face.short." + d.getSerializedName()));
                     event.getToolTip().add(Component.translatable("ae2_gvt.pattern.input_faces", AEKeyRendering.getDisplayName(e.key()), sides)
                             .withStyle(ChatFormatting.GRAY));
+                }
+            }
+            var outGuiSlots = event.getItemStack().get(TwinstarContent.PATTERN_OUTPUT_GUI_SLOTS.get());
+            if (outGuiSlots != null) {
+                for (var e : outGuiSlots.entries())
+                    event.getToolTip().add(Component.translatable("ae2_gvt.pattern.output_gui_slot", AEKeyRendering.getDisplayName(e.key()), e.slot())
+                            .withStyle(ChatFormatting.GRAY));
+            }
+            var guiSlots = event.getItemStack().get(TwinstarContent.PATTERN_INPUT_GUI_SLOTS.get());
+            if (guiSlots != null && guiSlots.slots().stream().anyMatch(g -> g > 0)) {
+                // one number per material slot, in order (0 = the first slot that takes it)
+                event.getToolTip().add(Component.translatable("ae2_gvt.pattern.input_gui_slots",
+                        guiSlots.slots().stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(" "))).withStyle(ChatFormatting.GRAY));
+            }
+            var roles = event.getItemStack().get(TwinstarContent.PATTERN_INPUT_ROLES.get());
+            if (roles != null) {
+                for (var e : roles.entries()) {
+                    if (e.role() == com.lumina.twinstar.algorithm.ae2.PatternInputRoles.CATALYST)
+                        event.getToolTip().add(Component.translatable("ae2_gvt.pattern.input_catalyst", AEKeyRendering.getDisplayName(e.key()))
+                                .withStyle(ChatFormatting.GRAY));
                 }
             }
         }

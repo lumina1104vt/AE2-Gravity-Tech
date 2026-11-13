@@ -1,0 +1,11 @@
+{
+  "type": "ae2_gvt:hole_conversion",
+  "hole": "black",
+  "ingredient": {
+    "item": "ae2:singularity"
+  },
+  "result": {
+    "id": "ae2_gvt:anti_singularity",
+    "count": 1
+  }
+}

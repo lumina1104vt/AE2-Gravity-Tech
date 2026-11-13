@@ -20,14 +20,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
 /** 機器接入方塊: the machine access interface as a block, for machines bound from afar. */
-public class MachineAccessBlock extends Block implements EntityBlock {
+public class MachineAccessBlock extends appeng.block.AEBaseEntityBlock<MachineAccessBlockEntity> {
     public MachineAccessBlock(Properties properties) {
         super(properties);
-    }
-
-    @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new MachineAccessBlockEntity(pos, state);
     }
 
     @Override
@@ -38,7 +33,7 @@ public class MachineAccessBlock extends Block implements EntityBlock {
     }
 
     @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!state.is(newState.getBlock()) && !level.isClientSide() && level.getBlockEntity(pos) instanceof MachineAccessBlockEntity be) {
             var drops = new ArrayList<ItemStack>();
             be.core().drops(drops);

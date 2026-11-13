@@ -88,7 +88,7 @@ public final class HoleRenderer {
         Vector3f up = new Vector3f(camera.getUpVector());
         float r = GravityHole.RADIUS;
         for (GravityHoleBlockEntity hole : holes) {
-            SceneSnapshot.capture(mc.getMainRenderTarget());
+            SceneSnapshot.capture(mc.getMainRenderTarget(), true);
             Vec3 at = centre(hole).subtract(cam);
             Vector3f c = new Vector3f((float) at.x, (float) at.y, (float) at.z);
             int white = hole.isWhite() ? 255 : 0;

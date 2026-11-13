@@ -11,6 +11,10 @@
     "TWIN_STAR_MACHINE": {
       "left": 12,
       "bottom": 158
+    },
+    "TWIN_STAR_TOOL": {
+      "left": 12,
+      "bottom": 122
     }
   },
   "widgets": {
@@ -33,7 +37,7 @@
     },
     "subMachines": {
       "left": 11,
-      "bottom": 139,
+      "bottom": 141,
       "width": 18,
       "height": 18
     }

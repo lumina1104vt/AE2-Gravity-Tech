@@ -8,6 +8,7 @@ import java.util.Locale;
 import org.jetbrains.annotations.Nullable;
 
 import com.lumina.ae2_gvt.terminal.TwinStarPatternTermMenu;
+import com.lumina.twinstar.algorithm.ae2.PatternOutputGuiSlots;
 
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AmountFormat;
@@ -53,16 +54,21 @@ public class SetOutputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, 
     private final @Nullable AE2Button fromRecipe;
     /** the probability as typed, kept while the advanced part is hidden */
     private String chanceText;
+    /** the slot of the machine's GUI the product is taken out of (0 = any result slot) */
+    private int guiSlot;
+    private final @Nullable AE2Button guiLess, guiMore;
 
     public SetOutputAmountScreen(TwinStarPatternTermScreen parent, GenericStack currentStack, Slot slot, int outputIndex) {
-        this(parent, currentStack, slot, outputIndex, chanceTextOf(parent.getMenu().getOutputChance(outputIndex)), false);
+        this(parent, currentStack, slot, outputIndex, chanceTextOf(parent.getMenu().getOutputChance(outputIndex)),
+                parent.getMenu().getOutputGuiSlot(outputIndex), false);
     }
 
     private SetOutputAmountScreen(TwinStarPatternTermScreen parent, GenericStack currentStack, Slot slot, int outputIndex, String chanceText,
-                                  boolean advanced) {
+                                  int guiSlot, boolean advanced) {
         super(parent, advanced ? "/screens/ae2_gvt_output_amount_advanced.json" : "/screens/ae2_gvt_output_amount.json");
         this.advanced = advanced;
         this.chanceText = chanceText;
+        this.guiSlot = guiSlot;
         this.currentStack = currentStack;
         this.slot = slot;
         this.outputIndex = outputIndex;
@@ -88,11 +94,23 @@ public class SetOutputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, 
             chance.setValue(chanceText);
             chance.setResponder(t -> this.chanceText = t);
             fromRecipe = widgets.addButton("recipeChance", Component.literal("JEI"), this::useRecipeChance);
+            guiLess = widgets.addButton("guiSlotLess", Component.literal("-"), () -> moveGuiSlot(-1));
+            guiMore = widgets.addButton("guiSlotMore", Component.literal("+"), () -> moveGuiSlot(1));
+            Tooltip guiHint = Tooltip.create(Component.translatable("ae2_gvt.pattern.gui_slot_out.hint"));
+            guiLess.setTooltip(guiHint);
+            guiMore.setTooltip(guiHint);
             IgnoreNbt.add(widgets, getMenu(), outputIndex, true);
         } else {
             chance = null;
             fromRecipe = null;
+            guiLess = guiMore = null;
         }
+    }
+
+    /** The GUI slot up or down; 0 (any result slot) is the bottom. */
+    private void moveGuiSlot(int by) {
+        guiSlot = Math.max(0, Math.min(PatternOutputGuiSlots.MAX, guiSlot + by));
+        getMenu().setOutputGuiSlot(outputIndex, guiSlot);
     }
 
     private static String chanceTextOf(double c) {
@@ -105,7 +123,7 @@ public class SetOutputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, 
         GenericStack stack = new GenericStack(currentStack.what(), Math.max(1, value));
         TwinStarPatternTermScreen parent = getParent();
         returnToParent();
-        parent.openDialog(new SetOutputAmountScreen(parent, stack, slot, outputIndex, chanceText, !advanced));
+        parent.openDialog(new SetOutputAmountScreen(parent, stack, slot, outputIndex, chanceText, guiSlot, !advanced));
     }
 
     @Override
@@ -134,6 +152,9 @@ public class SetOutputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, 
         if (!advanced) {
             return;
         }
+        guiGraphics.drawString(font, "GUI", 84, 100, TEXT, false);
+        String n = guiSlot == 0 ? "-" : String.valueOf(guiSlot);
+        guiGraphics.drawString(font, n, 132 - font.width(n) / 2, 100, TEXT, false);
         Double p = parseChance(chanceText);
         Component hint;
         if (p == null) {
@@ -169,6 +190,7 @@ public class SetOutputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, 
                     GenericStack.wrapInItemStack(stack)));
             if (stack != null) {
                 getMenu().setOutputChance(outputIndex, p);
+                getMenu().setOutputGuiSlot(outputIndex, guiSlot);
             }
             returnToParent();
         });

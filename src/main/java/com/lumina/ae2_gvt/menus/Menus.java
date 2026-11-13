@@ -42,6 +42,23 @@ public class Menus {
             () -> MenuTypeBuilder.create(QuantumControllerMenu::new, com.lumina.ae2_gvt.quantum.QuantumControllerBlockEntity.class)
                     .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "quantum_controller")));
 
+    public static final DeferredHolder<MenuType<?>, MenuType<GeneratorMenu>> CRYSTAL_GENERATOR = generatorMenu("crystal_generator");
+    public static final DeferredHolder<MenuType<?>, MenuType<GeneratorMenu>> GRAVITON_GENERATOR = generatorMenu("graviton_generator");
+    public static final DeferredHolder<MenuType<?>, MenuType<GeneratorMenu>> ACCRETION_GENERATOR = generatorMenu("accretion_generator");
+
+    private static DeferredHolder<MenuType<?>, MenuType<GeneratorMenu>> generatorMenu(String name) {
+        return MENUS.register(name, () -> MenuTypeBuilder.create(GeneratorMenu::new, com.lumina.ae2_gvt.blockentities.PowerGeneratorBlockEntity.class)
+                .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, name)));
+    }
+
+    public static DeferredHolder<MenuType<?>, MenuType<GeneratorMenu>> generator(com.lumina.ae2_gvt.blockentities.PowerGeneratorBlockEntity.Kind kind) {
+        return switch (kind) {
+            case CRYSTAL -> CRYSTAL_GENERATOR;
+            case GRAVITON -> GRAVITON_GENERATOR;
+            case ACCRETION -> ACCRETION_GENERATOR;
+        };
+    }
+
     public static void register(IEventBus bus) {
         MENUS.register(bus);
     }

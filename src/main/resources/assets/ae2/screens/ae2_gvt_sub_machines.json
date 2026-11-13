@@ -55,6 +55,18 @@
     }
   },
   "widgets": {
+    "startLess": {
+      "left": 124,
+      "top": 97,
+      "width": 14,
+      "height": 14
+    },
+    "startMore": {
+      "left": 152,
+      "top": 97,
+      "width": 14,
+      "height": 14
+    },
     "back": {
       "left": 152,
       "top": -5,

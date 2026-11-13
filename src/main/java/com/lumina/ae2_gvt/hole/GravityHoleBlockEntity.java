@@ -1,16 +1,18 @@
 package com.lumina.ae2_gvt.hole;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import appeng.core.definitions.AEItems;
-import com.lumina.ae2_gvt.items.Items;
+import com.lumina.ae2_gvt.recipes.HoleConversionRecipe;
+import com.lumina.ae2_gvt.recipes.Recipes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -20,8 +22,8 @@ import net.minecraft.world.phys.AABB;
  * each crystal stage grown eats one ({@link GravityHoleBlock#randomTick}). Nothing is pulled in from
  * a distance.
  * <p>
- * A black hole does not eat an AE2 singularity: it turns it into as many anti-singularities, left on
- * top of the hole (and never eats those).
+ * What a hole turns an item into, and so does not eat, is up to the {@code ae2_gvt:hole_conversion} recipes (a
+ * black hole turns an AE2 singularity into an anti-singularity).
  */
 public class GravityHoleBlockEntity extends BlockEntity {
     /** The holes loaded on the client, for {@code client.HoleRenderer} (one set per client, weakly held). */
@@ -55,22 +57,24 @@ public class GravityHoleBlockEntity extends BlockEntity {
         AABB hole = new AABB(p.getX() + 0.5 - TOUCH, p.getY() + 0.5 - TOUCH, p.getZ() + 0.5 - TOUCH,
                 p.getX() + 0.5 + TOUCH, p.getY() + 0.5 + TOUCH, p.getZ() + 0.5 + TOUCH);
         boolean ate = false;
+        List<HoleConversionRecipe> conversions = null;
         for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, hole)) {
             if (!item.isAlive())
                 continue;
             ItemStack stack = item.getItem();
-            if (!isWhite()) {
-                // its own make: left lying on the hole, not eaten
-                if (stack.is(Items.ANTI_SINGULARITY.get()))
-                    continue;
-                // a singularity is turned inside out and put back on top of the hole
-                if (stack.is(AEItems.SINGULARITY.asItem())) {
-                    item.discard();
-                    ItemEntity anti = new ItemEntity(level, p.getX() + 0.5, p.getY() + 0.5 + TOUCH + 0.05, p.getZ() + 0.5,
-                            new ItemStack(Items.ANTI_SINGULARITY.get(), stack.getCount()), 0, 0.1, 0);
-                    level.addFreshEntity(anti);
-                    continue;
-                }
+            // what the hole makes is left lying on it, not eaten; what it converts is turned and put back on top of it
+            if (conversions == null)
+                conversions = level.getRecipeManager().getAllRecipesFor(Recipes.HOLE_CONVERSION.get()).stream()
+                        .map(RecipeHolder::value).filter(r -> r.hole().covers(isWhite())).toList();
+            if (conversions.stream().anyMatch(r -> ItemStack.isSameItemSameComponents(r.result(), stack)))
+                continue;
+            HoleConversionRecipe conversion = conversions.stream().filter(r -> r.ingredient().test(stack)).findFirst().orElse(null);
+            if (conversion != null) {
+                item.discard();
+                ItemStack made = conversion.result().copyWithCount(conversion.result().getCount() * stack.getCount());
+                ItemEntity out = new ItemEntity(level, p.getX() + 0.5, p.getY() + 0.5 + TOUCH + 0.05, p.getZ() + 0.5, made, 0, 0.1, 0);
+                level.addFreshEntity(out);
+                continue;
             }
             nutrients += stack.getCount();
             item.discard();

@@ -1,0 +1,23 @@
+## 21.0.0.1-beta
+
+First public beta of AE2 Gravity Tech for Minecraft 1.21.1 (NeoForge). Requires Applied Energistics 2, GeckoLib and GuideMe.
+
+### Highlights
+- Black and white holes, three crystal lines, the gravity processing factory, graviton collector and fusion generator.
+- Twin-Star Hub: a hexagram crafting hub with its own planner, virtual patterns and pattern terminal.
+- Machine Access Interface and Machine Link Tool: link machines from up to 64 blocks away.
+- Quantum Controller: master/slave controllers with named frequencies.
+- Anti-gravity armor with upgradeable modules.
+
+---
+
+## 21.0.0.1-beta
+
+Minecraft 1.21.1、NeoForge 版的 AE2 引力科技首個公開測試版。需要 Applied Energistics 2、GeckoLib 和 GuideMe。
+
+### 重點內容
+- 黑洞與白洞、三條水晶線、引力加工工廠、引力子收集器、核融合發生器。
+- 雙星調度中樞：六角星合成中樞，有自己的規劃演算法、虛擬樣板和樣板終端。
+- 機器接入接口與機器連結器：從最遠 64 格外綁定機器。
+- 量子控制器：有主從角色和自訂頻率名稱的控制器。
+- 可升級模組的反重力裝甲。

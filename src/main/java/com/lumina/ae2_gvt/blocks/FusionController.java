@@ -26,7 +26,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
 
-public class FusionController extends Block implements EntityBlock {
+public class FusionController extends appeng.block.AEBaseEntityBlock<FusionControllerBlockEntity> {
     public static final BooleanProperty FORMED = BooleanProperty.create("formed");
     /** The way its front looks: out of the chamber's wall. */
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
@@ -37,6 +37,7 @@ public class FusionController extends Block implements EntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
         builder.add(FORMED, FACING);
     }
 
@@ -46,18 +47,7 @@ public class FusionController extends Block implements EntityBlock {
     }
 
     @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new FusionControllerBlockEntity(pos, state);
-    }
-
-    @Override
-    public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return type == BlockEntities.FUSION_CONTROLLER.get()
-                ? (l, p, s, be) -> FusionControllerBlockEntity.tick(l, p, s, (FusionControllerBlockEntity) be) : null;
-    }
-
-    @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof FusionControllerBlockEntity controller) {
             controller.dropContents();
         }

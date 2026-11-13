@@ -36,7 +36,10 @@ public final class SceneSnapshot {
 
     /** Binds the snapshot as Sampler0. */
     public static final RenderStateShard.EmptyTextureStateShard TEXTURE = new RenderStateShard.EmptyTextureStateShard(
-            () -> RenderSystem.setShaderTexture(0, target == null ? 0 : target.getColorTextureId()), () -> {
+            () -> {
+                RenderSystem.setShaderTexture(0, target == null ? 0 : target.getColorTextureId());
+                RenderSystem.setShaderTexture(1, target == null ? 0 : target.getDepthTextureId());
+            }, () -> {
             });
 
     private SceneSnapshot() {
@@ -44,6 +47,14 @@ public final class SceneSnapshot {
 
     /** Copies the colour of the framebuffer being drawn into, as big as the viewport, into the snapshot. */
     public static void capture(RenderTarget main) {
+        capture(main, false);
+    }
+
+    /**
+     * As {@link #capture(RenderTarget)}; with {@code depth} the depth buffer is copied too and bound as Sampler1, so a lens can tell
+     * what is nearer than itself (and must not be dragged into it).
+     */
+    public static void capture(RenderTarget main, boolean depth) {
         int bound = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
         int[] viewport = new int[4];
         GL11.glGetIntegerv(GL11.GL_VIEWPORT, viewport);
@@ -52,7 +63,7 @@ public final class SceneSnapshot {
             if (target != null) {
                 target.destroyBuffers();
             }
-            target = new TextureTarget(w, h, false, Minecraft.ON_OSX);
+            target = new TextureTarget(w, h, true, Minecraft.ON_OSX);
             target.setFilterMode(GL11.GL_LINEAR);
         }
         while (GL11.glGetError() != GL11.GL_NO_ERROR) {
@@ -62,6 +73,10 @@ public final class SceneSnapshot {
         GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, bound);
         GlStateManager._bindTexture(target.getColorTextureId());
         GL11.glCopyTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, 0, 0, w, h);
+        if (depth) {
+            GlStateManager._bindTexture(target.getDepthTextureId());
+            GL11.glCopyTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, 0, 0, w, h);
+        }
         GlStateManager._bindTexture(texture);
         int error = GL11.glGetError();
         if (error != GL11.GL_NO_ERROR && !warned) {

@@ -1,7 +1,7 @@
 ---
 navigation:
   parent: ae2:index.md
-  title: AE2 : Gravity Tech
+  title: "AE2 : Gravity Tech"
 ---
 
 # AE2 : Gravity Tech

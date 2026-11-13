@@ -103,6 +103,9 @@ public class Items {
 
     // machine blocks
     public static final DeferredItem<BlockItem> GRAVITON_COLLECTOR = ITEMS.registerSimpleBlockItem("graviton_collector", Blocks.GRAVITON_COLLECTOR);
+    public static final DeferredItem<BlockItem> CRYSTAL_GENERATOR = ITEMS.registerSimpleBlockItem("crystal_generator", Blocks.CRYSTAL_GENERATOR);
+    public static final DeferredItem<BlockItem> GRAVITON_GENERATOR = ITEMS.registerSimpleBlockItem("graviton_generator", Blocks.GRAVITON_GENERATOR);
+    public static final DeferredItem<BlockItem> ACCRETION_GENERATOR = ITEMS.registerSimpleBlockItem("accretion_generator", Blocks.ACCRETION_GENERATOR);
     public static final DeferredItem<BlockItem> GRAVITY_FACTORY = ITEMS.registerSimpleBlockItem("gravity_processing_factory", Blocks.GRAVITY_FACTORY);
     public static final DeferredItem<BlockItem> FUSION_CONTROLLER = ITEMS.registerSimpleBlockItem("fusion_controller", Blocks.FUSION_CONTROLLER);
     public static final DeferredItem<BlockItem> ENERGY_PORT = ITEMS.registerSimpleBlockItem("energy_port", Blocks.ENERGY_PORT);

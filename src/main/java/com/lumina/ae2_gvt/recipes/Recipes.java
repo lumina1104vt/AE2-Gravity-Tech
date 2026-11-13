@@ -31,6 +31,33 @@ public final class Recipes {
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<FusionRecipe>> FUSION_SERIALIZER =
             SERIALIZERS.register("fusion", FusionRecipe.Serializer::new);
 
+    public static final DeferredHolder<RecipeType<?>, RecipeType<HoleConversionRecipe>> HOLE_CONVERSION =
+            TYPES.register("hole_conversion", () -> RecipeType.simple(
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "hole_conversion")));
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<HoleConversionRecipe>> HOLE_CONVERSION_SERIALIZER =
+            SERIALIZERS.register("hole_conversion", HoleConversionRecipe.Serializer::new);
+
+    public static final DeferredHolder<RecipeType<?>, RecipeType<ExplosionRecipe>> EXPLOSION =
+            TYPES.register("explosion", () -> RecipeType.simple(
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "explosion")));
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<ExplosionRecipe>> EXPLOSION_SERIALIZER =
+            SERIALIZERS.register("explosion", ExplosionRecipe.Serializer::new);
+
+    /** The input of a recipe that no crafting grid or machine feeds: what happens in the world. */
+    public enum NoInput implements net.minecraft.world.item.crafting.RecipeInput {
+        INSTANCE;
+
+        @Override
+        public ItemStack getItem(int index) {
+            return ItemStack.EMPTY;
+        }
+
+        @Override
+        public int size() {
+            return 0;
+        }
+    }
+
     /** A recipe's result. Not ItemStack.CODEC: that one takes at most 99, and silently makes a larger count 1. */
     public static final Codec<ItemStack> RESULT = RecordCodecBuilder.create(i -> i.group(
             BuiltInRegistries.ITEM.holderByNameCodec().fieldOf("id").forGetter(ItemStack::getItemHolder),

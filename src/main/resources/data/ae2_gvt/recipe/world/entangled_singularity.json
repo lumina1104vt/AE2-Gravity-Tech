@@ -1,0 +1,26 @@
+{
+  "type": "ae2_gvt:explosion",
+  "center": {
+    "item": "ae2_gvt:anti_singularity"
+  },
+  "ingredients": [
+    {
+      "item": "ae2:singularity",
+      "count": 1
+    },
+    {
+      "item": "ae2_gvt:paradox_dust",
+      "count": 1
+    }
+  ],
+  "results": [
+    {
+      "id": "ae2_gvt:paradox_quantum_entangled_singularity",
+      "count": 2
+    }
+  ],
+  "radius": 1.5,
+  "repeat": true,
+  "shield": "items",
+  "priority": 0
+}

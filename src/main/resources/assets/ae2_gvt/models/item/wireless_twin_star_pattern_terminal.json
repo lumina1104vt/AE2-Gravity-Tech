@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "ae2_gvt:item/wireless_twin_star_pattern_terminal"
+  }
+}

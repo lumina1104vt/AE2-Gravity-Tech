@@ -7,6 +7,8 @@ import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.blocks.Blocks;
 import com.lumina.ae2_gvt.hole.GravityHole;
 import com.lumina.ae2_gvt.integration.WorldInteraction;
+import com.lumina.ae2_gvt.client.SequencePattern;
+import com.lumina.ae2_gvt.integration.WorldScene;
 import com.lumina.ae2_gvt.items.Items;
 import com.lumina.ae2_gvt.graviton.Gravitons;
 import com.lumina.lmb.compat.CountedEmiSlot;
@@ -51,7 +53,8 @@ public class GravityTechEmi implements EmiPlugin {
         registry.addCategory(FACTORY);
         registry.addCategory(FUSION);
         registry.addCategory(WORLD);
-        WorldInteraction.all().forEach(w -> registry.addRecipe(new World(w)));
+        registry.addRecipeDecorator(GravityTechEmi::decorate);
+        WorldInteraction.all(registry.getRecipeManager()).forEach(w -> registry.addRecipe(new World(w)));
         registry.addWorkstation(FACTORY, EmiStack.of(Blocks.GRAVITY_FACTORY.get()));
         registry.addWorkstation(FACTORY, EmiStack.of(Items.CHAOS_MATTER.get()));
         registry.addWorkstation(FUSION, EmiStack.of(Blocks.FUSION_CONTROLLER.get()));
@@ -121,15 +124,65 @@ public class GravityTechEmi implements EmiPlugin {
         }
     }
 
-    /** What happens in the world ({@link WorldInteraction}), laid out as in JEI (WorldInteractionJei). */
+    /**
+     * A button in the corner of every recipe that makes a sequence pattern of it ({@link SequencePattern}): every material in the
+     * place the recipe has it, one item each, with the GUI slot of that place. Greyed while the pattern terminal is not open.
+     */
+    private static void decorate(dev.emi.emi.api.recipe.EmiRecipe recipe, WidgetHolder widgets) {
+        if (recipe.getInputs().isEmpty() || recipe.getOutputs().isEmpty()) {
+            return;
+        }
+        int x = recipe.getDisplayWidth() - 13, y = recipe.getDisplayHeight() - 13;
+        widgets.addButton(x, y, 12, 12, 0, 0, SequencePattern.TEXTURE, () -> SequencePattern.terminal() != null,
+                (mouseX, mouseY, button) -> fillSequence(recipe));
+        widgets.addTooltipText(List.of(SequencePattern.tooltip()), x, y, 12, 12);
+    }
+
+    private static void fillSequence(dev.emi.emi.api.recipe.EmiRecipe recipe) {
+        List<GenericStack> inputs = new java.util.ArrayList<>();
+        for (dev.emi.emi.api.stack.EmiIngredient in : recipe.getInputs()) {
+            inputs.add(in.isEmpty() ? null : stackOf(in.getEmiStacks().get(0)));
+        }
+        while (!inputs.isEmpty() && inputs.get(inputs.size() - 1) == null) {
+            inputs.remove(inputs.size() - 1);
+        }
+        List<GenericStack> outputs = new java.util.ArrayList<>();
+        for (EmiStack out : recipe.getOutputs()) {
+            GenericStack s = stackOf(out);
+            if (s != null) {
+                outputs.add(s);
+            }
+        }
+        ItemStack machine = ItemStack.EMPTY;
+        for (dev.emi.emi.api.stack.EmiIngredient station : dev.emi.emi.api.EmiApi.getRecipeManager().getWorkstations(recipe.getCategory())) {
+            if (!station.isEmpty() && !station.getEmiStacks().get(0).getItemStack().isEmpty()) {
+                machine = station.getEmiStacks().get(0).getItemStack().copyWithCount(1);
+                break;
+            }
+        }
+        SequencePattern.open(new SequencePattern.Request(inputs, outputs, machine, recipe.getId()));
+    }
+
+    private static @org.jetbrains.annotations.Nullable GenericStack stackOf(EmiStack stack) {
+        if (stack.isEmpty()) {
+            return null;
+        }
+        if (stack.getKey() instanceof net.minecraft.world.level.material.Fluid fluid) {
+            return new GenericStack(appeng.api.stacks.AEFluidKey.of(new net.neoforged.neoforge.fluids.FluidStack(
+                    fluid.builtInRegistryHolder(), 1, stack.getComponentChanges())), stack.getAmount());
+        }
+        return GenericStack.fromItemStack(stack.getItemStack());
+    }
+
+    /** What happens in the world ({@link WorldInteraction}), pictured as in JEI (WorldScene). */
     private static final class World extends BasicEmiRecipe {
-        private static final int STEP = 20, INPUTS = 3, CONDITION_X = INPUTS * STEP + 4, ARROW_X = CONDITION_X + 2 * STEP + 2,
-                OUT_X = ARROW_X + 28, OUT_COLUMNS = 3, OUTPUTS = 6, TEXT_Y = 2 * STEP + 2;
         private final WorldInteraction w;
+        private final WorldScene.Layout layout;
 
         World(WorldInteraction w) {
-            super(WORLD, w.id(), OUT_X + OUT_COLUMNS * STEP, TEXT_Y + 10);
+            super(WORLD, w.id(), WorldScene.WIDTH, WorldScene.HEIGHT);
             this.w = w;
+            this.layout = WorldScene.of(w);
             w.inputs().forEach(s -> inputs.add(EmiStack.of(s, s.getCount())));
             w.conditions().forEach(s -> catalysts.add(EmiStack.of(s)));
             w.outputs().forEach(s -> outputs.add(EmiStack.of(s, s.getCount())));
@@ -137,15 +190,19 @@ public class GravityTechEmi implements EmiPlugin {
 
         @Override
         public void addWidgets(WidgetHolder widgets) {
-            for (int i = 0; i < inputs.size() && i < INPUTS; i++)
-                widgets.add(new CountedEmiSlot(inputs.get(i), i * STEP, 0));
-            for (int i = 0; i < catalysts.size() && i < 2; i++)
-                widgets.add(new CountedEmiSlot(catalysts.get(i), CONDITION_X + i * STEP, 0));
-            widgets.addTexture(EmiTexture.EMPTY_ARROW, ARROW_X, (2 * STEP - 17) / 2);
-            for (int i = 0; i < outputs.size() && i < OUTPUTS; i++)
-                widgets.add(new CountedEmiSlot(outputs.get(i), OUT_X + i % OUT_COLUMNS * STEP, i / OUT_COLUMNS * STEP)).recipeContext(this);
-            widgets.addDrawable(0, TEXT_Y, getDisplayWidth(), 10,
-                    (g, mouseX, mouseY, delta) -> RecipeNumbers.drawLine(g, w.text(), 0, 0, getDisplayWidth(), 0xFF404040));
+            widgets.addDrawable(0, 0, WorldScene.WIDTH, WorldScene.HEIGHT, (g, mouseX, mouseY, delta) -> WorldScene.draw(g, layout));
+            for (WorldScene.Slot s : layout.slots()) {
+                switch (s.part()) {
+                    case INPUT -> widgets.add(new CountedEmiSlot(inputs.get(s.index()), s.x(), s.y()));
+                    case CONDITION -> widgets.add(new CountedEmiSlot(catalysts.get(s.index()), s.x(), s.y()));
+                    case OUTPUT -> widgets.add(new CountedEmiSlot(outputs.get(s.index()), s.x(), s.y())).recipeContext(this);
+                }
+            }
+            for (WorldScene.Icon i : layout.icons())
+                if (i.tip() != null)
+                    widgets.addTooltipText(List.of(i.tip()), i.x(), i.y(), i.sprite().w, i.sprite().h);
+            if (layout.ring() != null)
+                widgets.addTooltipText(List.of(layout.ring().tip()), layout.ring().x(), layout.ring().y(), layout.ring().w(), layout.ring().h());
         }
     }
 }

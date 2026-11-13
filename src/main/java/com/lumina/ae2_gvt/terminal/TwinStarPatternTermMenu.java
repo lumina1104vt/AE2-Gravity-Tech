@@ -10,6 +10,9 @@ import org.jetbrains.annotations.Nullable;
 import com.lumina.twinstar.algorithm.ae2.PatternChances;
 import com.lumina.twinstar.algorithm.ae2.PatternInputFaces;
 import com.lumina.twinstar.algorithm.ae2.PatternIgnoreNbt;
+import com.lumina.twinstar.algorithm.ae2.PatternInputGuiSlots;
+import com.lumina.twinstar.algorithm.ae2.PatternOutputGuiSlots;
+import com.lumina.twinstar.algorithm.ae2.PatternInputRoles;
 import com.lumina.twinstar.algorithm.ae2.PatternInputTargets;
 import com.lumina.twinstar.storage.TwinstarContent;
 import com.lumina.twinstar.tools.RecipeChances;
@@ -44,11 +47,16 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
     private static final String RECIPE_CHANCES = "recipeChances";
     private static final String SET_INPUT_FACES = "setInputFaces";
     private static final String SET_INPUT_TARGET = "setInputTarget";
+    private static final String SET_INPUT_ROLE = "setInputRole";
+    private static final String SET_INPUT_GUI_SLOT = "setInputGuiSlot";
+    private static final String SET_OUTPUT_GUI_SLOT = "setOutputGuiSlot";
+    private static final String SET_SEQUENCE_START = "setSequenceStart";
     private static final String SET_IGNORE_NBT = "setIgnoreNbt";
 
-    private final TwinStarPatternTerminalPart host;
+    private final ITwinStarTermHost host;
     private final FakeSlot machineSlot;
     private final List<FakeSlot> subMachineSlots = new ArrayList<>();
+    private final FakeSlot toolSlot;
     /** Per processing output slot its probability ("" = always), ';' between slots: what the dialog shows. */
     @GuiSync(200)
     public String outputChances = "";
@@ -64,12 +72,24 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
     /** Per processing input slot where what is in it goes ("" = into the machine), ';' between slots. */
     @GuiSync(203)
     public String inputTargets = "";
+    /** Per processing input slot what it is besides used up (PatternInputRoles; "" = used up), ';' between slots. */
+    @GuiSync(206)
+    public String inputRoles = "";
+    /** Per processing input slot the GUI slot its material goes into ("" = the first that takes it), ';' between slots. */
+    @GuiSync(207)
+    public String inputGuiSlots = "";
+    /** Per processing output slot the GUI slot its product is taken out of ("" = any result slot), ';' between slots. */
+    @GuiSync(208)
+    public String outputGuiSlots = "";
+    /** per machine (item id) the GUI slot a sequence pattern starts at, "id=n;id=n" (see the part) */
+    @GuiSync(209)
+    public String sequenceStarts = "";
     /** Per processing input slot, then per output slot: 1 when its NBT does not matter. */
     @GuiSync(204)
     public String ignoreNbtIn = "";
     @GuiSync(205)
     public String ignoreNbtOut = "";
-    /** the probabilities of {@link TwinStarPatternTerminalPart#getRecipe()}, read once per recipe */
+    /** the probabilities of {@link TwinStarTermState#getRecipe()}, read once per recipe */
     private @Nullable ResourceLocation readRecipe;
     private @Nullable Map<String, Double> readChances;
     /** the encoded pattern slot as last seen: one put in loads its probabilities, like AE2 loads the rest */
@@ -80,14 +100,17 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
      */
     private boolean encoding;
 
-    public TwinStarPatternTermMenu(MenuType<?> menuType, int id, Inventory ip, TwinStarPatternTerminalPart host) {
+    public TwinStarPatternTermMenu(MenuType<?> menuType, int id, Inventory ip, ITwinStarTermHost host) {
         super(menuType, id, ip, host, true);
         this.host = host;
-        this.machineSlot = new FakeSlot(host.getMachineInv(), 0);
+        this.machineSlot = new FakeSlot(host.state().getMachineInv(), 0);
         this.machineSlot.setHideAmount(true);
         this.addSlot(this.machineSlot, TwinStarTerminal.MACHINE_SLOT);
+        this.toolSlot = new FakeSlot(host.state().getToolInv(), 0);
+        this.toolSlot.setHideAmount(true);
+        this.addSlot(this.toolSlot, TwinStarTerminal.TOOL_SLOT);
         for (int i = 0; i < TwinStarTerminal.SUB_MACHINES; i++) {
-            FakeSlot sub = new FakeSlot(host.getSubMachineInv(), i);
+            FakeSlot sub = new FakeSlot(host.state().getSubMachineInv(), i);
             sub.setHideAmount(true);
             subMachineSlots.add(sub);
             this.addSlot(sub, TwinStarTerminal.SUB_MACHINE_SLOTS);
@@ -103,6 +126,10 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
         registerClientAction(RECIPE_CHANCES, String.class, this::receiveRecipeChances);
         registerClientAction(SET_INPUT_FACES, String.class, this::receiveInputFaces);
         registerClientAction(SET_INPUT_TARGET, String.class, this::receiveInputTarget);
+        registerClientAction(SET_INPUT_ROLE, String.class, this::receiveInputRole);
+        registerClientAction(SET_INPUT_GUI_SLOT, String.class, this::receiveInputGuiSlot);
+        registerClientAction(SET_OUTPUT_GUI_SLOT, String.class, this::receiveOutputGuiSlot);
+        registerClientAction(SET_SEQUENCE_START, String.class, this::receiveSequenceStart);
         registerClientAction(SET_IGNORE_NBT, String.class, this::receiveIgnoreNbt);
     }
 
@@ -156,6 +183,12 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
         } else {
             pattern.set(TwinStarTerminal.PATTERN_MACHINE.get(), machine.getItemHolder());
         }
+        ItemStack tool = toolSlot.getItem();
+        if (machine.isEmpty() || tool.isEmpty()) {
+            pattern.remove(TwinStarTerminal.PATTERN_TOOL.get());
+        } else {
+            pattern.set(TwinStarTerminal.PATTERN_TOOL.get(), tool.getItemHolder());
+        }
         if (machine.isEmpty() || subs.isEmpty()) {
             pattern.remove(TwinStarTerminal.PATTERN_SUB_MACHINES.get());
         } else {
@@ -163,7 +196,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
         }
         if (!machine.isEmpty()) {
             // the next pattern for this machine starts with them
-            host.setLastSubMachines(machine.getItem(), subs.stream().map(Holder::value).toList());
+            host.state().setLastSubMachines(machine.getItem(), subs.stream().map(Holder::value).toList());
         }
         List<PatternChances.Entry> chances = new ArrayList<>();
         for (FakeSlot slot : getProcessingOutputSlots()) {
@@ -171,7 +204,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             if (out == null || chances.stream().anyMatch(e -> e.key().equals(out.what()))) {
                 continue;
             }
-            double c = host.getOutputChance(out.what());
+            double c = host.state().getOutputChance(out.what());
             if (c < 1) {
                 chances.add(new PatternChances.Entry(out.what(), c));
             }
@@ -187,7 +220,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             if (in == null || faces.stream().anyMatch(e -> e.key().equals(in.what()))) {
                 continue;
             }
-            int f = host.getInputFaces(in.what());
+            int f = host.state().getInputFaces(in.what());
             if (f != 0) {
                 faces.add(new PatternInputFaces.Entry(in.what(), f));
             }
@@ -203,10 +236,55 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             if (in == null || targets.stream().anyMatch(e -> e.key().equals(in.what()))) {
                 continue;
             }
-            int t = host.getInputTarget(in.what());
+            int t = host.state().getInputTarget(in.what());
             if (t != PatternInputTargets.DEFAULT) {
                 targets.add(new PatternInputTargets.Entry(in.what(), t));
             }
+        }
+        List<PatternInputRoles.Entry> roles = new ArrayList<>();
+        for (FakeSlot slot : getProcessingInputSlots()) {
+            GenericStack in = GenericStack.fromItemStack(slot.getItem());
+            if (in == null || roles.stream().anyMatch(e -> e.key().equals(in.what()))) {
+                continue;
+            }
+            int r = host.state().getInputRole(in.what());
+            if (r != PatternInputRoles.NORMAL) {
+                roles.add(new PatternInputRoles.Entry(in.what(), r));
+            }
+        }
+        List<PatternOutputGuiSlots.Entry> outGui = new ArrayList<>();
+        for (FakeSlot slot : getProcessingOutputSlots()) {
+            GenericStack out = GenericStack.fromItemStack(slot.getItem());
+            if (out == null || outGui.stream().anyMatch(e -> e.key().equals(out.what()))) {
+                continue;
+            }
+            int g = host.state().getOutputGuiSlot(out.what());
+            if (g > 0) {
+                outGui.add(new PatternOutputGuiSlots.Entry(out.what(), g));
+            }
+        }
+        if (outGui.isEmpty()) {
+            pattern.remove(TwinstarContent.PATTERN_OUTPUT_GUI_SLOTS.get());
+        } else {
+            pattern.set(TwinstarContent.PATTERN_OUTPUT_GUI_SLOTS.get(), new PatternOutputGuiSlots(outGui));
+        }
+        // per material slot, in the order AE2 lists them (the filled ones): the same material can go into many places
+        List<Integer> guiSlots = new ArrayList<>();
+        FakeSlot[] inSlots = getProcessingInputSlots();
+        for (int i = 0; i < inSlots.length; i++) {
+            if (GenericStack.fromItemStack(inSlots[i].getItem()) != null) {
+                guiSlots.add(host.state().getInputGuiSlot(i));
+            }
+        }
+        if (guiSlots.stream().allMatch(g -> g == 0)) {
+            pattern.remove(TwinstarContent.PATTERN_INPUT_GUI_SLOTS.get());
+        } else {
+            pattern.set(TwinstarContent.PATTERN_INPUT_GUI_SLOTS.get(), new PatternInputGuiSlots(guiSlots));
+        }
+        if (roles.isEmpty()) {
+            pattern.remove(TwinstarContent.PATTERN_INPUT_ROLES.get());
+        } else {
+            pattern.set(TwinstarContent.PATTERN_INPUT_ROLES.get(), new PatternInputRoles(roles));
         }
         if (targets.isEmpty()) {
             pattern.remove(TwinstarContent.PATTERN_INPUT_TARGETS.get());
@@ -216,13 +294,13 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
         List<appeng.api.stacks.AEKey> nbtIn = new ArrayList<>(), nbtOut = new ArrayList<>();
         for (FakeSlot slot : getProcessingInputSlots()) {
             GenericStack in = GenericStack.fromItemStack(slot.getItem());
-            if (in != null && !nbtIn.contains(in.what()) && host.ignoresNbt(in.what(), false)) {
+            if (in != null && !nbtIn.contains(in.what()) && host.state().ignoresNbt(in.what(), false)) {
                 nbtIn.add(in.what());
             }
         }
         for (FakeSlot slot : getProcessingOutputSlots()) {
             GenericStack out = GenericStack.fromItemStack(slot.getItem());
-            if (out != null && !nbtOut.contains(out.what()) && host.ignoresNbt(out.what(), true)) {
+            if (out != null && !nbtOut.contains(out.what()) && host.state().ignoresNbt(out.what(), true)) {
                 nbtOut.add(out.what());
             }
         }
@@ -269,10 +347,12 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
     /** A pattern put in: its machine and sub-machines go back in their slots, like AE2 puts back the rest. */
     private void loadMachines(ItemStack pattern) {
         Holder<Item> machine = pattern.get(TwinStarTerminal.PATTERN_MACHINE.get());
-        host.getMachineInv().setItemDirect(0, machine == null ? ItemStack.EMPTY : new ItemStack(machine));
+        host.state().getMachineInv().setItemDirect(0, machine == null ? ItemStack.EMPTY : new ItemStack(machine));
+        Holder<Item> tool = pattern.get(TwinStarTerminal.PATTERN_TOOL.get());
+        host.state().getToolInv().setItemDirect(0, tool == null ? ItemStack.EMPTY : new ItemStack(tool));
         List<Holder<Item>> subs = pattern.getOrDefault(TwinStarTerminal.PATTERN_SUB_MACHINES.get(), List.of());
         for (int i = 0; i < TwinStarTerminal.SUB_MACHINES; i++) {
-            host.getSubMachineInv().setItemDirect(i, i < subs.size() ? new ItemStack(subs.get(i)) : ItemStack.EMPTY);
+            host.state().getSubMachineInv().setItemDirect(i, i < subs.size() ? new ItemStack(subs.get(i)) : ItemStack.EMPTY);
         }
     }
 
@@ -280,11 +360,14 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
     public void clear() {
         super.clear();
         if (this.isServerSide()) {
-            host.clearOutputChances();
-            host.clearInputFaces();
-            host.clearInputTargets();
-            host.clearIgnoreNbt();
-            host.setRecipe(null);
+            host.state().clearOutputChances();
+            host.state().clearInputFaces();
+            host.state().clearInputTargets();
+            host.state().clearInputRoles();
+            host.state().clearInputGuiSlots();
+            host.state().clearOutputGuiSlots();
+            host.state().clearIgnoreNbt();
+            host.state().setRecipe(null);
             clearSubMachines();
         }
     }
@@ -299,9 +382,10 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
 
     /** The sub-machine slots: those last encoded with {@code machine}, else empty. */
     private void fillSubMachines(ItemStack machine) {
-        List<Item> subs = machine.isEmpty() ? List.of() : host.getLastSubMachines(machine.getItem());
+        host.state().getToolInv().setItemDirect(0, ItemStack.EMPTY);
+        List<Item> subs = machine.isEmpty() ? List.of() : host.state().getLastSubMachines(machine.getItem());
         for (int i = 0; i < TwinStarTerminal.SUB_MACHINES; i++) {
-            host.getSubMachineInv().setItemDirect(i, i < subs.size() ? new ItemStack(subs.get(i)) : ItemStack.EMPTY);
+            host.state().getSubMachineInv().setItemDirect(i, i < subs.size() ? new ItemStack(subs.get(i)) : ItemStack.EMPTY);
         }
         machineSeen = machine.getItem();
     }
@@ -325,28 +409,42 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
                 lastEncoded = now.copy();
                 if (PatternDetailsHelper.isEncodedPattern(now)) {
                     // a pattern put in: AE2 fills the grid from it, the probabilities come along
-                    host.clearOutputChances();
+                    host.state().clearOutputChances();
                     PatternChances c = now.get(TwinstarContent.PATTERN_CHANCES.get());
                     if (c != null) {
-                        c.entries().forEach(e -> host.setOutputChance(e.key(), e.chance()));
+                        c.entries().forEach(e -> host.state().setOutputChance(e.key(), e.chance()));
                     }
-                    host.clearInputFaces();
+                    host.state().clearInputFaces();
                     PatternInputFaces f = now.get(TwinstarContent.PATTERN_INPUT_FACES.get());
                     if (f != null) {
-                        f.entries().forEach(e -> host.setInputFaces(e.key(), e.faces()));
+                        f.entries().forEach(e -> host.state().setInputFaces(e.key(), e.faces()));
                     }
-                    host.clearIgnoreNbt();
+                    host.state().clearIgnoreNbt();
                     PatternIgnoreNbt n = now.get(TwinstarContent.PATTERN_IGNORE_NBT.get());
                     if (n != null) {
-                        n.inputs().forEach(k -> host.setIgnoreNbt(k, false, true));
-                        n.outputs().forEach(k -> host.setIgnoreNbt(k, true, true));
+                        n.inputs().forEach(k -> host.state().setIgnoreNbt(k, false, true));
+                        n.outputs().forEach(k -> host.state().setIgnoreNbt(k, true, true));
                     }
-                    host.clearInputTargets();
+                    host.state().clearOutputGuiSlots();
+                    PatternOutputGuiSlots outGuiNow = now.get(TwinstarContent.PATTERN_OUTPUT_GUI_SLOTS.get());
+                    if (outGuiNow != null) {
+                        outGuiNow.entries().forEach(e -> host.state().setOutputGuiSlot(e.key(), e.slot()));
+                    }
+                    host.state().clearInputGuiSlots();
+                    PatternInputGuiSlots guiNow = now.get(TwinstarContent.PATTERN_INPUT_GUI_SLOTS.get());
+                    pendingGuiSlots = guiNow == null ? null : guiNow.slots();
+                    applyPendingGuiSlots();
+                    host.state().clearInputRoles();
+                    PatternInputRoles roleNow = now.get(TwinstarContent.PATTERN_INPUT_ROLES.get());
+                    if (roleNow != null) {
+                        roleNow.entries().forEach(e -> host.state().setInputRole(e.key(), e.role()));
+                    }
+                    host.state().clearInputTargets();
                     PatternInputTargets t = now.get(TwinstarContent.PATTERN_INPUT_TARGETS.get());
                     if (t != null) {
-                        t.entries().forEach(e -> host.setInputTarget(e.key(), e.target()));
+                        t.entries().forEach(e -> host.state().setInputTarget(e.key(), e.target()));
                     }
-                    host.setRecipe(null);
+                    host.state().setRecipe(null);
                     loadMachines(now);
                     machineSeen = machineSlot.getItem().isEmpty() ? null : machineSlot.getItem().getItem();
                 }
@@ -358,12 +456,27 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
                     sb.append(';');
                 }
                 GenericStack out = GenericStack.fromItemStack(outs[i].getItem());
-                double c = out == null ? 1 : host.getOutputChance(out.what());
+                double c = out == null ? 1 : host.state().getOutputChance(out.what());
                 if (c < 1) {
                     sb.append(c);
                 }
             }
             outputChances = sb.toString();
+            StringBuilder ob = new StringBuilder();
+            for (int i = 0; i < outs.length; i++) {
+                if (i > 0) {
+                    ob.append(';');
+                }
+                GenericStack out = GenericStack.fromItemStack(outs[i].getItem());
+                int g = out == null ? 0 : host.state().getOutputGuiSlot(out.what());
+                if (g != 0) {
+                    ob.append(g);
+                }
+            }
+            outputGuiSlots = ob.toString();
+            StringBuilder sb2 = new StringBuilder();
+            host.state().getSequenceStarts().forEach((id, n) -> sb2.append(sb2.isEmpty() ? "" : ";").append(id).append('=').append(n));
+            sequenceStarts = sb2.toString();
             recipeChances = recipeChancesBySlot(outs);
             StringBuilder fb = new StringBuilder();
             FakeSlot[] ins = getProcessingInputSlots();
@@ -372,7 +485,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
                     fb.append(';');
                 }
                 GenericStack in = GenericStack.fromItemStack(ins[i].getItem());
-                int f = in == null ? 0 : host.getInputFaces(in.what());
+                int f = in == null ? 0 : host.state().getInputFaces(in.what());
                 if (f != 0) {
                     fb.append(f);
                 }
@@ -384,12 +497,37 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
                     tb.append(';');
                 }
                 GenericStack in = GenericStack.fromItemStack(ins[i].getItem());
-                int t = in == null ? 0 : host.getInputTarget(in.what());
+                int t = in == null ? 0 : host.state().getInputTarget(in.what());
                 if (t != 0) {
                     tb.append(t);
                 }
             }
             inputTargets = tb.toString();
+            StringBuilder rb = new StringBuilder();
+            for (int i = 0; i < ins.length; i++) {
+                if (i > 0) {
+                    rb.append(';');
+                }
+                GenericStack in = GenericStack.fromItemStack(ins[i].getItem());
+                int r = in == null ? 0 : host.state().getInputRole(in.what());
+                if (r != 0) {
+                    rb.append(r);
+                }
+            }
+            inputRoles = rb.toString();
+            StringBuilder gb = new StringBuilder();
+            for (int i = 0; i < ins.length; i++) {
+                if (i > 0) {
+                    gb.append(';');
+                }
+                GenericStack in = GenericStack.fromItemStack(ins[i].getItem());
+                int g = in == null ? 0 : host.state().getInputGuiSlot(i);
+                if (g != 0) {
+                    gb.append(g);
+                }
+            }
+            inputGuiSlots = gb.toString();
+            applyPendingGuiSlots();
             ignoreNbtIn = nbtFlags(ins, false);
             ignoreNbtOut = nbtFlags(outs, true);
         }
@@ -430,7 +568,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             }
             GenericStack out = GenericStack.fromItemStack(outs[index].getItem());
             if (out != null) {
-                host.setOutputChance(out.what(), chance);
+                host.state().setOutputChance(out.what(), chance);
             }
         } catch (NumberFormatException e) {
             // a malformed request: ignore it
@@ -447,10 +585,10 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
 
     /** The slots JEI filled arrived before this (same connection, in order). */
     private void receiveRecipeChances(String id) {
-        host.clearOutputChances();
+        host.state().clearOutputChances();
         clearSubMachines();
         ResourceLocation rl = id.isEmpty() ? null : ResourceLocation.tryParse(id);
-        host.setRecipe(rl);
+        host.state().setRecipe(rl);
         Map<String, Double> byId = chancesOf(rl);
         if (byId == null) {
             return;
@@ -462,7 +600,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             }
             Double c = byId.get(out.what().getId().toString());
             if (c != null) {
-                host.setOutputChance(out.what(), c);
+                host.state().setOutputChance(out.what(), c);
             }
         }
     }
@@ -482,7 +620,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
     }
 
     private String recipeChancesBySlot(FakeSlot[] outs) {
-        Map<String, Double> byId = chancesOf(host.getRecipe());
+        Map<String, Double> byId = chancesOf(host.state().getRecipe());
         if (byId == null) {
             return "";
         }
@@ -547,7 +685,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             }
             GenericStack in = GenericStack.fromItemStack(ins[index].getItem());
             if (in != null) {
-                host.setInputFaces(in.what(), faces);
+                host.state().setInputFaces(in.what(), faces);
             }
         } catch (NumberFormatException e) {
             // a malformed request: ignore it
@@ -558,7 +696,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
         StringBuilder sb = new StringBuilder();
         for (FakeSlot slot : slots) {
             GenericStack g = GenericStack.fromItemStack(slot.getItem());
-            sb.append(g != null && host.ignoresNbt(g.what(), output) ? '1' : '0');
+            sb.append(g != null && host.state().ignoresNbt(g.what(), output) ? '1' : '0');
         }
         return sb.toString();
     }
@@ -588,7 +726,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             }
             GenericStack g = GenericStack.fromItemStack(slots[index].getItem());
             if (g != null) {
-                host.setIgnoreNbt(g.what(), output, parts[2].equals("1"));
+                host.state().setIgnoreNbt(g.what(), output, parts[2].equals("1"));
             }
         } catch (NumberFormatException e) {
             // a malformed request: ignore it
@@ -605,6 +743,186 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             return Integer.parseInt(parts[index]);
         } catch (NumberFormatException e) {
             return 0;
+        }
+    }
+
+    private static String machineId(ItemStack machine) {
+        return machine.isEmpty() ? "" : net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(machine.getItem()).toString();
+    }
+
+    /** The GUI slot a sequence pattern for {@code machine} starts at (1 = the menu's first slot). */
+    public int getSequenceStart(ItemStack machine) {
+        String id = machineId(machine);
+        for (String part : sequenceStarts.split(";")) {
+            int eq = part.lastIndexOf('=');
+            if (eq > 0 && part.substring(0, eq).equals(id)) {
+                try {
+                    return Integer.parseInt(part.substring(eq + 1));
+                } catch (NumberFormatException e) {
+                    return 1;
+                }
+            }
+        }
+        return 1;
+    }
+
+    /** Client: sets the GUI slot a sequence pattern for {@code machine} starts at. */
+    public void setSequenceStart(ItemStack machine, int start) {
+        sendClientAction(SET_SEQUENCE_START, machineId(machine) + "=" + start);
+    }
+
+    private void receiveSequenceStart(String arg) {
+        int eq = arg.lastIndexOf('=');
+        if (eq < 0) {
+            return;
+        }
+        try {
+            int start = Integer.parseInt(arg.substring(eq + 1));
+            if (start >= 1 && start <= PatternInputGuiSlots.MAX) {
+                host.state().setSequenceStart(arg.substring(0, eq), start);
+            }
+        } catch (NumberFormatException e) {
+            // a malformed request: ignore it
+        }
+    }
+
+    /** The GUI slot processing output slot {@code index}'s product is taken out of (0 = any result slot). */
+    public int getOutputGuiSlot(int index) {
+        String[] parts = outputGuiSlots.split(";", -1);
+        if (index < 0 || index >= parts.length || parts[index].isEmpty()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(parts[index]);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    /** Client: sets the GUI slot the product in processing output slot {@code index} is taken out of. */
+    public void setOutputGuiSlot(int index, int slot) {
+        sendClientAction(SET_OUTPUT_GUI_SLOT, index + ";" + slot);
+    }
+
+    private void receiveOutputGuiSlot(String arg) {
+        String[] parts = arg.split(";");
+        if (parts.length != 2) {
+            return;
+        }
+        try {
+            int index = Integer.parseInt(parts[0]);
+            int slot = Integer.parseInt(parts[1]);
+            FakeSlot[] outs = getProcessingOutputSlots();
+            if (index < 0 || index >= outs.length || slot < 0 || slot > PatternOutputGuiSlots.MAX) {
+                return;
+            }
+            GenericStack out = GenericStack.fromItemStack(outs[index].getItem());
+            if (out != null) {
+                host.state().setOutputGuiSlot(out.what(), slot);
+            }
+        } catch (NumberFormatException e) {
+            // a malformed request: ignore it
+        }
+    }
+
+    /** The GUI slot processing input slot {@code index}'s material goes into (0 = the first that takes it). */
+    public int getInputGuiSlot(int index) {
+        String[] parts = inputGuiSlots.split(";", -1);
+        if (index < 0 || index >= parts.length || parts[index].isEmpty()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(parts[index]);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    /** Client: sets the GUI slot the material in processing input slot {@code index} goes into. */
+    public void setInputGuiSlot(int index, int slot) {
+        sendClientAction(SET_INPUT_GUI_SLOT, index + ";" + slot);
+    }
+
+    private void receiveInputGuiSlot(String arg) {
+        String[] parts = arg.split(";");
+        if (parts.length != 2) {
+            return;
+        }
+        try {
+            int index = Integer.parseInt(parts[0]);
+            int slot = Integer.parseInt(parts[1]);
+            FakeSlot[] ins = getProcessingInputSlots();
+            if (index < 0 || index >= ins.length || slot < 0 || slot > PatternInputGuiSlots.MAX) {
+                return;
+            }
+            host.state().setInputGuiSlot(index, slot);
+        } catch (NumberFormatException e) {
+            // a malformed request: ignore it
+        }
+    }
+
+    /** the GUI slots of a pattern that was put in, waiting for the grid to be filled from it (they go to its filled slots in order) */
+    private @Nullable List<Integer> pendingGuiSlots;
+
+    private void applyPendingGuiSlots() {
+        if (pendingGuiSlots == null) {
+            return;
+        }
+        FakeSlot[] ins = getProcessingInputSlots();
+        int filled = 0;
+        for (FakeSlot s : ins) {
+            if (GenericStack.fromItemStack(s.getItem()) != null) {
+                filled++;
+            }
+        }
+        if (filled == 0) {
+            return;     // the grid is not filled yet
+        }
+        int n = 0;
+        for (int i = 0; i < ins.length && n < pendingGuiSlots.size(); i++) {
+            if (GenericStack.fromItemStack(ins[i].getItem()) != null) {
+                host.state().setInputGuiSlot(i, pendingGuiSlots.get(n++));
+            }
+        }
+        pendingGuiSlots = null;
+    }
+
+    /** What processing input slot {@code index}'s material is besides used up ({@link PatternInputRoles}; 0 = used up). */
+    public int getInputRole(int index) {
+        String[] parts = inputRoles.split(";", -1);
+        if (index < 0 || index >= parts.length || parts[index].isEmpty()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(parts[index]);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    /** Client: sets what the material in processing input slot {@code index} is besides used up. */
+    public void setInputRole(int index, int role) {
+        sendClientAction(SET_INPUT_ROLE, index + ";" + role);
+    }
+
+    private void receiveInputRole(String arg) {
+        String[] parts = arg.split(";");
+        if (parts.length != 2) {
+            return;
+        }
+        try {
+            int index = Integer.parseInt(parts[0]);
+            int role = Integer.parseInt(parts[1]);
+            FakeSlot[] ins = getProcessingInputSlots();
+            if (index < 0 || index >= ins.length || role < 0 || role >= PatternInputRoles.KINDS) {
+                return;
+            }
+            GenericStack in = GenericStack.fromItemStack(ins[index].getItem());
+            if (in != null) {
+                host.state().setInputRole(in.what(), role);
+            }
+        } catch (NumberFormatException e) {
+            // a malformed request: ignore it
         }
     }
 
@@ -628,7 +946,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             GenericStack in = GenericStack.fromItemStack(ins[index].getItem());
             if (in != null) {
                 int kind = PatternInputTargets.kind(target);
-                host.setInputTarget(in.what(), PatternInputTargets.of(kind, PatternInputTargets.distance(target)));
+                host.state().setInputTarget(in.what(), PatternInputTargets.of(kind, PatternInputTargets.distance(target)));
             }
         } catch (NumberFormatException e) {
             // a malformed request: ignore it
@@ -637,6 +955,10 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
 
     public FakeSlot getMachineSlot() {
         return machineSlot;
+    }
+
+    public FakeSlot getToolSlot() {
+        return toolSlot;
     }
 
     public List<FakeSlot> getSubMachineSlots() {

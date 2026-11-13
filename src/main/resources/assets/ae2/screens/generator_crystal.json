@@ -1,0 +1,52 @@
+{
+  "includes": [
+    "common/common.json",
+    "common/player_inventory.json"
+  ],
+  "background": {
+    "texture": "ae2_gvt:textures/gui/generator_crystal.png",
+    "textureWidth": 256,
+    "textureHeight": 256,
+    "srcRect": [
+      0,
+      0,
+      176,
+      168
+    ]
+  },
+  "text": {
+    "dialog_title": {
+      "text": {
+        "text": ""
+      },
+      "position": {
+        "left": 8,
+        "top": 6
+      }
+    },
+    "output": {
+      "text": {
+        "text": ""
+      },
+      "position": {
+        "left": 8,
+        "top": 20
+      }
+    },
+    "line": {
+      "text": {
+        "text": ""
+      },
+      "position": {
+        "left": 8,
+        "top": 52
+      }
+    }
+  },
+  "slots": {
+    "MACHINE_INPUT": {
+      "left": 80,
+      "top": 33
+    }
+  }
+}

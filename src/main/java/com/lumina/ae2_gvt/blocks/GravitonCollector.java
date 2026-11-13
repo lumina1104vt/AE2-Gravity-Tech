@@ -21,7 +21,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class GravitonCollector extends Block implements EntityBlock {
+public class GravitonCollector extends appeng.block.AEBaseEntityBlock<com.lumina.ae2_gvt.blockentities.GravitonCollector> {
     public static final int HEIGHT = 5;
     public static final IntegerProperty PART = IntegerProperty.create("part", 0, HEIGHT - 1);
 
@@ -39,6 +39,7 @@ public class GravitonCollector extends Block implements EntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
         builder.add(PART);
     }
 
@@ -64,6 +65,7 @@ public class GravitonCollector extends Block implements EntityBlock {
 
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, LivingEntity by, ItemStack itemStack) {
+        super.setPlacedBy(level, pos, state, by, itemStack);     // AE2: who owns the network node
         for (int i = 1; i < HEIGHT; i++) {
             level.setBlock(pos.above(i), state.setValue(PART, i), Block.UPDATE_ALL);
         }
@@ -97,7 +99,7 @@ public class GravitonCollector extends Block implements EntityBlock {
 
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return state.getValue(PART) == 0 ? new com.lumina.ae2_gvt.blockentities.GravitonCollector(pos, state) : null;
+        return state.getValue(PART) == 0 ? super.newBlockEntity(pos, state) : null;
     }
 
     private boolean isPart(BlockState state, int part) {

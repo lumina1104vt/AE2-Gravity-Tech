@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.Nullable;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
+import com.lumina.ae2_gvt.client.SequencePattern;
 import com.lumina.ae2_gvt.terminal.TwinStarPatternTermMenu;
 import com.lumina.ae2_gvt.terminal.TwinStarTerminal;
 
@@ -15,6 +16,12 @@ import appeng.api.stacks.GenericStack;
 import appeng.integration.modules.itemlists.EncodingHelper;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
+import mezz.jei.api.gui.IRecipeLayoutDrawable;
+import mezz.jei.api.gui.buttons.IButtonState;
+import mezz.jei.api.gui.buttons.IIconButtonController;
+import mezz.jei.api.gui.builder.ITooltipBuilder;
+import mezz.jei.api.gui.drawable.IDrawable;
+import mezz.jei.api.gui.inputs.IJeiUserInput;
 import mezz.jei.api.gui.ingredient.IRecipeSlotView;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.ingredients.IIngredientType;
@@ -27,6 +34,8 @@ import mezz.jei.api.recipe.transfer.IRecipeTransferError;
 import mezz.jei.api.recipe.transfer.IRecipeTransferHandlerHelper;
 import mezz.jei.api.recipe.transfer.IUniversalRecipeTransferHandler;
 import mezz.jei.api.recipe.RecipeType;
+import mezz.jei.api.recipe.advanced.IRecipeButtonControllerFactory;
+import mezz.jei.api.registration.IAdvancedRegistration;
 import mezz.jei.api.registration.IRecipeTransferRegistration;
 import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -58,6 +67,67 @@ public class TwinStarJeiPlugin implements IModPlugin {
         registration.addUniversalRecipeTransferHandler(new PatternTransfer(registration.getTransferHelper()));
     }
 
+    /**
+     * A button beside every recipe that makes a sequence pattern of it ({@link SequencePattern}): every material in the
+     * place the recipe has it, one item each, with the GUI slot of that place. Shown while the pattern terminal is open.
+     */
+    @Override
+    public void registerAdvanced(IAdvancedRegistration registration) {
+        IDrawable icon = registration.getJeiHelpers().getGuiHelper().createDrawable(SequencePattern.TEXTURE, 0, 12, 12, 12);
+        registration.addRecipeButtonFactory(new IRecipeButtonControllerFactory() {
+            @Override
+            public <T> IIconButtonController createButtonController(IRecipeLayoutDrawable<T> layout) {
+                return new IIconButtonController() {
+                    @Override
+                    public boolean onPress(IJeiUserInput input) {
+                        if (input.isSimulate()) {
+                            return SequencePattern.terminal() != null;
+                        }
+                        return fillSequence(layout);
+                    }
+
+                    @Override
+                    public void getTooltips(ITooltipBuilder tooltip) {
+                        tooltip.add(SequencePattern.tooltip());
+                    }
+
+                    @Override
+                    public void initState(IButtonState state) {
+                        state.setIcon(icon);
+                    }
+
+                    @Override
+                    public void updateState(IButtonState state) {
+                        boolean open = SequencePattern.terminal() != null;
+                        state.setVisible(open);
+                        state.setActive(open);
+                    }
+                };
+            }
+        });
+    }
+
+    /** The recipe as it is laid out, slot by slot, into the open terminal. */
+    private static boolean fillSequence(IRecipeLayoutDrawable<?> layout) {
+        IRecipeSlotsView view = layout.getRecipeSlotsView();
+        List<GenericStack> inputs = new ArrayList<>();
+        for (IRecipeSlotView slot : view.getSlotViews(RecipeIngredientRole.INPUT)) {
+            inputs.add(slot.getDisplayedIngredient().or(() -> slot.getAllIngredients().findFirst())
+                    .map(PatternTransfer::toGenericStack).orElse(null));
+        }
+        while (!inputs.isEmpty() && inputs.get(inputs.size() - 1) == null) {
+            inputs.remove(inputs.size() - 1);
+        }
+        List<GenericStack> outputs = new ArrayList<>();
+        for (IRecipeSlotView slot : view.getSlotViews(RecipeIngredientRole.OUTPUT)) {
+            slot.getDisplayedIngredient().or(() -> slot.getAllIngredients().findFirst())
+                    .map(PatternTransfer::toGenericStack).ifPresent(outputs::add);
+        }
+        IRecipeCategory<?> category = layout.getRecipeCategory();
+        return SequencePattern.open(new SequencePattern.Request(inputs, outputs, PatternTransfer.machineOf(category),
+                PatternTransfer.idOf(category, layout.getRecipe())));
+    }
+
     @Override
     public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
         runtime = jeiRuntime;
@@ -76,7 +146,7 @@ public class TwinStarJeiPlugin implements IModPlugin {
 
         @Override
         public Optional<MenuType<TwinStarPatternTermMenu>> getMenuType() {
-            return Optional.of(TwinStarTerminal.MENU.get());
+            return Optional.empty();   // the terminal part and the wireless terminal have this menu class, with a menu type each
         }
 
         @Override

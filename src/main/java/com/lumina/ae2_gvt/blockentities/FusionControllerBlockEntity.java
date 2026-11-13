@@ -83,7 +83,7 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
     public static final double AMBIENT = 1500;
     /** Equilibrium Kelvin per FE/t of input. */
     public static final double KELVIN_PER_FE = 0.0005;
-    /** Int max (~2.1e9 FE/t), settling near 1,075,000 K - well past the hottest colour (80,000 K at ~157M FE/t). */
+    /** Long max FE/t: no cap in practice. A chamber settles at 1,500 K + 0.0005 K per FE/t - 1,000,000 K at about 2e9 FE/t, far past the hottest colour (80,000 K at ~157M FE/t). */
     public static final long MAX_CAP = Long.MAX_VALUE;
     /** FE held from the energy ports: a second of the cap, and never less than this. */
     private static final long MIN_FE_BUFFER = 1_000_000;

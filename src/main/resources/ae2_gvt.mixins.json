@@ -8,10 +8,12 @@
     "ControllerValidatorMixin",
     "GridMixin",
     "NetworkStatusMenuMixin",
-    "BlockStateBaseMixin"
+    "BlockStateBaseMixin",
+    "PlayerPhaseMixin"
   ],
   "client": [
-    "NetworkStatusScreenMixin"
+    "NetworkStatusScreenMixin",
+    "GuideDefaultExtensionsMixin"
   ],
   "injectors": {
     "defaultRequire": 1

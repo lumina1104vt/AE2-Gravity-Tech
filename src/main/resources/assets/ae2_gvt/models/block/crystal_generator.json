@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "ae2:block/generics/bottom",
+    "east": "ae2_gvt:block/crystal_generator_side",
+    "west": "ae2_gvt:block/crystal_generator_side",
+    "north": "ae2_gvt:block/crystal_generator_front",
+    "south": "ae2_gvt:block/crystal_generator_back",
+    "up": "ae2_gvt:block/crystal_generator_top",
+    "particle": "ae2_gvt:block/crystal_generator_front"
+  }
+}

@@ -1,0 +1,41 @@
+## 21.0.0.2-beta
+
+### New
+- Sequence patterns: a button beside every recipe in JEI and EMI (while the pattern terminal is open) writes a pattern for machines that need the materials in their places, such as an ordered crafting table.
+- Pattern terminal: a catalyst switch on every material slot (a catalyst stays in the machine for the whole batch), a tool slot (the machine is right-clicked with it once all materials are in), and GUI slot numbers for materials and products, for machines that take items only in a GUI.
+- Wireless Twin-Star Pattern Terminal: the pattern terminal to carry, made from an AE2 wireless terminal and the twin-star pattern terminal.
+- Three generators that put FE into the ME network: the Crystal Dust Generator (2,000 FE/t burning gravity or anti-gravity dust, 4,000 FE/t burning paradox dust, 2 s each), the Graviton Generator (200,000 FE/t, one graviton or anti-graviton a second from the network) and the Accretion Generator (1,000,000 FE/t, touching a white hole, four to a hole; made in the Fusion Generator at 100,000 K).
+- Antigravity armor: the whole set flies (an anti-graviton from a linked network every 5 ticks) and takes no fall damage, and all 31 of its modules work now (the armor can be linked to a wireless access point for auto stock, recharge and pick craft; phase, flying with it on, goes through blocks: magnet, portable workbench (B), dash (V), evasion, flight drift, night vision, water breathing, regeneration, fire resistance, lava immunity, max health, strength, attack speed, damage reduction, thorns, undying, shield, cleanse, dig affinity, luck, move speed, swim speed, jump height, step assist, reach, saturation, auto feed, auto stock, recharge, pick craft, phase).
+- The world interaction pages in JEI and EMI are pictures now.
+- The guide book's recipe tags show the Gravity Processing Factory and Fusion Generator recipes, and black and white holes show in its scenes.
+
+### Changes
+- The White Hole Energy Cell and the Black Hole Storage Cell need 5,000,000 K in the Fusion Generator (about 10 billion FE/t) and the reaction gives no energy back.
+- Needs NeoForge 21.1.251 or newer (it was 21.1.262).
+
+### Fixes
+- A black or white hole made by AE2's tiny TNT is no longer broken by the same explosion.
+- Items on a pedestal are no longer swapped out by the next material.
+- The guide book loads again.
+
+---
+
+## 21.0.0.2-beta
+
+### 新增
+- 序列樣板：樣板終端開著時，JEI 和 EMI 的每個配方旁多了一個按鈕，可以為需要材料各放各的位置的機器（像有序合成的工作台）寫出樣板。
+- 樣板終端：每個材料格有催化劑開關（催化劑整批留在機器裡）、多了工具格（材料全部放完後用它對機器右鍵）、材料和成品可以指定 GUI 格號，給只能在 GUI 裡放東西的機器用。
+- 無線雙星樣板終端：可以帶著走的樣板終端，用 AE2 無線終端加雙星樣板終端合成。
+- 三種發電機，把 FE 送進 ME 網路：結晶粉發電機（燒引力或反引力水晶粉 2,000 FE/t，燒悖論水晶粉 4,000 FE/t，各燒 2 秒）、引力子發電機（200,000 FE/t，每秒從網路取一個引力子或反引力子）、吸積發電機（1,000,000 FE/t，貼著白洞，一個白洞最多四台；要在核融合發生器裡以 100,000 K 製作）。
+- 反重力裝甲：穿齊整套可以飛行（每 5 tick 從連結的網路取 1 個反引力子）、不會摔傷，31 個模組全部都有效果了（盔甲可以連到無線存取點，給自動補貨、充電、中鍵下單用；穿牆在飛行時可以穿過方塊：磁力吸取、隨身工作台（B）、衝刺突進（V）、閃避、飛行防飄移、夜視、水下呼吸、生命回復、抗火、熔岩免疫、生命上限、力量、攻擊速度、固定減傷、反傷、瀕死免死、護盾吸收、清除負面、挖掘不減速、幸運、移動速度、游泳加速、跳躍高度、免跳上階、延伸互動距離、飽和、自動進食、自動補貨、充電、中鍵下單、穿牆）。
+- JEI 和 EMI 的世界交互頁改用圖像。
+- 導覽書的配方標籤可以顯示引力加工工廠和核融合發生器的配方，黑洞和白洞也能顯示在場景裡。
+
+### 調整
+- 白洞能源元件和黑洞存儲磁盤在核融合發生器裡需要 5,000,000 K（約 100 億 FE/t），反應期間不再還電。
+- 需要 NeoForge 21.1.251 以上（原本是 21.1.262）。
+
+### 修正
+- AE2 迷你 TNT 炸出的黑洞或白洞，不會再被同一次爆炸炸掉。
+- 基座上的東西不會再被下一個材料換掉。
+- 導覽書可以正常載入。

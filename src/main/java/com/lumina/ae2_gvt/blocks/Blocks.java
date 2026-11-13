@@ -62,6 +62,21 @@ public final class Blocks {
             "white_hole_energy_cell", com.lumina.ae2_gvt.storage.WhiteHoleEnergyCellBlock::new,
             BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.2f, 11f).sound(SoundType.METAL));
 
+    private static BlockBehaviour.Properties generatorProps() {
+        return BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(2.2f, 11f).sound(SoundType.METAL);
+    }
+    public static final DeferredBlock<GeneratorBlock> CRYSTAL_GENERATOR = BLOCKS.registerBlock("crystal_generator",
+            p -> new GeneratorBlock(com.lumina.ae2_gvt.blockentities.PowerGeneratorBlockEntity.Kind.CRYSTAL, p), generatorProps());
+    /** The flywheel and the cage are not whole cubes: what is behind them is drawn, and light and sight go through. */
+    private static BlockBehaviour.Properties openGeneratorProps() {
+        return generatorProps().noOcclusion().isViewBlocking((s, l, p) -> false).isSuffocating((s, l, p) -> false)
+                .isRedstoneConductor((s, l, p) -> false);
+    }
+    public static final DeferredBlock<GeneratorBlock> GRAVITON_GENERATOR = BLOCKS.registerBlock("graviton_generator",
+            p -> new GeneratorBlock(com.lumina.ae2_gvt.blockentities.PowerGeneratorBlockEntity.Kind.GRAVITON, p), openGeneratorProps());
+    public static final DeferredBlock<GeneratorBlock> ACCRETION_GENERATOR = BLOCKS.registerBlock("accretion_generator",
+            p -> new GeneratorBlock(com.lumina.ae2_gvt.blockentities.PowerGeneratorBlockEntity.Kind.ACCRETION, p), openGeneratorProps());
+
     public static final DeferredBlock<DummyTwinStarCPU> TWINSTAR_CPU = Blocks.BLOCKS.registerBlock(
             "dummy_twinstar_cpu", DummyTwinStarCPU::new);
 

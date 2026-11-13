@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "ae2_gvt:block/graviton_generator"
+    },
+    "facing=east": {
+      "model": "ae2_gvt:block/graviton_generator",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "ae2_gvt:block/graviton_generator",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "ae2_gvt:block/graviton_generator",
+      "y": 270
+    }
+  }
+}

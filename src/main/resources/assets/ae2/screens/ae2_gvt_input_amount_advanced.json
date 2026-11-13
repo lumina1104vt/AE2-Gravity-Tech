@@ -79,6 +79,24 @@
       "width": 72,
       "height": 14
     },
+    "guiSlotLess": {
+      "left": 28,
+      "top": 118,
+      "width": 12,
+      "height": 12
+    },
+    "guiSlotMore": {
+      "left": 62,
+      "top": 118,
+      "width": 12,
+      "height": 12
+    },
+    "role": {
+      "left": 84,
+      "top": 97,
+      "width": 84,
+      "height": 14
+    },
     "target": {
       "left": 50,
       "top": 170,

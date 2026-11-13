@@ -6,6 +6,8 @@ import java.util.Locale;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.client.TwinStarTerminalClient;
+import com.lumina.twinstar.algorithm.ae2.PatternInputGuiSlots;
+import com.lumina.twinstar.algorithm.ae2.PatternInputRoles;
 import com.lumina.twinstar.algorithm.ae2.PatternInputTargets;
 import com.lumina.ae2_gvt.terminal.TwinStarPatternTermMenu;
 
@@ -59,17 +61,22 @@ public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, T
     /** where the material goes (PatternInputTargets) */
     private int target;
     private final boolean advanced;
-    private final @Nullable AE2Button targetButton, distanceLess, distanceMore;
+    /** what the material is besides used up (PatternInputRoles) */
+    private int role;
+    /** the slot of the machine's GUI the material goes into (0 = the first that takes it) */
+    private int guiSlot;
+    private final @Nullable AE2Button guiLess, guiMore;
+    private final @Nullable AE2Button targetButton, distanceLess, distanceMore, roleButton;
     private final List<FaceToggle> toggles = new ArrayList<>();
 
     public SetInputAmountScreen(TwinStarPatternTermScreen parent, GenericStack currentStack, Slot slot, int inputIndex) {
         this(parent, currentStack, slot, inputIndex, parent.getMenu().getInputFaces(inputIndex), parent.getMenu().getInputTarget(inputIndex),
-                false);
+                parent.getMenu().getInputRole(inputIndex), parent.getMenu().getInputGuiSlot(inputIndex), false);
     }
 
     /** {@code faces} and {@code target}: as set so far (the menu may not have them back from the server yet). */
     private SetInputAmountScreen(TwinStarPatternTermScreen parent, GenericStack currentStack, Slot slot, int inputIndex, int faces, int target,
-                                 boolean advanced) {
+                                 int role, int guiSlot, boolean advanced) {
         super(parent, advanced ? "/screens/ae2_gvt_input_amount_advanced.json" : "/screens/ae2_gvt_input_amount.json");
         this.advanced = advanced;
         this.currentStack = currentStack;
@@ -88,6 +95,8 @@ public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, T
         addClientSideSlot(new ClientDisplaySlot(currentStack), SlotSemantics.MACHINE_OUTPUT);
         this.faces = faces;
         this.target = target;
+        this.role = role;
+        this.guiSlot = guiSlot;
         widgets.addButton("advanced", Component.translatable(advanced ? "ae2_gvt.pattern.advanced.hide" : "ae2_gvt.pattern.advanced.show"),
                 this::toggleAdvanced);
         if (advanced) {
@@ -95,9 +104,16 @@ public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, T
             distanceLess = widgets.addButton("distanceLess", Component.literal("-"), () -> moveDistance(-1));
             distanceMore = widgets.addButton("distanceMore", Component.literal("+"), () -> moveDistance(1));
             showTarget();
+            roleButton = widgets.addButton("role", Component.empty(), this::nextRole);
+            showRole();
+            guiLess = widgets.addButton("guiSlotLess", Component.literal("-"), () -> moveGuiSlot(-1));
+            guiMore = widgets.addButton("guiSlotMore", Component.literal("+"), () -> moveGuiSlot(1));
+            Tooltip guiHint = Tooltip.create(Component.translatable("ae2_gvt.pattern.gui_slot.hint"));
+            guiLess.setTooltip(guiHint);
+            guiMore.setTooltip(guiHint);
             IgnoreNbt.add(widgets, getMenu(), inputIndex, false);
         } else {
-            targetButton = distanceLess = distanceMore = null;
+            targetButton = distanceLess = distanceMore = roleButton = guiLess = guiMore = null;
         }
     }
 
@@ -107,7 +123,29 @@ public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, T
         GenericStack stack = new GenericStack(currentStack.what(), Math.max(1, value));
         TwinStarPatternTermScreen parent = getParent();
         returnToParent();
-        parent.openDialog(new SetInputAmountScreen(parent, stack, slot, inputIndex, faces, target, !advanced));
+        parent.openDialog(new SetInputAmountScreen(parent, stack, slot, inputIndex, faces, target, role, guiSlot, !advanced));
+    }
+
+    /** The GUI slot up or down; 0 (the first that takes it) is the bottom. */
+    private void moveGuiSlot(int by) {
+        guiSlot = Math.max(0, Math.min(PatternInputGuiSlots.MAX, guiSlot + by));
+        getMenu().setInputGuiSlot(inputIndex, guiSlot);
+    }
+
+    /** The switch: used up, or a catalyst. */
+    private void nextRole() {
+        role = PatternInputRoles.next(role);
+        getMenu().setInputRole(inputIndex, role);
+        showRole();
+    }
+
+    private void showRole() {
+        if (roleButton == null) {
+            return;
+        }
+        String name = role == PatternInputRoles.CATALYST ? "catalyst" : "normal";
+        roleButton.setMessage(Component.translatable("ae2_gvt.pattern.role." + name));
+        roleButton.setTooltip(Tooltip.create(Component.translatable("ae2_gvt.pattern.role.hint." + name)));
     }
 
     /** The next place: by default, machine, sub-machines, placed in front, dropped in front. */
@@ -162,6 +200,12 @@ public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, T
     @Override
     public void drawFG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY) {
         super.drawFG(guiGraphics, offsetX, offsetY, mouseX, mouseY);
+        if (advanced) {
+            Component g = Component.literal("GUI");
+            guiGraphics.drawString(font, g, 8, 121, 0x404040, false);
+            String n = guiSlot == 0 ? "-" : String.valueOf(guiSlot);
+            guiGraphics.drawString(font, n, 51 - font.width(n) / 2, 121, 0x404040, false);
+        }
         if (advanced && PatternInputTargets.isFront(target)) {
             Component d = Component.translatable("ae2_gvt.pattern.target.distance", PatternInputTargets.distance(target));
             guiGraphics.drawString(font, d, 82 - font.width(d) / 2, 188, 0x404040, false);
@@ -204,6 +248,8 @@ public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, T
             if (stack != null) {
                 getMenu().setInputFaces(inputIndex, faces);
                 getMenu().setInputTarget(inputIndex, target);
+                getMenu().setInputRole(inputIndex, role);
+                getMenu().setInputGuiSlot(inputIndex, guiSlot);
             }
             returnToParent();
         });

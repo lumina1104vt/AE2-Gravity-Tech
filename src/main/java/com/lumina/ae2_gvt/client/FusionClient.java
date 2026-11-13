@@ -27,5 +27,8 @@ public final class FusionClient {
     @SubscribeEvent
     static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(BlockEntities.FUSION_CONTROLLER.get(), context -> new FusionPlasmaRenderer());
+        // a hole where the world's drawing does not run (a guide's scene)
+        event.registerBlockEntityRenderer(com.lumina.ae2_gvt.hole.GravityHole.BLOCK_ENTITY.get(),
+                context -> new com.lumina.ae2_gvt.client.renderer.SimpleHoleRenderer());
     }
 }

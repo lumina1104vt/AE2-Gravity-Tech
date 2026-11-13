@@ -1,0 +1,20 @@
+{
+  "type": "ae2_gvt:explosion",
+  "center": {
+    "item": "ae2_gvt:chaos_matter"
+  },
+  "ingredients": [
+    {
+      "item": "ae2_gvt:anti_singularity",
+      "count": 1
+    },
+    {
+      "item": "ae2_gvt:gravity_dust",
+      "count": 64
+    }
+  ],
+  "block": "ae2_gvt:white_hole",
+  "radius": 1.5,
+  "shield": "all",
+  "priority": 1
+}

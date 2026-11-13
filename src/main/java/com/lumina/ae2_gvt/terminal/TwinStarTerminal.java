@@ -36,6 +36,8 @@ public final class TwinStarTerminal {
     public static final SlotSemantic MACHINE_SLOT = SlotSemantics.register("TWIN_STAR_MACHINE", false);
     /** The sub-machine slots, shown in their own dialog ({@code SubMachineScreen}). */
     public static final SlotSemantic SUB_MACHINE_SLOTS = SlotSemantics.register("TWIN_STAR_SUB_MACHINES", false);
+    /** The tool slot, in the same dialog as the sub-machines. */
+    public static final SlotSemantic TOOL_SLOT = SlotSemantics.register("TWIN_STAR_TOOL", false);
     /** How many sub-machines a pattern can name. */
     public static final int SUB_MACHINES = 9;
 
@@ -48,6 +50,14 @@ public final class TwinStarTerminal {
      */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<Holder<Item>>> PATTERN_MACHINE = COMPONENTS
             .registerComponentType("pattern_machine", builder -> builder.persistent(BuiltInRegistries.ITEM.holderByNameCodec())
+                    .networkSynchronized(ByteBufCodecs.holderRegistry(Registries.ITEM)));
+
+    /**
+     * On a synthesis pattern with a machine: the tool that right-clicks the machine once every material of a
+     * run is in.
+     */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<Holder<Item>>> PATTERN_TOOL = COMPONENTS
+            .registerComponentType("pattern_tool", builder -> builder.persistent(BuiltInRegistries.ITEM.holderByNameCodec())
                     .networkSynchronized(ByteBufCodecs.holderRegistry(Registries.ITEM)));
 
     /**
@@ -79,6 +89,15 @@ public final class TwinStarTerminal {
             () -> MenuTypeBuilder.<TwinStarPatternTermMenu, TwinStarPatternTerminalPart>create(TwinStarPatternTermMenu::new,
                     TwinStarPatternTerminalPart.class)
                     .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, ID)));
+
+    /** the wireless one: AE2's wireless terminal with this screen */
+    public static final DeferredItem<WirelessTwinStarTerminalItem> WIRELESS_ITEM = AE2GravityTech.ITEMS.registerItem("wireless_" + ID,
+            props -> new WirelessTwinStarTerminalItem(() -> appeng.core.AEConfig.instance().getWirelessTerminalBattery().getAsDouble(), props.stacksTo(1)));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<TwinStarPatternTermMenu>> WIRELESS_MENU = MENUS.register("wireless_" + ID,
+            () -> MenuTypeBuilder.<TwinStarPatternTermMenu, WirelessTwinStarTerminalMenuHost>create(TwinStarPatternTermMenu::new,
+                    WirelessTwinStarTerminalMenuHost.class)
+                    .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "wireless_" + ID)));
 
     private TwinStarTerminal() {
     }

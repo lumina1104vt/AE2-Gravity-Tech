@@ -24,7 +24,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
-public class GravityFactory extends Block implements EntityBlock {
+public class GravityFactory extends appeng.block.AEBaseEntityBlock<GravityFactoryBlockEntity> {
     private static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
 
     public static final SlotSemantic CATALYST = SlotSemantics.register("GRAVITY_CATALYST", false);
@@ -46,6 +46,7 @@ public class GravityFactory extends Block implements EntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        super.createBlockStateDefinition(builder);
         builder.add(FACING);
     }
 
@@ -55,24 +56,13 @@ public class GravityFactory extends Block implements EntityBlock {
     }
 
     @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
             if (level.getBlockEntity(pos) instanceof GravityFactoryBlockEntity be) {
                 be.dropContents(level, pos);
             }
         }
         super.onRemove(state, level, pos, newState, movedByPiston);
-    }
-
-    @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState blockState) {
-        return new GravityFactoryBlockEntity(pos, blockState);
-    }
-
-    @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return level.isClientSide() || type != BlockEntities.GRAVITY_FACTORY.get() ? null
-                : (l, p, s, be) -> GravityFactoryBlockEntity.serverTick(l, p, s, (GravityFactoryBlockEntity) be);
     }
 
     @Override

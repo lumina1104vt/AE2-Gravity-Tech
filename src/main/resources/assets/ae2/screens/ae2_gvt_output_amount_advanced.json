@@ -79,6 +79,18 @@
       "width": 72,
       "height": 14
     },
+    "guiSlotLess": {
+      "left": 104,
+      "top": 97,
+      "width": 12,
+      "height": 14
+    },
+    "guiSlotMore": {
+      "left": 140,
+      "top": 97,
+      "width": 12,
+      "height": 14
+    },
     "chance": {
       "left": 48,
       "top": 120,

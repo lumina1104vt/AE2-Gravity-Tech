@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "DAD",
+    "AFA",
+    "ICI"
+  ],
+  "key": {
+    "D": {
+      "item": "ae2_gvt:gravity_dust"
+    },
+    "A": {
+      "item": "ae2_gvt:antigravity_dust"
+    },
+    "F": {
+      "item": "ae2_gvt:machine_frame"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "C": {
+      "item": "ae2:energy_acceptor"
+    }
+  },
+  "result": {
+    "id": "ae2_gvt:crystal_generator",
+    "count": 1
+  }
+}

@@ -115,6 +115,13 @@ public class TwinStarPatternTermScreen extends PatternEncodingTermScreen<TwinSta
     @Override
     public void renderSlot(GuiGraphics guiGraphics, Slot slot) {
         super.renderSlot(guiGraphics, slot);
+        if (slot == menu.getToolSlot() && !slot.hasItem()) {
+            // an empty tool slot: a faint hammer
+            int x = slot.x + 3, y = slot.y + 2;
+            guiGraphics.fill(x, y, x + 10, y + 4, 0xFF8B8BA6);
+            guiGraphics.fill(x + 4, y + 4, x + 6, y + 12, 0xFF8B8BA6);
+            return;
+        }
         Slot[] outputs = menu.getProcessingOutputSlots();
         for (int i = 0; i < outputs.length; i++) {
             if (outputs[i] != slot) {
@@ -172,8 +179,9 @@ public class TwinStarPatternTermScreen extends PatternEncodingTermScreen<TwinSta
             if (subs.isEmpty()) {
                 // an empty frame with a faint plus: there is something to set here
                 int cx = getX() + 9, cy = getY() + 9;
-                g.fill(cx - 3, cy, cx + 4, cy + 1, 0xFF8B8BA6);
-                g.fill(cx, cy - 3, cx + 1, cy + 4, 0xFF8B8BA6);
+                // two pixels thick and an even length: the frame is 18 wide, so one pixel could not be in the middle
+                g.fill(cx - 4, cy - 1, cx + 4, cy + 1, 0xFF8B8BA6);
+                g.fill(cx - 1, cy - 4, cx + 1, cy + 4, 0xFF8B8BA6);
             } else {
                 g.renderItem(subs.get(0), getX() + 1, getY() + 1);
                 if (subs.size() > 1) {
