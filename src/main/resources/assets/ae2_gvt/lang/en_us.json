@@ -485,5 +485,10 @@
   "gui.ae2_gvt.armor_network.no_link": "Not linked to a network",
   "gui.ae2_gvt.armor_network.not_stocked": "The network has no %s",
   "gui.ae2_gvt.armor_flight.no_fuel": "No anti-graviton: flight stops",
-  "gui.ae2_gvt.generator.take": "Takes"
+  "gui.ae2_gvt.generator.take": "Takes",
+  "item.ae2_gvt.fe_storage_cell_1k": "FE Storage Cell 1K",
+  "item.ae2_gvt.fe_storage_cell_4k": "FE Storage Cell 4K",
+  "item.ae2_gvt.fe_storage_cell_16k": "FE Storage Cell 16K",
+  "item.ae2_gvt.fe_storage_cell_64k": "FE Storage Cell 64K",
+  "item.ae2_gvt.fe_storage_cell_256k": "FE Storage Cell 256K"
 }

@@ -17,6 +17,12 @@ public final class FeKeyType extends AEKeyType {
         super(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "fe"), FeKey.class, Component.translatable("ae2_gvt.key_type.fe"));
     }
 
+    /** FE kept in a cell: a byte holds 10,000, so a 1k cell holds about 10 million and a 256k cell about 2.6 billion. */
+    @Override
+    public int getAmountPerByte() {
+        return 10_000;
+    }
+
     /** What moves at once, as Applied Flux has it: energy comes in far larger amounts than items. */
     @Override
     public int getAmountPerOperation() {

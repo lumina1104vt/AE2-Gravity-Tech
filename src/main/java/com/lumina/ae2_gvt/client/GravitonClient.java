@@ -48,6 +48,10 @@ public final class GravitonClient {
                 StorageCellModels.registerModel(t.cell().get(),
                         ResourceLocation.fromNamespaceAndPath("ae2", "block/drive/cells/" + t.size + "_item_cell"));
             }
+            for (com.lumina.ae2_gvt.storage.FeCells.Tier t : com.lumina.ae2_gvt.storage.FeCells.Tier.values()) {
+                StorageCellModels.registerModel(t.cell().get(),
+                        ResourceLocation.fromNamespaceAndPath("ae2", "block/drive/cells/" + t.size + "_item_cell"));
+            }
             StorageCellModels.registerModel(Gravitons.INFINITE_CELL.get(),
                     ResourceLocation.fromNamespaceAndPath("ae2", "block/drive/cells/256k_item_cell"));
             StorageCellModels.registerModel(com.lumina.ae2_gvt.items.Items.BLACK_HOLE_STORAGE_CELL.get(),

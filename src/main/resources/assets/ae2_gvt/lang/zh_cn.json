@@ -485,5 +485,10 @@
   "gui.ae2_gvt.armor_network.no_link": "没有连上网络",
   "gui.ae2_gvt.armor_network.not_stocked": "网络里没有 %s",
   "gui.ae2_gvt.armor_flight.no_fuel": "没有反引力子，无法继续飞行",
-  "gui.ae2_gvt.generator.take": "取用"
+  "gui.ae2_gvt.generator.take": "取用",
+  "item.ae2_gvt.fe_storage_cell_1k": "FE 存储元件 1K",
+  "item.ae2_gvt.fe_storage_cell_4k": "FE 存储元件 4K",
+  "item.ae2_gvt.fe_storage_cell_16k": "FE 存储元件 16K",
+  "item.ae2_gvt.fe_storage_cell_64k": "FE 存储元件 64K",
+  "item.ae2_gvt.fe_storage_cell_256k": "FE 存储元件 256K"
 }

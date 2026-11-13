@@ -53,6 +53,7 @@ public class AE2GravityTech {
         com.lumina.ae2_gvt.elevator.SpaceElevator.register();   // the space elevator: controller block + lumina-multiblock definition
         com.lumina.ae2_gvt.quantum.QuantumController.init();   // quantum controller
         com.lumina.ae2_gvt.graviton.Gravitons.init();   // graviton storage type and cells
+        com.lumina.ae2_gvt.storage.FeCells.init();      // cells that keep FE
         com.lumina.ae2_gvt.storage.FeEnergy.init();     // FE on the network, without Applied Flux
     }
 
@@ -86,6 +87,8 @@ public class AE2GravityTech {
                 output.accept(Items.MACHINE_LINK_TOOL);
                 output.accept(com.lumina.ae2_gvt.quantum.QuantumController.ITEM.get());
                 com.lumina.ae2_gvt.graviton.Gravitons.all().forEach(item -> output.accept(item.get()));
+                if (com.lumina.ae2_gvt.storage.FeCells.enabled())
+                    com.lumina.ae2_gvt.storage.FeCells.all().forEach(item -> output.accept(item.get()));
                 output.accept(Items.BLACK_HOLE_STORAGE_CELL);
                 output.accept(Items.WHITE_HOLE_ENERGY_CELL);
                 output.accept(Items.GRAVITON_COLLECTOR);

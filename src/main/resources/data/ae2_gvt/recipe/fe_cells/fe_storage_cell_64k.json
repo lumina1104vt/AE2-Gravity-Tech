@@ -1,0 +1,27 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:not",
+      "value": {
+        "type": "neoforge:mod_loaded",
+        "modid": "appflux"
+      }
+    }
+  ],
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "ae2:item_cell_housing"
+    },
+    {
+      "item": "ae2:cell_component_64k"
+    },
+    {
+      "item": "ae2:energy_acceptor"
+    }
+  ],
+  "result": {
+    "id": "ae2_gvt:fe_storage_cell_64k"
+  }
+}
