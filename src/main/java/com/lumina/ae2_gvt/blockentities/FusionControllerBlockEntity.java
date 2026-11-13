@@ -110,6 +110,11 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
     private static final Map<GlobalPos, BlockPos> LAST_CHAMBER = new ConcurrentHashMap<>();
 
     private double temperature = AMBIENT;
+    /**
+     * Just loaded, the network is not up yet and gives no energy for a few seconds; the plasma does not cool in that time, or a
+     * chamber at millions of kelvin would be near ambient again when the world is back (not saved).
+     */
+    private int loadGrace = 200;
     private long energyCap = 0;
     private @Nullable BlockPos chamber;
 
@@ -218,6 +223,11 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
             }
         }
         double goal = formed ? AMBIENT + be.burning * KELVIN_PER_FE : AMBIENT;
+        if (be.loadGrace > 0) {
+            be.loadGrace--;
+            if (goal < be.temperature)
+                return;
+        }
         be.temperature += (goal - be.temperature) * RATE;
     }
 
