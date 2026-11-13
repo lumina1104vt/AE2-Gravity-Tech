@@ -32,6 +32,7 @@ import appeng.util.ConfigInventory;
 import appeng.util.inv.AppEngInternalInventory;
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.blocks.Blocks;
+import com.lumina.ae2_gvt.config.Config;
 import com.lumina.ae2_gvt.blocks.FusionController;
 import com.lumina.ae2_gvt.hub.HexagramHub;
 import com.lumina.ae2_gvt.hub.HubPortBlockEntity;
@@ -125,6 +126,8 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
     private long burning, giving;
     /** FE come in through the energy ports, burnt before the network's power. */
     private long storedFe;
+    /** What a reaction gives back, kept for the energy ports to be drawn from; what does not fit goes to the network. */
+    private long outFe;
     private Set<BlockPos> energyPorts = Set.of();
     private final IEnergyStorage feInput = new IEnergyStorage() {
         @Override
@@ -137,24 +140,31 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
             return taken;
         }
 
+        /** Cables and pipes draw the energy the reactions gave back (not what was put in). */
         @Override
         public int extractEnergy(int amount, boolean simulate) {
-            return 0;
+            int taken = (int) Math.min(Math.max(amount, 0), outFe);
+            if (!simulate && taken > 0) {
+                outFe -= taken;
+                setChanged();
+            }
+            return taken;
         }
 
+        /** What can be drawn: the energy given back. */
         @Override
         public int getEnergyStored() {
-            return (int) Math.min(storedFe, Integer.MAX_VALUE);
+            return (int) Math.min(outFe, Integer.MAX_VALUE);
         }
 
         @Override
         public int getMaxEnergyStored() {
-            return (int) Math.min(feCapacity(), Integer.MAX_VALUE);
+            return (int) Math.min(Config.FUSION_OUTPUT_BUFFER.get(), Integer.MAX_VALUE);
         }
 
         @Override
         public boolean canExtract() {
-            return false;
+            return true;
         }
 
         @Override
@@ -279,8 +289,14 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
 
     /** The energy a reaction gives goes to the network; what it can't hold is lost. */
     private void giveBack() {
-        if (giving > 0 && getMainNode().isActive() && getMainNode().getGrid() != null)
-            getMainNode().getGrid().getEnergyService().injectPower(PowerUnit.FE.convertTo(PowerUnit.AE, giving), Actionable.MODULATE);
+        if (giving <= 0)
+            return;
+        // the energy ports' buffer first, what does not fit to the network
+        long toBuffer = Math.min(giving, Math.max(0, Config.FUSION_OUTPUT_BUFFER.get() - outFe));
+        outFe += toBuffer;
+        long rest = giving - toBuffer;
+        if (rest > 0 && getMainNode().isActive() && getMainNode().getGrid() != null)
+            getMainNode().getGrid().getEnergyService().injectPower(PowerUnit.FE.convertTo(PowerUnit.AE, rest), Actionable.MODULATE);
     }
 
     private record Made(long at, AEKey key, long amount) {
@@ -621,6 +637,7 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
         tag.putDouble("temperature", temperature);
         tag.putLong("energyCap", energyCap);
         tag.putLong("storedFe", storedFe);
+        tag.putLong("outFe", outFe);
         if (chamber != null) {
             tag.putLong("chamber", chamber.asLong());
         }
@@ -636,6 +653,7 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
         temperature = tag.contains("temperature") ? tag.getDouble("temperature") : AMBIENT;
         energyCap = tag.getLong("energyCap");
         storedFe = tag.getLong("storedFe");
+        outFe = tag.getLong("outFe");
         chamber = tag.contains("chamber") ? BlockPos.of(tag.getLong("chamber")) : null;
         inputs.readFromChildTag(tag, "inputs", registries);
         marks.readFromChildTag(tag, "marks", registries);

@@ -25,6 +25,7 @@ public class Config {
     public static final ModConfigSpec.DoubleValue STOCK_COST, RECHARGE_FE;
     public static final ModConfigSpec.IntValue PICK_CRAFT_AMOUNT;
     public static final ModConfigSpec.BooleanValue ARMOR_LINK_RANGE;
+    public static final ModConfigSpec.LongValue FUSION_OUTPUT_BUFFER;
 
     static {
         BUILDER.comment("Generators").push("generators");
@@ -42,6 +43,12 @@ public class Config {
                 .defineInRange("accretionOutput", 1_000_000L, 0L, Long.MAX_VALUE);
         ACCRETION_PER_HOLE = BUILDER.comment("Accretion Generator: how many one white hole feeds in full (more share it)")
                 .defineInRange("accretionPerHole", 4, 1, 6);
+        BUILDER.pop();
+
+        BUILDER.comment("Fusion generator").push("fusion");
+        FUSION_OUTPUT_BUFFER = BUILDER.comment("How much of the energy a reaction gives back the energy ports hold for cables to draw (FE);",
+                "what does not fit goes to the ME network")
+                .defineInRange("outputBuffer", 1_000_000_000_000L, 0L, Long.MAX_VALUE);
         BUILDER.pop();
 
         BUILDER.comment("Antigravity armor").push("armor");
