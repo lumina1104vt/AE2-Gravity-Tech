@@ -490,5 +490,10 @@
   "item.ae2_gvt.fe_storage_cell_4k": "FE 儲存元件 4K",
   "item.ae2_gvt.fe_storage_cell_16k": "FE 儲存元件 16K",
   "item.ae2_gvt.fe_storage_cell_64k": "FE 儲存元件 64K",
-  "item.ae2_gvt.fe_storage_cell_256k": "FE 儲存元件 256K"
+  "item.ae2_gvt.fe_storage_cell_256k": "FE 儲存元件 256K",
+  "ae2_gvt.tooltip.generator.output": "發電：%s FE/t",
+  "ae2_gvt.tooltip.generator.idle": "發電：待機",
+  "ae2_gvt.tooltip.fusion.temperature": "溫度：%s K",
+  "ae2_gvt.tooltip.fusion.in": "輸入：%s FE/t（緩衝 %s）",
+  "ae2_gvt.tooltip.fusion.out": "還電：%s FE/t（緩衝 %s）"
 }

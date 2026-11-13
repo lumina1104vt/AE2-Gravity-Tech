@@ -626,6 +626,16 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
     }
 
     /** Energy really burnt this tick. */
+    /** FE waiting in the input buffer (from the energy ports). */
+    public long storedFe() {
+        return storedFe;
+    }
+
+    /** FE a reaction gave back, waiting for cables to draw it. */
+    public long outFe() {
+        return outFe;
+    }
+
     public long energyIn() {
         return burning;
     }
