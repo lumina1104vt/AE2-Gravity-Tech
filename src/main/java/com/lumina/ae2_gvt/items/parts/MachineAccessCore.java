@@ -678,7 +678,30 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
                 seen.add(fluids);
                 recoverFluids(fluids, keep, network, source);
             }
+            IEnergyStorage energy = level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, d);
+            if (energy != null && seen.stream().noneMatch(o -> o == energy)) {
+                seen.add(energy);
+                recoverEnergy(energy, settings, network, source);
+            }
         }
+    }
+
+    /**
+     * The FE a machine gives out (a generator, an energy port's output) goes into the network's FE storage. A machine that also takes
+     * FE in (a battery) is left alone unless it is set to insert nothing (the output setting): it would be charged and drained again.
+     */
+    private static void recoverEnergy(IEnergyStorage energy, Settings settings, MEStorage network, IActionSource source) {
+        if (!energy.canExtract() || (energy.canReceive() && settings.insertMode != InsertMode.OUTPUT))
+            return;
+        int offered = energy.extractEnergy(Integer.MAX_VALUE, true);
+        if (offered <= 0)
+            return;
+        long room = network.insert(FeEnergy.key(), offered, Actionable.SIMULATE, source);
+        if (room <= 0)
+            return;
+        int taken = energy.extractEnergy((int) room, false);
+        if (taken > 0)
+            network.insert(FeEnergy.key(), taken, Actionable.MODULATE, source);
     }
 
     private static void recoverItems(IItemHandler items, Set<AEKey> keep, MEStorage network, IActionSource source) {
