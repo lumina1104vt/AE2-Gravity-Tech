@@ -693,7 +693,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
             IEnergyStorage energy = level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, d);
             if (settings.recoverEnergy && energy != null && seen.stream().noneMatch(o -> o == energy)) {
                 seen.add(energy);
-                recoverEnergy(energy, settings, network, source);
+                recoverEnergy(energy, settings, level.getBlockEntity(pos) instanceof com.lumina.ae2_gvt.blockentities.EnergyPortBlockEntity, network, source);
             }
         }
     }
@@ -701,9 +701,11 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
     /**
      * The FE a machine gives out (a generator, an energy port's output) goes into the network's FE storage. A machine that also takes
      * FE in (a battery) is left alone unless it is set to insert nothing (the output setting): it would be charged and drained again.
+     * (The setting is only on the screen in provider mode, so the fusion generator's energy port, which takes and gives in two buffers
+     * of its own, is taken back whatever it is set to.)
      */
-    private static void recoverEnergy(IEnergyStorage energy, Settings settings, MEStorage network, IActionSource source) {
-        if (!energy.canExtract() || (energy.canReceive() && settings.insertMode != InsertMode.OUTPUT))
+    private static void recoverEnergy(IEnergyStorage energy, Settings settings, boolean energyPort, MEStorage network, IActionSource source) {
+        if (!energy.canExtract() || (energy.canReceive() && !energyPort && settings.insertMode != InsertMode.OUTPUT))
             return;
         int offered = energy.extractEnergy(Integer.MAX_VALUE, true);
         if (offered <= 0)
