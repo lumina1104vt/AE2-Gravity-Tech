@@ -498,5 +498,8 @@
   "ae2_gvt.tooltip.fusion.out": "还电：%s FE/t（缓冲 %s）",
   "config.jade.plugin_ae2_gvt.generator": "发电机",
   "config.jade.plugin_ae2_gvt.fusion": "核聚变发生器",
-  "config.jade.plugin_ae2_gvt.energy_port": "能量接口"
+  "config.jade.plugin_ae2_gvt.energy_port": "能量接口",
+  "gui.ae2_gvt.machine_access.recover_energy": "收回 FE",
+  "gui.ae2_gvt.machine_access.recover_energy_on": "开启：机器输出的 FE 也收回网络（点击关闭）",
+  "gui.ae2_gvt.machine_access.recover_energy_off": "关闭：不收机器的 FE（点击开启）"
 }

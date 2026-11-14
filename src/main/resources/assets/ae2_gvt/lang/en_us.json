@@ -498,5 +498,8 @@
   "ae2_gvt.tooltip.fusion.out": "Given back: %s FE/t (buffer %s)",
   "config.jade.plugin_ae2_gvt.generator": "Generator",
   "config.jade.plugin_ae2_gvt.fusion": "Fusion Generator",
-  "config.jade.plugin_ae2_gvt.energy_port": "Energy Port"
+  "config.jade.plugin_ae2_gvt.energy_port": "Energy Port",
+  "gui.ae2_gvt.machine_access.recover_energy": "Take FE back",
+  "gui.ae2_gvt.machine_access.recover_energy_on": "On: the FE a machine gives out goes into the network (click to turn off)",
+  "gui.ae2_gvt.machine_access.recover_energy_off": "Off: the machine's FE is left alone (click to turn on)"
 }

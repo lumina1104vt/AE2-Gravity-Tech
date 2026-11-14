@@ -52,6 +52,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
     private final PageButton nextPage = new PageButton(false);
     private final GearButton[] gears = new GearButton[MachineAccessCore.STOCK_SLOTS];
     private final RecoverButton recoverButton = new RecoverButton();
+    private final RecoverEnergyButton recoverEnergyButton = new RecoverEnergyButton();
     private final FacesButton facesButton = new FacesButton();
     private final BlockingButton blocking = new BlockingButton();
     private final InsertModeButton insert = new InsertModeButton();
@@ -69,6 +70,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
             gears[i] = new GearButton(i);
         addToLeftToolbar(modeButton);
         addToLeftToolbar(recoverButton);
+        addToLeftToolbar(recoverEnergyButton);
         addToLeftToolbar(facesButton);
         addToLeftToolbar(blocking);
         addToLeftToolbar(insert);
@@ -106,6 +108,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
         for (IconButton b : new IconButton[]{blocking, insert, groupButton, range, pulse})
             b.setVisibility(provider);     // the machine's settings are the provider's
         recoverButton.setVisibility(!provider);
+        recoverEnergyButton.setVisibility(!provider && menu.recover);     // the FE a machine gives out, taken back as well
         facesButton.setVisibility(!provider && menu.recover);     // the ME interface's: take the output back, from which faces
         if (provider || !menu.recover)
             facesOpen = false;
@@ -537,6 +540,39 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
         public List<Component> getTooltipMessage() {
             return List.of(Component.translatable("gui.ae2_gvt.machine_access.recover"),
                     Component.translatable(menu.recover ? "gui.ae2_gvt.machine_access.recover_on" : "gui.ae2_gvt.machine_access.recover_off")
+                            .withStyle(ChatFormatting.GRAY));
+        }
+    }
+
+    /** ME interface mode: whether the FE a machine gives out is taken back into the network too. */
+    private final class RecoverEnergyButton extends IconButton {
+        RecoverEnergyButton() {
+            super(btn -> menu.toggleRecoverEnergy());
+        }
+
+        @Override
+        protected Icon getIcon() {
+            return null;    // the background only; the FE icon is drawn on it
+        }
+
+        @Override
+        public void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+            super.renderWidget(g, mouseX, mouseY, partialTick);
+            if (!visible)
+                return;
+            int y = getY() + (isHovered() ? 1 : 0);
+            g.pose().pushPose();
+            g.pose().translate(0, 0, 100);
+            g.renderItem(new ItemStack(com.lumina.ae2_gvt.storage.FeEnergy.ICON.get()), getX(), y);
+            if (!menu.recoverEnergy)
+                g.fill(getX(), y, getX() + 16, y + 16, 0xB0C6C6C6);      // greyed out: off
+            g.pose().popPose();
+        }
+
+        @Override
+        public List<Component> getTooltipMessage() {
+            return List.of(Component.translatable("gui.ae2_gvt.machine_access.recover_energy"),
+                    Component.translatable(menu.recoverEnergy ? "gui.ae2_gvt.machine_access.recover_energy_on" : "gui.ae2_gvt.machine_access.recover_energy_off")
                             .withStyle(ChatFormatting.GRAY));
         }
     }

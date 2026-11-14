@@ -43,7 +43,7 @@ public class MachineAccessMenu extends AEBaseMenu {
     private static final String SELECT = "selectMachine";
     private static final String STEP_PAGE = "stepMachinePage";
     private static final String SET_MODE = "setAccessMode";
-    private static final String TOGGLE_RECOVER = "toggleRecover";
+    private static final String TOGGLE_RECOVER = "toggleRecover", TOGGLE_RECOVER_ENERGY = "toggleRecoverEnergy";
     private static final String RECOVER_FACE = "toggleRecoverFace";
     /** Pairing numbers: 0 (none) to this. */
     private static final int MAX_GROUP = 16;
@@ -88,6 +88,9 @@ public class MachineAccessMenu extends AEBaseMenu {
     public boolean recover;
     @GuiSync(26)
     public int recoverMask;
+    /** whether the FE a machine gives out is taken back too */
+    @GuiSync(27)
+    public boolean recoverEnergy;
     /** the network's count of what the selected machine's stock slots hold, one per slot */
     @GuiSync(30) public long net0;
     @GuiSync(31) public long net1;
@@ -165,6 +168,7 @@ public class MachineAccessMenu extends AEBaseMenu {
         registerClientAction(STEP_PAGE, Boolean.class, this::stepMachinePage);
         registerClientAction(SET_MODE, Integer.class, this::setAccessMode);
         registerClientAction(TOGGLE_RECOVER, this::toggleRecover);
+        registerClientAction(TOGGLE_RECOVER_ENERGY, this::toggleRecoverEnergy);
         registerClientAction(RECOVER_FACE, Integer.class, this::toggleRecoverFace);
     }
 
@@ -240,6 +244,15 @@ public class MachineAccessMenu extends AEBaseMenu {
         }
         var s = part.settings(selected);
         s.setRecover(!s.isRecover());
+    }
+
+    public void toggleRecoverEnergy() {
+        if (isClientSide()) {
+            sendClientAction(TOGGLE_RECOVER_ENERGY);
+            return;
+        }
+        var s = part.settings(selected);
+        s.setRecoverEnergy(!s.isRecoverEnergy());
     }
 
     public void toggleRecoverFace(Integer face) {
@@ -368,6 +381,7 @@ public class MachineAccessMenu extends AEBaseMenu {
             subRange = s.getSubRange();
             redstonePulse = s.isRedstonePulse();
             recover = s.isRecover();
+            recoverEnergy = s.isRecoverEnergy();
             int mask = 0;
             for (var d : net.minecraft.core.Direction.values())
                 if (s.recoversFrom(d))

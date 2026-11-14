@@ -104,6 +104,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         private boolean redstonePulse;
         /** ME interface mode takes back what the machine gives out, from the faces in the mask ({@link Direction#ordinal} bits) */
         private boolean recover = true;
+        private boolean recoverEnergy = true;
         private int recoverMask = 0x3F;
         /** what it keeps in the machine (ME interface mode), and how much (ghost stacks) */
         private final ConfigInventory stock = ConfigInventory.configStacks(STOCK_SLOTS)
@@ -168,6 +169,15 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
             markForSave();
         }
 
+        /** Whether the FE a machine gives out is taken back as well. */
+        public boolean isRecoverEnergy() {
+            return recoverEnergy;
+        }
+
+        public void setRecoverEnergy(boolean on) {
+            recoverEnergy = on;
+        }
+
         public boolean isRecover() {
             return recover;
         }
@@ -206,6 +216,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
             tag.putInt("subRange", subRange);
             tag.putBoolean("redstonePulse", redstonePulse);
             tag.putBoolean("recover", recover);
+            tag.putBoolean("recoverEnergy", recoverEnergy);
             tag.putInt("recoverMask", recoverMask);
             stock.writeToChildTag(tag, "stock", registries);
         }
@@ -226,6 +237,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
             subRange = tag.contains("subRange") ? Math.max(1, Math.min(MAX_SUB_RANGE, tag.getInt("subRange"))) : 3;
             redstonePulse = tag.getBoolean("redstonePulse");
             recover = !tag.contains("recover") || tag.getBoolean("recover");
+            recoverEnergy = !tag.contains("recoverEnergy") || tag.getBoolean("recoverEnergy");
             recoverMask = tag.contains("recoverMask") ? tag.getInt("recoverMask") & 0x3F : 0x3F;
             stock.readFromChildTag(tag, "stock", registries);
         }
@@ -679,7 +691,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
                 recoverFluids(fluids, keep, network, source);
             }
             IEnergyStorage energy = level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, d);
-            if (energy != null && seen.stream().noneMatch(o -> o == energy)) {
+            if (settings.recoverEnergy && energy != null && seen.stream().noneMatch(o -> o == energy)) {
                 seen.add(energy);
                 recoverEnergy(energy, settings, network, source);
             }
