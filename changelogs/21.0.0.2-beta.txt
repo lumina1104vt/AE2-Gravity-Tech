@@ -22,6 +22,7 @@
 - The guide book loads again.
 - The Energy Ports of the Fusion Generator can be drawn from now: what a reaction gives back is kept for cables to take, and what does not fit goes to the network as before.
 - The plasma of the Fusion Generator no longer cools right after a world loads, before the network has its energy back.
+- Annihilation TNT also removes mobs that shrug off every hit, which it did not kill before.
 
 ---
 
@@ -49,3 +50,4 @@
 - 導覽書可以正常載入。
 - 核融合發生器的能量接口現在可以抽電：反應還回來的電會留著讓電纜來抽，放不下的才像原本一樣進網路。
 - 核融合發生器的電漿，不會在剛讀進世界、網路還沒恢復供電的時候就冷卻掉。
+- 湮滅 TNT 現在也會消掉怎麼打都不受傷的生物，之前殺不死它們。

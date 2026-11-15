@@ -48,7 +48,8 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * but leaves no chaos matter. The crater's wall turns to sky stone in patches, and a permanent tear in
  * space is left at the centre ({@link SpaceRift}).
  * <p>
- * Whatever lives inside is struck once as the blast reaches it (a totem saves it, armour does not); a
+ * Whatever lives inside is struck once as the blast reaches it (a totem saves a player, armour does not; a mob that survives the hit
+ * is removed all the same); a
  * shockwave hurts out to twice the radius. A blast in progress is not saved: a restart leaves the crater
  * unfinished.
  */
@@ -182,8 +183,13 @@ public final class AnnihilationBlast {
             for (Entity e : level.getEntities((Entity) null, new AABB(at, at).inflate(far), Entity::isAlive)) {
                 double d = e.position().distanceTo(at);
                 if (e instanceof LivingEntity living) {
-                    if (d <= reached && hit.add(e.getUUID()))
+                    if (d <= reached && hit.add(e.getUUID())) {
                         living.hurt(annihilation, KILL);
+                        // something that shrugs every hit off (a mob whose hurt does nothing) is annihilated all the same; a player
+                        // is left to the totem and creative mode
+                        if (living.isAlive() && !(living instanceof Player))
+                            living.kill();
+                    }
                     else if (d > RADIUS && d <= far && radius > RADIUS && hit.add(e.getUUID()))
                         living.hurt(level.damageSources().explosion(null), SHOCKWAVE * (float) (1 - (d - RADIUS) / RADIUS));
                 } else if (d <= reached && !(e instanceof Player)) {
