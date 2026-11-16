@@ -164,7 +164,7 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
 
         @Override
         public int getMaxEnergyStored() {
-            return (int) Math.min(Config.FUSION_OUTPUT_BUFFER.get(), Integer.MAX_VALUE);
+            return (int) Math.min(outCapacity(), Integer.MAX_VALUE);
         }
 
         @Override
@@ -229,6 +229,12 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
                 return;
         }
         be.temperature += (goal - be.temperature) * RATE;
+    }
+
+    /** What the energy ports can hold of what a reaction gave back: a second of it (at least a million), never above the config. */
+    private long outCapacity() {
+        long second = giving > Long.MAX_VALUE / FE_BUFFER_TICKS ? Long.MAX_VALUE : giving * FE_BUFFER_TICKS;
+        return Math.min(Config.FUSION_OUTPUT_BUFFER.get(), Math.max(MIN_FE_BUFFER, second));
     }
 
     private long feCapacity() {
@@ -306,8 +312,9 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
     private void giveBack() {
         if (giving <= 0)
             return;
-        // the energy ports' buffer first, what does not fit to the network
-        long toBuffer = Math.min(giving, Math.max(0, Config.FUSION_OUTPUT_BUFFER.get() - outFe));
+        // the energy ports' buffer first, what does not fit to the network: the buffer holds a second of the giving, so with no
+        // cable drawing it is full at once and everything goes to the network's power
+        long toBuffer = Math.min(giving, Math.max(0, outCapacity() - outFe));
         outFe += toBuffer;
         long rest = giving - toBuffer;
         if (rest > 0 && getMainNode().isActive() && getMainNode().getGrid() != null)
