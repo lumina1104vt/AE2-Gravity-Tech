@@ -83,20 +83,47 @@ public class HexagramHubRenderer implements BlockEntityRenderer<TwinStarHubBlock
      * and give the cosmos shader its rim.
      */
     private static void cosmos(PoseStack.Pose pose, VertexConsumer vc, float r, int lats, int lons) {
+        float[] dirs = sphere(lats, lons);
+        int row = (lons + 1) * 3;
         for (int i = 0; i < lats; i++) {
             for (int j = 0; j < lons; j++) {
-                Vector3f a = dir(i, j, lats, lons), b = dir(i + 1, j, lats, lons), c = dir(i + 1, j + 1, lats, lons), d = dir(i, j + 1, lats, lons);
-                for (Vector3f v : new Vector3f[] {a, b, c, d}) {   // faces the centre (a, d, c, b would face out)
-                    vc.addVertex(pose, v.x * r, v.y * r, v.z * r).setColor(255, 255, 255, 255).setUv(0, 0)
-                            .setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(pose, v.x, v.y, v.z);
-                }
+                // a (i, j), b (i + 1, j), c (i + 1, j + 1), d (i, j + 1)
+                int a = i * row + j * 3, b = a + row, c = b + 3, d = a + 3;
+                cosmosVertex(pose, vc, dirs, a, r);
+                cosmosVertex(pose, vc, dirs, b, r);
+                cosmosVertex(pose, vc, dirs, c, r);
+                cosmosVertex(pose, vc, dirs, d, r);
             }
         }
     }
 
-    private static Vector3f dir(int i, int j, int lats, int lons) {
-        double th = Math.PI * i / lats, ph = 2 * Math.PI * j / lons;
-        return new Vector3f((float) (Math.sin(th) * Math.cos(ph)), (float) Math.cos(th), (float) (Math.sin(th) * Math.sin(ph)));
+    private static void cosmosVertex(PoseStack.Pose pose, VertexConsumer vc, float[] dirs, int at, float r) {
+        float x = dirs[at], y = dirs[at + 1], z = dirs[at + 2];
+        vc.addVertex(pose, x * r, y * r, z * r).setColor(255, 255, 255, 255).setUv(0, 0)
+                .setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(pose, x, y, z);
+    }
+
+    private static float[] sphereDirs;
+    private static int sphereLats, sphereLons;
+
+    /** The unit directions of the sphere's grid, worked out once: (lats + 1) rows of (lons + 1) points, three floats each. */
+    private static synchronized float[] sphere(int lats, int lons) {
+        if (sphereDirs == null || sphereLats != lats || sphereLons != lons) {
+            float[] out = new float[(lats + 1) * (lons + 1) * 3];
+            int n = 0;
+            for (int i = 0; i <= lats; i++) {
+                for (int j = 0; j <= lons; j++) {
+                    double th = Math.PI * i / lats, ph = 2 * Math.PI * j / lons;
+                    out[n++] = (float) (Math.sin(th) * Math.cos(ph));
+                    out[n++] = (float) Math.cos(th);
+                    out[n++] = (float) (Math.sin(th) * Math.sin(ph));
+                }
+            }
+            sphereDirs = out;
+            sphereLats = lats;
+            sphereLons = lons;
+        }
+        return sphereDirs;
     }
 
     /**
