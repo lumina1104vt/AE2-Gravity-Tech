@@ -104,6 +104,10 @@ abstract class ConnectedQuarterModel implements IDynamicBakedModel {
         int at = 1 + side.ordinal() * 4;
         int[] open = {9, 3, 12, 6};   // the four outer corners, for an item
         List<Vector3f> c = CORNERS.get(side);
+        // four quarters of the same tile make the whole tile: one quad instead of four (most faces of a big structure are plain),
+        // a quarter of the vertices to build, keep and draw
+        if (layout != null && layout[at] == layout[at + 1] && layout[at] == layout[at + 2] && layout[at] == layout[at + 3])
+            return List.of(quad(side, c, layout[at], row, 0, 0, 1, 1));
         List<BakedQuad> quads = new ArrayList<>(4);
         float[][] quarters = {{0, 0}, {.5f, 0}, {0, .5f}, {.5f, .5f}};
         for (int q = 0; q < 4; q++) {

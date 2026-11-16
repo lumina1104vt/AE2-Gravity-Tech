@@ -37,7 +37,9 @@ public class HexagramHubRenderer implements BlockEntityRenderer<TwinStarHubBlock
     // the ring blocks' nearest corners are 14.85 from the centre: stay clear of them
     private static final float SPHERE = HexagramHub.SPHERE_RADIUS - 0.25f;
     private static final float HOLE = 1.8f, ORBIT = 3.6f;                   // hole radius, centre distance from the middle
-    private static final int TAIL_STEPS = 64;
+    private static final int[] TAIL_STEPS = {16, 32, 64};      // by the hub detail setting: low, medium, high
+    private static final int[][] SPHERE_GRID = {{12, 24}, {20, 40}, {32, 64}};
+    private static final int[][] HOLE_GRID = {{12, 20}, {18, 30}, {24, 40}};
     private static final float TAIL_TURN = 3.9f, TAIL_GROWTH = 7.0f, TAIL_WIDTH = 1.5f;   // radians behind, extra radius, width at the hole
 
     @Override
@@ -53,7 +55,8 @@ public class HexagramHubRenderer implements BlockEntityRenderer<TwinStarHubBlock
         poseStack.translate(0.5, 0.5 + HexagramHub.SPHERE_ABOVE_CONTROLLER, 0.5);
         PoseStack.Pose pose = poseStack.last();
 
-        cosmos(pose, buffers.getBuffer(HexagramHubClient.COSMOS), SPHERE, 32, 64);
+        int detail = com.lumina.ae2_gvt.config.ClientConfig.HUB_DETAIL.get();
+        cosmos(pose, buffers.getBuffer(HexagramHubClient.COSMOS), SPHERE, SPHERE_GRID[detail][0], SPHERE_GRID[detail][1]);
 
         // orbit plane: tilted 25 degrees, the tilt itself slowly going round
         float tilt = (float) Math.toRadians(25), precess = t * 0.05f;
@@ -63,9 +66,9 @@ public class HexagramHubRenderer implements BlockEntityRenderer<TwinStarHubBlock
         float angle = t * 0.9f;   // about one orbit every 7 s
         Vector3f axis = along(e1, e2, angle, 1);   // white -> black, through the middle
 
-        TwinHoleMesh.draw(pose, buffers.getBuffer(TwinHoleRenderTypes.TWIN_HOLE), axis, 2 * ORBIT, HOLE, 0, 24, 40);
-        tail(pose, buffers.getBuffer(DARK_TAIL), e1, e2, normal, angle, 0x0c0a16, 235);
-        tail(pose, buffers.getBuffer(BRIGHT_TAIL), e1, e2, normal, angle + (float) Math.PI, 0xffffff, 255);
+        TwinHoleMesh.draw(pose, buffers.getBuffer(TwinHoleRenderTypes.TWIN_HOLE), axis, 2 * ORBIT, HOLE, 0, HOLE_GRID[detail][0], HOLE_GRID[detail][1]);
+        tail(pose, buffers.getBuffer(DARK_TAIL), e1, e2, normal, angle, 0x0c0a16, 235, TAIL_STEPS[detail]);
+        tail(pose, buffers.getBuffer(BRIGHT_TAIL), e1, e2, normal, angle + (float) Math.PI, 0xffffff, 255, TAIL_STEPS[detail]);
         poseStack.popPose();
     }
 
@@ -130,9 +133,9 @@ public class HexagramHubRenderer implements BlockEntityRenderer<TwinStarHubBlock
      * A tail behind the hole now at {@code angle}: it follows the orbit backwards, spiralling outwards,
      * thinning and fading. Two crossed ribbons (in the orbit plane and across it) so it reads from any side.
      */
-    private static void tail(PoseStack.Pose pose, VertexConsumer vc, Vector3f e1, Vector3f e2, Vector3f normal, float angle, int rgb, int alpha) {
-        for (int i = 0; i < TAIL_STEPS; i++) {
-            float f0 = (float) i / TAIL_STEPS, f1 = (float) (i + 1) / TAIL_STEPS;
+    private static void tail(PoseStack.Pose pose, VertexConsumer vc, Vector3f e1, Vector3f e2, Vector3f normal, float angle, int rgb, int alpha, int steps) {
+        for (int i = 0; i < steps; i++) {
+            float f0 = (float) i / steps, f1 = (float) (i + 1) / steps;
             Vector3f p0 = point(e1, e2, angle, f0), p1 = point(e1, e2, angle, f1);
             Vector3f out0 = new Vector3f(p0).normalize(), out1 = new Vector3f(p1).normalize();
             float w0 = TAIL_WIDTH * (1 - f0), w1 = TAIL_WIDTH * (1 - f1);

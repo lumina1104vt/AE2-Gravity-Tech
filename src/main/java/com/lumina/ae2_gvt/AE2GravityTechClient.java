@@ -21,6 +21,7 @@ public class AE2GravityTechClient {
     public AE2GravityTechClient(ModContainer container) {
         // AE2 19 bakes a part's models only if they are registered before its model loading (it reads
         // the @PartModels fields of each part class); the ae2/parts/*.json of newer AE2 is not read
+        container.registerConfig(net.neoforged.fml.config.ModConfig.Type.CLIENT, com.lumina.ae2_gvt.config.ClientConfig.SPEC);
         PartModels.registerModels(PartModelsHelper.createModels(MachineAccessInterface.class));
         PartModels.registerModels(PartModelsHelper.createModels(TwinStarPatternTerminalPart.class));
     }
