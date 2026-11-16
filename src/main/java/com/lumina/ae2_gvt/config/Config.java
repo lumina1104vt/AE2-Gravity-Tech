@@ -1,8 +1,13 @@
 package com.lumina.ae2_gvt.config;
 
+import com.lumina.twinstar.algorithm.execution.ExecutionSettings;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /** What the numbers of the generators and the antigravity armor are (the file is config/ae2_gvt-common.toml). */
+@EventBusSubscriber(modid = com.lumina.ae2_gvt.AE2GravityTech.MODID, bus = EventBusSubscriber.Bus.MOD)
 public class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
@@ -26,6 +31,7 @@ public class Config {
     public static final ModConfigSpec.IntValue PICK_CRAFT_AMOUNT;
     public static final ModConfigSpec.BooleanValue ARMOR_LINK_RANGE;
     public static final ModConfigSpec.LongValue FUSION_OUTPUT_BUFFER;
+    public static final ModConfigSpec.IntValue GUI_POLL_TICKS, TOOL_DELAY_TICKS;
 
     static {
         BUILDER.comment("Generators").push("generators");
@@ -43,6 +49,13 @@ public class Config {
                 .defineInRange("accretionOutput", 1_000_000L, 0L, Long.MAX_VALUE);
         ACCRETION_PER_HOLE = BUILDER.comment("Accretion Generator: how many one white hole feeds in full (more share it)")
                 .defineInRange("accretionPerHole", 4, 1, 6);
+        BUILDER.pop();
+
+        BUILDER.comment("Twin-star machines").push("machines");
+        GUI_POLL_TICKS = BUILDER.comment("How often (ticks) a machine that takes items only through a GUI (a forge, Immersive Engineering's alloy smelter) is looked into for its products")
+                .defineInRange("guiPollTicks", 1, 1, 1200);
+        TOOL_DELAY_TICKS = BUILDER.comment("How long (ticks) such a machine is left alone between its last material and the tool right-click")
+                .defineInRange("toolDelayTicks", 1, 0, 200);
         BUILDER.pop();
 
         BUILDER.comment("Fusion generator").push("fusion");
@@ -84,4 +97,11 @@ public class Config {
     }
 
     public static final ModConfigSpec SPEC = BUILDER.build();
+
+    /** The engine has no config: the mod hands it these when the file is loaded and when it is changed. */
+    @SubscribeEvent
+    static void onConfig(ModConfigEvent event) {
+        if (event.getConfig().getSpec() == SPEC)
+            ExecutionSettings.set(GUI_POLL_TICKS.get(), TOOL_DELAY_TICKS.get());
+    }
 }
