@@ -15,7 +15,7 @@
 ### Changes
 - The White Hole Energy Cell and the Black Hole Storage Cell need 5,000,000 K in the Fusion Generator (about 10 billion FE/t) and the reaction gives no energy back.
 - Needs NeoForge 21.1.251 or newer (it was 21.1.262).
-- The Twin-Star Hub and the connected frame blocks use less memory to draw (a plain face of a frame is one quad now, not four), and the hub's inside has a detail setting for slow computers (config/ae2_gvt-client.toml, hubDetail).
+- The Twin-Star Hub and the connected frame blocks use less memory to draw (a plain face of a frame is one quad now, not four), and the hub's inside and black and white holes have detail settings for slow computers (config/ae2_gvt-client.toml, hubDetail and holeDetail).
 
 ### Fixes
 - A black or white hole made by AE2's tiny TNT is no longer broken by the same explosion.
@@ -44,7 +44,7 @@
 ### 調整
 - 白洞能源元件和黑洞存儲磁盤在核融合發生器裡需要 5,000,000 K（約 100 億 FE/t），反應期間不再還電。
 - 需要 NeoForge 21.1.251 以上（原本是 21.1.262）。
-- 雙星中樞和相連的框架方塊畫起來更省記憶體（框架的平面一面只用一個四邊形，不是四個），中樞內部多了給慢電腦用的細緻度設定（config/ae2_gvt-client.toml 的 hubDetail）。
+- 雙星中樞和相連的框架方塊畫起來更省記憶體（框架的平面一面只用一個四邊形，不是四個），中樞內部和黑白洞多了給慢電腦用的細緻度設定（config/ae2_gvt-client.toml 的 hubDetail 和 holeDetail）。
 
 ### 修正
 - AE2 迷你 TNT 炸出的黑洞或白洞，不會再被同一次爆炸炸掉。

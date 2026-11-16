@@ -45,10 +45,13 @@ import com.lumina.ae2_gvt.AE2GravityTech;
 public final class HoleRenderer {
     /** Lens panel half-size and accretion disc radii, in hole radii. */
     static final float LENS = 7f, DISC_IN = 1.25f, DISC_OUT = 2.7f;
-    private static final double RANGE = 96;
-    private static final int LATS = 24, LONS = 32, DISC_SEGMENTS = 64;
-    /** Holes drawn per frame (each costs a copy of the frame). */
-    private static final int MAX_HOLES = 8;
+    /** By the client's hole detail (low, medium, high): how far a hole is drawn, the mesh of its body and disc, and how many at once. */
+    private static final double[] RANGES = {48, 72, 96};
+    private static final int[] LAT_STEPS = {10, 16, 24}, LON_STEPS = {14, 22, 32}, DISC_STEPS = {24, 40, 64};
+    /** Holes drawn per frame (each costs two copies of the frame). */
+    private static final int[] MAX_BY_DETAIL = {2, 4, 8};
+    private static double range = RANGES[2];
+    private static int LATS = 24, LONS = 32, DISC_SEGMENTS = 64, MAX_HOLES = 8;
 
     private HoleRenderer() {
     }
@@ -62,11 +65,17 @@ public final class HoleRenderer {
         if (mc.level == null) {
             return;
         }
+        int detail = com.lumina.ae2_gvt.config.ClientConfig.HOLE_DETAIL.get();
+        range = RANGES[detail];
+        LATS = LAT_STEPS[detail];
+        LONS = LON_STEPS[detail];
+        DISC_SEGMENTS = DISC_STEPS[detail];
+        MAX_HOLES = MAX_BY_DETAIL[detail];
         Camera camera = event.getCamera();
         Vec3 cam = camera.getPosition();
         List<GravityHoleBlockEntity> holes = new ArrayList<>();
         for (GravityHoleBlockEntity hole : GravityHoleBlockEntity.CLIENT_HOLES) {
-            if (hole.getLevel() == mc.level && !hole.isRemoved() && centre(hole).distanceToSqr(cam) < RANGE * RANGE) {
+            if (hole.getLevel() == mc.level && !hole.isRemoved() && centre(hole).distanceToSqr(cam) < range * range) {
                 holes.add(hole);
             }
         }
