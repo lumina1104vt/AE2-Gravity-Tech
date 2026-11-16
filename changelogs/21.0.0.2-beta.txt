@@ -20,7 +20,7 @@
 - A black or white hole made by AE2's tiny TNT is no longer broken by the same explosion.
 - Items on a pedestal are no longer swapped out by the next material.
 - The guide book loads again.
-- The Energy Ports of the Fusion Generator can be drawn from now: what a reaction gives back is kept (up to a second of it) for cables to take, and the rest goes to the network's power as before.
+- The Energy Ports of the Fusion Generator can be drawn from now: what a reaction gives back goes to the network's power while it has room (as before), and what the network cannot take is kept (up to a second of it) for cables to draw.
 - The plasma of the Fusion Generator no longer cools right after a world loads, before the network has its energy back.
 - Annihilation TNT also removes mobs that shrug off every hit, which it did not kill before.
 
@@ -48,6 +48,6 @@
 - AE2 迷你 TNT 炸出的黑洞或白洞，不會再被同一次爆炸炸掉。
 - 基座上的東西不會再被下一個材料換掉。
 - 導覽書可以正常載入。
-- 核融合發生器的能量接口現在可以抽電：反應還回來的電會留一秒的量讓電纜來抽，其餘像原本一樣進網路電力。
+- 核融合發生器的能量接口現在可以抽電：反應還回來的電，網路電力有空間時照原本進網路，網路收不下的才留一秒的量讓電纜來抽。
 - 核融合發生器的電漿，不會在剛讀進世界、網路還沒恢復供電的時候就冷卻掉。
 - 湮滅 TNT 現在也會消掉怎麼打都不受傷的生物，之前殺不死它們。

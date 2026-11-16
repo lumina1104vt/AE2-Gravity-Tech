@@ -312,13 +312,21 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
     private void giveBack() {
         if (giving <= 0)
             return;
-        // the energy ports' buffer first, what does not fit to the network: the buffer holds a second of the giving, so with no
-        // cable drawing it is full at once and everything goes to the network's power
-        long toBuffer = Math.min(giving, Math.max(0, outCapacity() - outFe));
-        outFe += toBuffer;
-        long rest = giving - toBuffer;
-        if (rest > 0 && getMainNode().isActive() && getMainNode().getGrid() != null)
-            getMainNode().getGrid().getEnergyService().injectPower(PowerUnit.FE.convertTo(PowerUnit.AE, rest), Actionable.MODULATE);
+        long left = giving;
+        // the network's power first, as far as it has room: a network that is full, or one that swallows without end (a creative
+        // energy cell: its maximum is what it holds) takes nothing and the energy goes to the energy ports
+        if (getMainNode().isActive() && getMainNode().getGrid() != null) {
+            var energy = getMainNode().getGrid().getEnergyService();
+            double room = energy.getMaxStoredPower() - energy.getStoredPower();
+            if (room > 0) {
+                double offered = Math.min(PowerUnit.FE.convertTo(PowerUnit.AE, left), room);
+                double refused = energy.injectPower(offered, Actionable.MODULATE);
+                left -= Math.min(left, (long) PowerUnit.AE.convertTo(PowerUnit.FE, offered - refused));
+            }
+        }
+        // then the energy ports' buffer, for the cables that draw it (what it cannot hold is lost)
+        if (left > 0)
+            outFe += Math.min(left, Math.max(0, outCapacity() - outFe));
     }
 
     private record Made(long at, AEKey key, long amount) {
