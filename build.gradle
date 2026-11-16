@@ -114,6 +114,9 @@ dependencies {
     compileOnly "maven.modrinth:jade:${jade_version}"
     localRuntime "maven.modrinth:jade:${jade_version}"
 
+    // Immersive Engineering: only to try its machines (the alloy smelter takes its items through a GUI)
+    localRuntime "maven.modrinth:immersiveengineering:${immersiveengineering_version}"
+
     // ExtendedAE (EAE) and ExtendedAE-Plus (EAEP): compile against them for compat later, run them in
     // the dev client; EAE needs glodium and ae2wtlib (its wireless terminal API)
     compileOnly "maven.modrinth:extended-ae:${extendedae_version}"
