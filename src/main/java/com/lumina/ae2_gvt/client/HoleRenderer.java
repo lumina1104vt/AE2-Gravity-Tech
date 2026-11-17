@@ -49,8 +49,8 @@ public final class HoleRenderer {
     /** By the client's hole detail (low, medium, high): how far a hole is drawn, the mesh of its body and disc, and how many at once. */
     private static final double[] RANGES = {48, 72, 96};
     private static final int[] LAT_STEPS = {10, 16, 24}, LON_STEPS = {14, 22, 32}, DISC_STEPS = {24, 40, 64};
-    /** Holes drawn per frame (each costs two copies of the frame). */
-    private static final int[] MAX_BY_DETAIL = {2, 4, 8};
+    /** Holes drawn per frame: at the highest detail each costs two half-size copies of the frame, at medium one, at the lowest none. */
+    private static final int[] MAX_BY_DETAIL = {16, 8, 8};
     private static double range = RANGES[2];
     private static int LATS = 24, LONS = 32, DISC_SEGMENTS = 64, MAX_HOLES = 8;
 
