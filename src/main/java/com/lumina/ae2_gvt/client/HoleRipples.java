@@ -33,7 +33,7 @@ public final class HoleRipples {
     static final RenderType RIPPLE = RenderType.create("ae2_gvt_hole_ripple", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 8192,
             false, false, RenderType.CompositeState.builder()
                     .setShaderState(new RenderStateShard.ShaderStateShard(() -> ClientShaders.holeRipple))
-                    .setTextureState(SceneSnapshot.TEXTURE)
+                    .setTextureState(SceneSnapshot.TEXTURE_HALF)
                     .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
                     .setWriteMaskState(RenderStateShard.COLOR_WRITE)
                     .setCullState(RenderStateShard.NO_CULL)
@@ -83,7 +83,7 @@ public final class HoleRipples {
             float t = (float) Math.max(0, (now - b.start()) / BURST_LIFE);
             float out = 1 - (float) Math.pow(1 - t, 2.5);     // fast at first, slowing down
             float fade = (float) Math.pow(1 - t, 1.5);
-            SceneSnapshot.capture(mc.getMainRenderTarget());
+            SceneSnapshot.captureHalf(mc.getMainRenderTarget());
             VertexConsumer vc = buffers.getBuffer(RIPPLE);
             Vec3 at = b.at().subtract(cam);
             // the leading shell pushes out, the next pulls in, the last pushes a little: a wave, not a step

@@ -8,6 +8,7 @@
 // so a far ripple warps less.
 
 uniform sampler2D Sampler0;
+uniform sampler2D Sampler1;   // depth of the frame (full size)
 uniform mat4 ProjMat;
 
 in vec3 viewPos;
@@ -27,7 +28,7 @@ void main() {
         discard;
     }
     vec2 dir = length(n.xy) > 0.0001 ? normalize(n.xy) : vec2(0.0);
-    vec2 size = vec2(textureSize(Sampler0, 0));
+    vec2 size = vec2(textureSize(Sampler1, 0));     // the whole frame: Sampler0 is a half-size copy of it
     float pxPerBlock = ProjMat[1][1] * 0.5 * size.y / max(-viewPos.z, 0.5);
     vec2 uv = (gl_FragCoord.xy - dir * push * pxPerBlock) / size;
     vec3 c = texture(Sampler0, clamp(uv, vec2(0.0), vec2(1.0))).rgb;

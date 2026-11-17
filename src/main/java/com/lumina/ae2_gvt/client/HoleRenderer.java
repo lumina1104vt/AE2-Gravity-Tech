@@ -14,6 +14,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.world.phys.Vec3;
@@ -96,18 +97,22 @@ public final class HoleRenderer {
         Vector3f right = new Vector3f(camera.getLeftVector()).negate();
         Vector3f up = new Vector3f(camera.getUpVector());
         float r = GravityHole.RADIUS;
+        boolean bends = detail > 0;
         for (GravityHoleBlockEntity hole : holes) {
-            SceneSnapshot.capture(mc.getMainRenderTarget(), true);
+            // the lowest detail copies nothing: no bending, only the rings over the scene
+            RenderType lensType = bends ? HoleRenderTypes.LENS : HoleRenderTypes.LENS_FLAT;
+            if (bends)
+                SceneSnapshot.captureHalf(mc.getMainRenderTarget());
             Vec3 at = centre(hole).subtract(cam);
             Vector3f c = new Vector3f((float) at.x, (float) at.y, (float) at.z);
             int white = hole.isWhite() ? 255 : 0;
 
-            VertexConsumer lens = buffers.getBuffer(HoleRenderTypes.LENS);
+            VertexConsumer lens = buffers.getBuffer(lensType);
             for (int[] k : new int[][] {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}}) {
                 Vector3f p = new Vector3f(c).add(new Vector3f(right).mul(k[0] * LENS * r)).add(new Vector3f(up).mul(k[1] * LENS * r));
-                vertex(lens, pose, p, k[0] * LENS, k[1] * LENS, white, 0, 0, 0, 1);
+                vertex(lens, pose, p, k[0] * LENS, k[1] * LENS, white, bends ? 0 : 255, 0, 0, 1);
             }
-            buffers.endBatch(HoleRenderTypes.LENS);
+            buffers.endBatch(lensType);
 
             sphere(buffers.getBuffer(HoleRenderTypes.BODY), pose, c, r, white);
             buffers.endBatch(HoleRenderTypes.BODY);
@@ -115,8 +120,11 @@ public final class HoleRenderer {
             disc(buffers.getBuffer(HoleRenderTypes.DISC), pose, c, r, white, tilt(hole));
             buffers.endBatch(HoleRenderTypes.DISC);
 
-            SceneSnapshot.capture(mc.getMainRenderTarget());
-            HoleRipples.ambient(buffers, cam, hole, now);
+            // the small ripple warps the frame with the hole in it, so it needs a fresh copy (only at the highest detail)
+            if (detail == 2) {
+                SceneSnapshot.captureHalf(mc.getMainRenderTarget());
+                HoleRipples.ambient(buffers, cam, hole, now);
+            }
         }
         HoleRipples.bursts(buffers, cam, now);
     }

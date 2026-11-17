@@ -19,7 +19,16 @@ public final class HoleRenderTypes {
     static final RenderType LENS = RenderType.create("ae2_gvt_hole_lens", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256,
             false, false, RenderType.CompositeState.builder()
                     .setShaderState(new RenderStateShard.ShaderStateShard(() -> ClientShaders.holeLens))
-                    .setTextureState(SceneSnapshot.TEXTURE)
+                    .setTextureState(SceneSnapshot.TEXTURE_HALF)
+                    .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
+                    .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                    .setCullState(RenderStateShard.NO_CULL)
+                    .createCompositeState(false));
+    /** The lowest detail: the same panel, but no copy of the frame and no bending - only the rings, laid over the scene. */
+    static final RenderType LENS_FLAT = RenderType.create("ae2_gvt_hole_lens_flat", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256,
+            false, false, RenderType.CompositeState.builder()
+                    .setShaderState(new RenderStateShard.ShaderStateShard(() -> ClientShaders.holeLens))
+                    .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                     .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
                     .setWriteMaskState(RenderStateShard.COLOR_WRITE)
                     .setCullState(RenderStateShard.NO_CULL)

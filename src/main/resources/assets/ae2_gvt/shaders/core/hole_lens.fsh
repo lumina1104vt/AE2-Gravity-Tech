@@ -10,7 +10,7 @@
 // The panel's size on screen comes from the UV derivatives, so no screen-space data is passed in.
 
 uniform sampler2D Sampler0;
-uniform sampler2D Sampler1;   // depth of the same copy
+uniform sampler2D Sampler1;   // depth of the frame itself (full size)
 uniform mat4 ProjMat;
 
 in vec2 local;
@@ -30,12 +30,22 @@ void main() {
         discard;
     }
     bool white = flags.r > 0.5;
+    if (flags.g > 0.5) {
+        // lowest detail: no copy of the frame to bend, only the rings over the scene
+        float a = white ? pow(clamp(1.0 - (r - 1.0) / 0.8, 0.0, 1.0), 2.0) * 0.6
+                        : max(exp(-pow((r - 1.9) / 0.12, 2.0)) * 0.55, exp(-pow((r - 1.05) / 0.05, 2.0)) * 0.6);
+        if (a < 0.004) {
+            discard;
+        }
+        fragColor = vec4(1.0, 1.0, 1.0, a);
+        return;
+    }
     vec2 pxPerUnit = vec2(1.0 / length(vec2(dFdx(local.x), dFdy(local.x))),
                           1.0 / length(vec2(dFdx(local.y), dFdy(local.y))));
     float fade = 1.0 - smoothstep(EXTENT * 0.3, EXTENT, r);
     float scale = white ? mix(1.0 / ZOOM, 1.0, smoothstep(1.5, EXTENT, r))
                         : 1.0 - K / (r * r) * fade * fade;               // nothing left at the panel edge
-    vec2 size = vec2(textureSize(Sampler0, 0));
+    vec2 size = vec2(textureSize(Sampler1, 0));     // the whole frame: Sampler0 is a half-size copy of it
     vec2 plain = gl_FragCoord.xy / size;
     vec2 uv = clamp((gl_FragCoord.xy + local * pxPerUnit * (scale - 1.0)) / size, vec2(0.0), vec2(1.0));
     // The panel is a flat sheet through the hole, so a block standing next to the hole would be torn

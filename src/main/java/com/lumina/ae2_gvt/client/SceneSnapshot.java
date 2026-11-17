@@ -42,7 +42,78 @@ public final class SceneSnapshot {
             }, () -> {
             });
 
+    private static TextureTarget half;
+    /** The depth texture the half-size copy is used with: the one of the framebuffer drawn into (or a copy of it). */
+    private static int halfDepth, halfColor;
+
+    /**
+     * Sampler0 is the half-size copy ({@link #captureHalf}), Sampler1 the depth of the frame itself, so a shader gets the full size
+     * of the frame from {@code textureSize(Sampler1, 0)}.
+     */
+    public static final RenderStateShard.EmptyTextureStateShard TEXTURE_HALF = new RenderStateShard.EmptyTextureStateShard(
+            () -> {
+                RenderSystem.setShaderTexture(0, halfColor);
+                RenderSystem.setShaderTexture(1, halfDepth);
+            }, () -> {
+            });
+
     private SceneSnapshot() {
+    }
+
+    /**
+     * A copy of the colour at half the width and height (a quarter of the pixels to move; a lens bends and blurs it anyway) for
+     * {@link #TEXTURE_HALF}. The depth is not copied at all: it is read from the framebuffer itself, which a pass that does not write
+     * depth may do. Only when that framebuffer's depth is not a texture (another mod's) is the full copy with depth made instead.
+     */
+    public static void captureHalf(RenderTarget main) {
+        int bound = GL11.glGetInteger(GL30.GL_DRAW_FRAMEBUFFER_BINDING);
+        int[] viewport = new int[4];
+        GL11.glGetIntegerv(GL11.GL_VIEWPORT, viewport);
+        int w = viewport[2] > 0 ? viewport[2] : main.width, h = viewport[3] > 0 ? viewport[3] : main.height;
+        int hw = Math.max(1, (w + 1) / 2), hh = Math.max(1, (h + 1) / 2);
+        int depth = depthTextureOf(bound);
+        if (depth == 0) {
+            capture(main, true);
+            halfDepth = target.getDepthTextureId();
+            halfColor = target.getColorTextureId();
+            return;
+        }
+        if (half == null || half.width != hw || half.height != hh) {
+            if (half != null) {
+                half.destroyBuffers();
+            }
+            half = new TextureTarget(hw, hh, false, Minecraft.ON_OSX);
+            half.setFilterMode(GL11.GL_LINEAR);
+        }
+        while (GL11.glGetError() != GL11.GL_NO_ERROR) {
+            // not ours
+        }
+        GlStateManager._glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, bound);
+        GlStateManager._glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, half.frameBufferId);
+        GL30.glBlitFramebuffer(0, 0, w, h, 0, 0, hw, hh, GL11.GL_COLOR_BUFFER_BIT, GL11.GL_LINEAR);
+        GlStateManager._glBindFramebuffer(GL30.GL_FRAMEBUFFER, bound);
+        halfDepth = depth;
+        halfColor = half.getColorTextureId();
+        int error = GL11.glGetError();
+        if (error != GL11.GL_NO_ERROR && !warned) {
+            warned = true;
+            AE2GravityTech.LOGGER.warn("Half scene snapshot failed: GL error {}, framebuffer {} (main {}), {} x {}", error, bound, main.frameBufferId, w, h);
+        }
+    }
+
+    /** The depth texture attached to the framebuffer, 0 if there is none or it is not a texture. */
+    private static int depthTextureOf(int framebuffer) {
+        if (framebuffer == 0) {
+            return 0;
+        }
+        while (GL11.glGetError() != GL11.GL_NO_ERROR) {
+            // not ours
+        }
+        int type = GL30.glGetFramebufferAttachmentParameteri(GL30.GL_DRAW_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT,
+                GL30.GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE);
+        int name = GL30.glGetFramebufferAttachmentParameteri(GL30.GL_DRAW_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT,
+                GL30.GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME);
+        return GL11.glGetError() == GL11.GL_NO_ERROR && type == GL11.GL_TEXTURE ? name : 0;
     }
 
     /** Copies the colour of the framebuffer being drawn into, as big as the viewport, into the snapshot. */
