@@ -121,6 +121,17 @@ public final class HoleRenderer {
         HoleRipples.bursts(buffers, cam, now);
     }
 
+    /**
+     * The selection box of a hole is a wireframe drawn before the hole is, so the lens copied it with the rest of the frame and bent it
+     * (a cube of lines warped around the hole); a hole is not selected visibly at all.
+     */
+    @SubscribeEvent
+    static void noHoleOutline(net.neoforged.neoforge.client.event.RenderHighlightEvent.Block event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level != null && mc.level.getBlockState(event.getTarget().getBlockPos()).getBlock() instanceof com.lumina.ae2_gvt.hole.GravityHoleBlock)
+            event.setCanceled(true);
+    }
+
     /** The white flash of an 湮滅 TNT, over everything. */
     @SubscribeEvent
     static void flash(net.neoforged.neoforge.client.event.RenderGuiEvent.Post event) {
