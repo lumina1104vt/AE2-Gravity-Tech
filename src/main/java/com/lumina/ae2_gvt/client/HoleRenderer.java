@@ -49,6 +49,12 @@ public final class HoleRenderer {
     /** By the client's hole detail (low, medium, high): how far a hole is drawn, and the mesh of its body and disc. */
     private static final double[] RANGES = {48, 72, 96};
     private static final int[] LAT_STEPS = {10, 16, 24}, LON_STEPS = {14, 22, 32}, DISC_STEPS = {24, 40, 64};
+    /**
+     * Beyond these distances (blocks) the effects are left out, since the warp of a far hole is a few pixels: past LENS_RANGES the
+     * background is no longer bent (the rings are still laid over the scene), past RIPPLE_RANGE there is no small ripple.
+     */
+    private static final double[] LENS_RANGES = {0, 40, 64};
+    private static final double RIPPLE_RANGE = 32;
     private static double range = RANGES[2];
     private static int LATS = 24, LONS = 32, DISC_SEGMENTS = 64;
 
@@ -95,13 +101,13 @@ public final class HoleRenderer {
         Vector3f right = new Vector3f(camera.getLeftVector()).negate();
         Vector3f up = new Vector3f(camera.getUpVector());
         float r = GravityHole.RADIUS;
-        boolean bends = detail > 0;
         for (GravityHoleBlockEntity hole : holes) {
             Vec3 at = centre(hole).subtract(cam);
+            boolean bends = at.length() < LENS_RANGES[detail];
             Vector3f c = new Vector3f((float) at.x, (float) at.y, (float) at.z);
             int white = hole.isWhite() ? 255 : 0;
 
-            // the lowest detail bends nothing: only the rings, over the scene. Otherwise the bent picture is made over the part of
+            // far away (or at the lowest detail) nothing is bent: only the rings, over the scene. Otherwise the bent picture is made over the part of
             // the screen the panel covers, reading the frame where it stands, and laid over the frame (if the frame cannot be read
             // - another mod's framebuffer - the lens is left out)
             int[] size = LensPass.viewport();
@@ -123,8 +129,8 @@ public final class HoleRenderer {
             disc(buffers.getBuffer(HoleRenderTypes.DISC), pose, c, r, white, tilt(hole));
             buffers.endBatch(HoleRenderTypes.DISC);
 
-            // the small ripple warps the frame with the hole in it (only at the highest detail)
-            if (detail == 2)
+            // the small ripple warps the frame with the hole in it (only at the highest detail, and near)
+            if (detail == 2 && at.length() < RIPPLE_RANGE)
                 HoleRipples.ambient(buffers, cam, hole, now, right, up);
         }
         HoleRipples.bursts(buffers, cam, now);

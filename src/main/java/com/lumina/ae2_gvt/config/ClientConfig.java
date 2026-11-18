@@ -14,10 +14,10 @@ public class ClientConfig {
 
     /** 0 low, 1 medium, 2 high. */
     public static final ModConfigSpec.IntValue HOLE_DETAIL = BUILDER
-            .comment("How detailed black and white holes are drawn: 0 low, 1 medium, 2 high. Bending the background costs by the part of the screen",
-                    "a hole covers, so a far hole costs little: 2 bends the background and adds the small ripples, 1 bends it with no ripples,",
-                    "0 bends nothing - the hole is a plain sphere and disc with its rings. Lower also means a shorter drawing distance",
-                    "and a coarser body and disc. Every hole in range is drawn.")
+            .comment("How detailed black and white holes are drawn: 0 low, 1 medium, 2 high. Every hole in range is drawn, but the effects are staged",
+                    "by distance, since a far hole's warp is a few pixels: 2 bends the background within 64 blocks and adds small ripples within 32,",
+                    "1 bends it within 40 blocks, 0 bends nothing (the hole is a plain sphere and disc with its rings). Farther holes keep the",
+                    "rings. Lower also means a shorter drawing distance and a coarser body and disc.")
             .defineInRange("holeDetail", 2, 0, 2);
 
     public static final ModConfigSpec SPEC = BUILDER.build();
