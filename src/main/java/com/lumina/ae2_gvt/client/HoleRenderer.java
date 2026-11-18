@@ -46,13 +46,11 @@ import com.lumina.ae2_gvt.AE2GravityTech;
 public final class HoleRenderer {
     /** Lens panel half-size and accretion disc radii, in hole radii. */
     static final float LENS = 7f, DISC_IN = 1.25f, DISC_OUT = 2.7f;
-    /** By the client's hole detail (low, medium, high): how far a hole is drawn, the mesh of its body and disc, and how many at once. */
+    /** By the client's hole detail (low, medium, high): how far a hole is drawn, and the mesh of its body and disc. */
     private static final double[] RANGES = {48, 72, 96};
     private static final int[] LAT_STEPS = {10, 16, 24}, LON_STEPS = {14, 22, 32}, DISC_STEPS = {24, 40, 64};
-    /** Holes drawn per frame: the bending costs by the screen area a hole covers, the small ripple of the highest detail as much again. */
-    private static final int[] MAX_BY_DETAIL = {16, 8, 8};
     private static double range = RANGES[2];
-    private static int LATS = 24, LONS = 32, DISC_SEGMENTS = 64, MAX_HOLES = 8;
+    private static int LATS = 24, LONS = 32, DISC_SEGMENTS = 64;
 
     private HoleRenderer() {
     }
@@ -76,7 +74,6 @@ public final class HoleRenderer {
         LATS = LAT_STEPS[detail];
         LONS = LON_STEPS[detail];
         DISC_SEGMENTS = DISC_STEPS[detail];
-        MAX_HOLES = MAX_BY_DETAIL[detail];
         Camera camera = event.getCamera();
         Vec3 cam = camera.getPosition();
         List<GravityHoleBlockEntity> holes = new ArrayList<>();
@@ -92,11 +89,8 @@ public final class HoleRenderer {
             return;
         }
         // far to near, each bent from the frame as it is then: a nearer hole bends the farther ones (their discs, rings and
-        // all) like the rest of the scene. Only the nearest few are drawn.
+        // all) like the rest of the scene. Every hole in range is drawn: a hole costs by the screen area it covers.
         holes.sort(java.util.Comparator.comparingDouble((GravityHoleBlockEntity h) -> centre(h).distanceToSqr(cam)).reversed());
-        if (holes.size() > MAX_HOLES) {
-            holes = holes.subList(holes.size() - MAX_HOLES, holes.size());
-        }
         PoseStack.Pose pose = new PoseStack().last();
         Vector3f right = new Vector3f(camera.getLeftVector()).negate();
         Vector3f up = new Vector3f(camera.getUpVector());
