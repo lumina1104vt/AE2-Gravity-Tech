@@ -59,6 +59,11 @@ public final class HoleRenderer {
 
     @SubscribeEvent
     static void afterParticles(RenderLevelStageEvent event) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES)
+            LevelPass.run(event, () -> draw(event));
+    }
+
+    private static void draw(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
             return;
         }

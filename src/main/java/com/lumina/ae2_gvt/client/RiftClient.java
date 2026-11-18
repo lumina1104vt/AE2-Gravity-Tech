@@ -182,6 +182,11 @@ public final class RiftClient {
 
     @SubscribeEvent
     static void afterParticles(RenderLevelStageEvent event) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES)
+            LevelPass.run(event, () -> draw(event));
+    }
+
+    private static void draw(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES)
             return;
         Minecraft mc = Minecraft.getInstance();
