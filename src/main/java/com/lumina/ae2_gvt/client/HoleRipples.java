@@ -33,8 +33,8 @@ public final class HoleRipples {
     static final RenderType RIPPLE = RenderType.create("ae2_gvt_hole_ripple", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 8192,
             false, false, RenderType.CompositeState.builder()
                     .setShaderState(new RenderStateShard.ShaderStateShard(() -> ClientShaders.holeRipple))
-                    .setTextureState(SceneSnapshot.TEXTURE_HALF)
-                    .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
+                    .setTextureState(LensPass.INPUT)
+                    .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
                     .setWriteMaskState(RenderStateShard.COLOR_WRITE)
                     .setCullState(RenderStateShard.NO_CULL)
                     .createCompositeState(false));
@@ -61,16 +61,30 @@ public final class HoleRipples {
             BURSTS.add(new Burst(Vec3.atCenterOf(pos), mc.level.getGameTime() + mc.getTimer().getGameTimeDeltaPartialTick(true), reach));
     }
 
-    /** The hole's small ripple (the snapshot must be fresh). */
-    static void ambient(MultiBufferSource.BufferSource buffers, Vec3 cam, GravityHoleBlockEntity hole, double now) {
+    /** The hole's small ripple, bent over the frame (only the part of the screen the shell covers is worked on). */
+    static void ambient(MultiBufferSource.BufferSource buffers, Vec3 cam, GravityHoleBlockEntity hole, double now, Vector3f right,
+                        Vector3f up) {
         int offset = Math.floorMod(hole.getBlockPos().hashCode(), (int) AMBIENT_PERIOD);
         double t = ((now + offset) % AMBIENT_PERIOD) / AMBIENT_PERIOD;
         float fadeIn = (float) Math.min(1, t / 0.08);
         float fade = (float) ((1 - t) * (1 - t)) * fadeIn;
         float radius = GravityHole.RADIUS + (float) t * (AMBIENT_REACH - GravityHole.RADIUS);
-        shell(buffers.getBuffer(RIPPLE), Vec3.atCenterOf(hole.getBlockPos()).subtract(cam), radius,
-                AMBIENT_PUSH * fade, 0.03f * fade, 24, 48);
+        Vec3 at = Vec3.atCenterOf(hole.getBlockPos()).subtract(cam);
+        if (!LensPass.begin(Minecraft.getInstance().getMainRenderTarget(), shellRect(at, radius, right, up)))
+            return;
+        shell(buffers.getBuffer(RIPPLE), at, radius, AMBIENT_PUSH * fade, 0.03f * fade, 24, 48);
         buffers.endBatch(RIPPLE);
+        LensPass.end();
+    }
+
+    /** The part of the screen a sphere of this radius, this far (blocks from the camera) away, covers; null if none. */
+    private static int[] shellRect(Vec3 at, float radius, Vector3f right, Vector3f up) {
+        int[] size = LensPass.viewport();
+        double d = at.length();
+        if (d <= radius * 1.2)
+            return new int[] {0, 0, size[0], size[1]};
+        float half = (float) (radius * d / Math.sqrt(d * d - radius * radius) * 1.05);
+        return LevelPass.screenRect(new Vector3f((float) at.x, (float) at.y, (float) at.z), right, up, half, size[0], size[1]);
     }
 
     /** The big ripples running now, each over a fresh snapshot; the finished ones are dropped. */
@@ -83,7 +97,9 @@ public final class HoleRipples {
             float t = (float) Math.max(0, (now - b.start()) / BURST_LIFE);
             float out = 1 - (float) Math.pow(1 - t, 2.5);     // fast at first, slowing down
             float fade = (float) Math.pow(1 - t, 1.5);
-            SceneSnapshot.captureHalf(mc.getMainRenderTarget());
+            int[] size = LensPass.viewport();
+            if (!LensPass.begin(mc.getMainRenderTarget(), new int[] {0, 0, size[0], size[1]}))
+                continue;
             VertexConsumer vc = buffers.getBuffer(RIPPLE);
             Vec3 at = b.at().subtract(cam);
             // the leading shell pushes out, the next pulls in, the last pushes a little: a wave, not a step
@@ -94,6 +110,7 @@ public final class HoleRipples {
                     shell(vc, at, radius, BURST_PUSH * b.reach() / 48 * push[k] * fade, k == 0 ? 0.12f * fade : 0, 48, 96);
             }
             buffers.endBatch(RIPPLE);
+            LensPass.end();
         }
     }
 

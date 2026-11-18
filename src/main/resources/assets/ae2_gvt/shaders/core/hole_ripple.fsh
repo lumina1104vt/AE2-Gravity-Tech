@@ -4,12 +4,25 @@
 // it. Seen face-on the shell does nothing; in a band just inside its rim the world is pushed out
 // along the shell's normal, back to nothing at the rim itself (no hard edge), so on screen it is a
 // clear ring that warps what is behind it. Sampler0 is
-// a copy of the frame so far (SceneSnapshot). The push is in blocks, turned to pixels by the depth,
+// the frame so far (Sampler1 is its depth; LensPass). The push is in blocks, turned to pixels by the depth,
 // so a far ripple warps less.
 
 uniform sampler2D Sampler0;
 uniform sampler2D Sampler1;   // depth of the frame (full size)
 uniform mat4 ProjMat;
+
+// The frame is read as it is, and its texture is not filtered: smooth it by hand.
+vec3 linear(vec2 uv, vec2 size) {
+    vec2 p = uv * size - 0.5;
+    ivec2 i = ivec2(floor(p));
+    vec2 f = fract(p);
+    ivec2 hi = ivec2(size) - 1;
+    vec3 a = texelFetch(Sampler0, clamp(i, ivec2(0), hi), 0).rgb;
+    vec3 b = texelFetch(Sampler0, clamp(i + ivec2(1, 0), ivec2(0), hi), 0).rgb;
+    vec3 c = texelFetch(Sampler0, clamp(i + ivec2(0, 1), ivec2(0), hi), 0).rgb;
+    vec3 d = texelFetch(Sampler0, clamp(i + ivec2(1, 1), ivec2(0), hi), 0).rgb;
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
 
 in vec3 viewPos;
 in vec3 viewNormal;
@@ -28,9 +41,13 @@ void main() {
         discard;
     }
     vec2 dir = length(n.xy) > 0.0001 ? normalize(n.xy) : vec2(0.0);
-    vec2 size = vec2(textureSize(Sampler1, 0));     // the whole frame: Sampler0 is a half-size copy of it
+    vec2 size = vec2(textureSize(Sampler1, 0));
+    // drawn into a target of its own, which has no depth test: what is nearer than the shell is left clear
+    if (gl_FragCoord.z > texture(Sampler1, gl_FragCoord.xy / size).r) {
+        discard;
+    }
     float pxPerBlock = ProjMat[1][1] * 0.5 * size.y / max(-viewPos.z, 0.5);
     vec2 uv = (gl_FragCoord.xy - dir * push * pxPerBlock) / size;
-    vec3 c = texture(Sampler0, clamp(uv, vec2(0.0), vec2(1.0))).rgb;
+    vec3 c = linear(clamp(uv, vec2(0.0), vec2(1.0)), size);
     fragColor = vec4(c + vec3(glow), 1.0);
 }

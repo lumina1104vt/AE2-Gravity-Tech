@@ -1,7 +1,7 @@
 #version 150
 
-// Gravitational lensing round a hole: redraw the world behind the panel bent. Sampler0 is a copy
-// of the frame so far (SceneSnapshot).
+// Gravitational lensing round a hole: redraw the world behind the panel bent. Sampler0 is the frame
+// so far, Sampler1 its depth (LensPass); the bent picture goes to a target of its own, laid over the frame after.
 //  - black hole: a true lens - each pixel at r shows the scene at r - K / r, so what is behind the
 //    hole is stretched round it, not along the radius - with an Einstein ring and a thin photon ring
 //  - white hole: the opposite - a magnifier: near the hole each pixel shows a smaller piece of the
@@ -12,6 +12,19 @@
 uniform sampler2D Sampler0;
 uniform sampler2D Sampler1;   // depth of the frame itself (full size)
 uniform mat4 ProjMat;
+
+// The frame is read as it is, and its texture is not filtered: smooth it by hand.
+vec3 linear(vec2 uv, vec2 size) {
+    vec2 p = uv * size - 0.5;
+    ivec2 i = ivec2(floor(p));
+    vec2 f = fract(p);
+    ivec2 hi = ivec2(size) - 1;
+    vec3 a = texelFetch(Sampler0, clamp(i, ivec2(0), hi), 0).rgb;
+    vec3 b = texelFetch(Sampler0, clamp(i + ivec2(1, 0), ivec2(0), hi), 0).rgb;
+    vec3 c = texelFetch(Sampler0, clamp(i + ivec2(0, 1), ivec2(0), hi), 0).rgb;
+    vec3 d = texelFetch(Sampler0, clamp(i + ivec2(1, 1), ivec2(0), hi), 0).rgb;
+    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
 
 in vec2 local;
 in vec4 flags;
@@ -45,8 +58,12 @@ void main() {
     float fade = 1.0 - smoothstep(EXTENT * 0.3, EXTENT, r);
     float scale = white ? mix(1.0 / ZOOM, 1.0, smoothstep(1.5, EXTENT, r))
                         : 1.0 - K / (r * r) * fade * fade;               // nothing left at the panel edge
-    vec2 size = vec2(textureSize(Sampler1, 0));     // the whole frame: Sampler0 is a half-size copy of it
+    vec2 size = vec2(textureSize(Sampler1, 0));
     vec2 plain = gl_FragCoord.xy / size;
+    // drawn into a target of its own, which has no depth test: what is nearer than the panel stays as it is (left clear)
+    if (gl_FragCoord.z > texture(Sampler1, plain).r) {
+        discard;
+    }
     vec2 uv = clamp((gl_FragCoord.xy + local * pxPerUnit * (scale - 1.0)) / size, vec2(0.0), vec2(1.0));
     // The panel is a flat sheet through the hole, so a block standing next to the hole would be torn
     // in two (its far half bent, its near half not), and one in front of the hole would be dragged
@@ -57,7 +74,7 @@ void main() {
     float behindHere = b / (texture(Sampler1, plain).r * 2.0 - 1.0 + a) - panelDist;
     float behindThere = b / (texture(Sampler1, uv).r * 2.0 - 1.0 + a) - panelDist;
     float bend = smoothstep(BEHIND_MIN, BEHIND_FULL, min(behindHere, behindThere));
-    vec3 c = texture(Sampler0, mix(plain, uv, bend)).rgb;
+    vec3 c = linear(mix(plain, uv, bend), size);
     if (!white) {
         c = mix(c, vec3(1.0), exp(-pow((r - 1.9) / 0.12, 2.0)) * 0.55);    // Einstein ring
         c = mix(c, vec3(1.0), exp(-pow((r - 1.05) / 0.05, 2.0)) * 0.6);    // photon ring

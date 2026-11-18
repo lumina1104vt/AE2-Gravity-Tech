@@ -19,8 +19,8 @@ public final class HoleRenderTypes {
     static final RenderType LENS = RenderType.create("ae2_gvt_hole_lens", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256,
             false, false, RenderType.CompositeState.builder()
                     .setShaderState(new RenderStateShard.ShaderStateShard(() -> ClientShaders.holeLens))
-                    .setTextureState(SceneSnapshot.TEXTURE_HALF)
-                    .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
+                    .setTextureState(LensPass.INPUT)
+                    .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
                     .setWriteMaskState(RenderStateShard.COLOR_WRITE)
                     .setCullState(RenderStateShard.NO_CULL)
                     .createCompositeState(false));

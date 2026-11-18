@@ -49,7 +49,7 @@ public final class HoleRenderer {
     /** By the client's hole detail (low, medium, high): how far a hole is drawn, the mesh of its body and disc, and how many at once. */
     private static final double[] RANGES = {48, 72, 96};
     private static final int[] LAT_STEPS = {10, 16, 24}, LON_STEPS = {14, 22, 32}, DISC_STEPS = {24, 40, 64};
-    /** Holes drawn per frame: at the highest detail each costs two half-size copies of the frame, at medium one, at the lowest none. */
+    /** Holes drawn per frame: the bending costs by the screen area a hole covers, the small ripple of the highest detail as much again. */
     private static final int[] MAX_BY_DETAIL = {16, 8, 8};
     private static double range = RANGES[2];
     private static int LATS = 24, LONS = 32, DISC_SEGMENTS = 64, MAX_HOLES = 8;
@@ -91,9 +91,8 @@ public final class HoleRenderer {
             HoleRipples.bursts(buffers, cam, now);
             return;
         }
-        // far to near, each with a fresh copy of the frame: a nearer hole then bends the farther
-        // ones (their discs, rings and all) like the rest of the scene. One copy per hole, so only
-        // the nearest few are drawn.
+        // far to near, each bent from the frame as it is then: a nearer hole bends the farther ones (their discs, rings and
+        // all) like the rest of the scene. Only the nearest few are drawn.
         holes.sort(java.util.Comparator.comparingDouble((GravityHoleBlockEntity h) -> centre(h).distanceToSqr(cam)).reversed());
         if (holes.size() > MAX_HOLES) {
             holes = holes.subList(holes.size() - MAX_HOLES, holes.size());
@@ -104,20 +103,25 @@ public final class HoleRenderer {
         float r = GravityHole.RADIUS;
         boolean bends = detail > 0;
         for (GravityHoleBlockEntity hole : holes) {
-            // the lowest detail copies nothing: no bending, only the rings over the scene
-            RenderType lensType = bends ? HoleRenderTypes.LENS : HoleRenderTypes.LENS_FLAT;
-            if (bends)
-                SceneSnapshot.captureHalf(mc.getMainRenderTarget());
             Vec3 at = centre(hole).subtract(cam);
             Vector3f c = new Vector3f((float) at.x, (float) at.y, (float) at.z);
             int white = hole.isWhite() ? 255 : 0;
 
-            VertexConsumer lens = buffers.getBuffer(lensType);
-            for (int[] k : new int[][] {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}}) {
-                Vector3f p = new Vector3f(c).add(new Vector3f(right).mul(k[0] * LENS * r)).add(new Vector3f(up).mul(k[1] * LENS * r));
-                vertex(lens, pose, p, k[0] * LENS, k[1] * LENS, white, bends ? 0 : 255, 0, 0, 1);
+            // the lowest detail bends nothing: only the rings, over the scene. Otherwise the bent picture is made over the part of
+            // the screen the panel covers, reading the frame where it stands, and laid over the frame (if the frame cannot be read
+            // - another mod's framebuffer - the lens is left out)
+            int[] size = LensPass.viewport();
+            if (!bends || LensPass.begin(mc.getMainRenderTarget(), LevelPass.screenRect(c, right, up, LENS * r, size[0], size[1]))) {
+                RenderType lensType = bends ? HoleRenderTypes.LENS : HoleRenderTypes.LENS_FLAT;
+                VertexConsumer lens = buffers.getBuffer(lensType);
+                for (int[] k : new int[][] {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}}) {
+                    Vector3f p = new Vector3f(c).add(new Vector3f(right).mul(k[0] * LENS * r)).add(new Vector3f(up).mul(k[1] * LENS * r));
+                    vertex(lens, pose, p, k[0] * LENS, k[1] * LENS, white, bends ? 0 : 255, 0, 0, 1);
+                }
+                buffers.endBatch(lensType);
+                if (bends)
+                    LensPass.end();
             }
-            buffers.endBatch(lensType);
 
             sphere(buffers.getBuffer(HoleRenderTypes.BODY), pose, c, r, white);
             buffers.endBatch(HoleRenderTypes.BODY);
@@ -125,11 +129,9 @@ public final class HoleRenderer {
             disc(buffers.getBuffer(HoleRenderTypes.DISC), pose, c, r, white, tilt(hole));
             buffers.endBatch(HoleRenderTypes.DISC);
 
-            // the small ripple warps the frame with the hole in it, so it needs a fresh copy (only at the highest detail)
-            if (detail == 2) {
-                SceneSnapshot.captureHalf(mc.getMainRenderTarget());
-                HoleRipples.ambient(buffers, cam, hole, now);
-            }
+            // the small ripple warps the frame with the hole in it (only at the highest detail)
+            if (detail == 2)
+                HoleRipples.ambient(buffers, cam, hole, now, right, up);
         }
         HoleRipples.bursts(buffers, cam, now);
     }
