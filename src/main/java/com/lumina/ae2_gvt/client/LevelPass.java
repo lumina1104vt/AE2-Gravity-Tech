@@ -5,9 +5,14 @@ import org.joml.Matrix4fStack;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+import org.lwjgl.opengl.GL11;
+
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexSorting;
 
+import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 /**
@@ -17,6 +22,10 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
  * but a mod that changes them for its own pass and does not put them back (or draws in between) leaves ours drawn somewhere else - a hole
  * turned up away from its block. So both are set from the event, which carries what the level was drawn with, for the draw, and put
  * back after it.
+ * <p>
+ * The same goes for the viewport and the scissor box: a mod that narrows them for its own pass and does not restore them (Accelerated
+ * Rendering is set not to, by its config) squeezes everything drawn after into a corner of the screen - the hole and its ripples in the
+ * bottom left. They are set to the whole frame for the draw and put back after it.
  */
 final class LevelPass {
     /** The matrices of the pass being drawn. */
@@ -63,13 +72,25 @@ final class LevelPass {
         VertexSorting sorting = RenderSystem.getVertexSorting();
         VIEW.set(event.getModelViewMatrix());
         PROJECTION.set(event.getProjectionMatrix());
+        int[] viewport = new int[4], scissor = new int[4];
+        GL11.glGetIntegerv(GL11.GL_VIEWPORT, viewport);
+        GL11.glGetIntegerv(GL11.GL_SCISSOR_BOX, scissor);
+        boolean scissorOn = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST);
+        RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
         view.pushMatrix();
         view.set(event.getModelViewMatrix());
         RenderSystem.applyModelViewMatrix();
         RenderSystem.setProjectionMatrix(event.getProjectionMatrix(), VertexSorting.DISTANCE_TO_ORIGIN);
+        RenderSystem.viewport(0, 0, main.width, main.height);
+        GlStateManager._disableScissorTest();
         try {
             draw.run();
         } finally {
+            RenderSystem.viewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+            if (scissorOn) {
+                GlStateManager._enableScissorTest();
+                GlStateManager._scissorBox(scissor[0], scissor[1], scissor[2], scissor[3]);
+            }
             view.popMatrix();
             RenderSystem.applyModelViewMatrix();
             RenderSystem.setProjectionMatrix(projection, sorting);
