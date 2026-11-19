@@ -55,6 +55,8 @@ public final class HoleRenderer {
      */
     private static final double[] LENS_RANGES = {0, 40, 64};
     private static final double RIPPLE_RANGE = 32;
+    /** The panel of the rings alone is drawn this many blocks nearer than the hole's centre. */
+    private static final float FLAT_FORWARD = 2.5f;
     private static double range = RANGES[2];
     private static int LATS = 24, LONS = 32, DISC_SEGMENTS = 64;
 
@@ -114,8 +116,14 @@ public final class HoleRenderer {
             if (!bends || LensPass.begin(mc.getMainRenderTarget(), LevelPass.screenRect(c, right, up, LENS * r, size[0], size[1]))) {
                 RenderType lensType = bends ? HoleRenderTypes.LENS : HoleRenderTypes.LENS_FLAT;
                 VertexConsumer lens = buffers.getBuffer(lensType);
+                // the flat panel is depth-tested by the hardware: bring it a little nearer (same size on screen), so a floor just under the
+                // hole does not cut the rings in half
+                double dist = c.length();
+                float toward = dist > 3 ? (float) ((dist - FLAT_FORWARD) / dist) : 1f;
                 for (int[] k : new int[][] {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}}) {
                     Vector3f p = new Vector3f(c).add(new Vector3f(right).mul(k[0] * LENS * r)).add(new Vector3f(up).mul(k[1] * LENS * r));
+                    if (!bends)
+                        p.mul(toward);
                     vertex(lens, pose, p, k[0] * LENS, k[1] * LENS, white, bends ? 0 : 255, 0, 0, 1);
                 }
                 buffers.endBatch(lensType);
