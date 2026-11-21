@@ -39,6 +39,8 @@ legacyForge {
 
         server {
             server()
+            // beside the client's folder, so a server and a client can run at the same time
+            gameDirectory = file('run/server')
             programArgument '--nogui'
             systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
         }
@@ -77,6 +79,14 @@ legacyForge {
     }
 }
 
+// the two lib mods have mixins of their own (the multiblock lib's chunk hook, the twin-star recipe hook); the dev runs load them too
+mixin {
+    add project(':core').sourceSets.main, "twinstar.refmap.json"
+    config "twinstar.mixins.json"
+    add project(':lumina-multiblock').sourceSets.main, "lumina_multiblock.refmap.json"
+    config "lumina_multiblock.mixins.json"
+}
+
 // 'localRuntime': on the dev runtime classpath, but not published as a dependency of this mod
 configurations {
     runtimeClasspath.extendsFrom localRuntime
@@ -93,8 +103,16 @@ dependencies {
     additionalRuntimeClasspath files(tasks.register('devMixinConfig', Copy) {
         from('src/main/resources') { include "${mod_id}.mixins.json" }
         from(layout.buildDirectory.dir('mixin')) { include "${mod_id}.refmap.json" }
+        from('core/src/main/resources') { include 'twinstar.mixins.json' }
+        from('core/build/mixin') { include 'twinstar.refmap.json' }
+        from('lumina-multiblock/src/main/resources') { include 'lumina_multiblock.mixins.json' }
+        from('lumina-multiblock/build/mixin') { include 'lumina_multiblock.refmap.json' }
         into layout.buildDirectory.dir('devMixin')
     }.map { it.destinationDir })
+
+    // MixinExtras: the lib mods' mixins use it; carried in the jar, and loaded in the dev runs
+    runtimeOnly 'io.github.llamalad7:mixinextras-forge:0.5.5'
+    jarJar('io.github.llamalad7:mixinextras-forge:[0.5.5,)')
 
     // bundled into the ae2_gvt jar (jar-in-jar); each lib keeps its own mod id
     jarJar(project(':core'))
