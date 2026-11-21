@@ -57,6 +57,8 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
     private final BlockingButton blocking = new BlockingButton();
     private final InsertModeButton insert = new InsertModeButton();
     private final GroupButton groupButton = new GroupButton();
+    private final RoleButton roleButton = new RoleButton();
+    private final SlotButton slotButton = new SlotButton();
     private final SubRangeButton range = new SubRangeButton();
     private final PulseButton pulse = new PulseButton();
     /** what each slot's lower cell shows: false the amount it is set to keep, true the network's count of it */
@@ -74,6 +76,8 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
         addToLeftToolbar(facesButton);
         addToLeftToolbar(blocking);
         addToLeftToolbar(insert);
+        addToLeftToolbar(roleButton);
+        addToLeftToolbar(slotButton);
         addToLeftToolbar(groupButton);
         addToLeftToolbar(range);
         addToLeftToolbar(pulse);
@@ -105,8 +109,11 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
     protected void updateBeforeRender() {
         super.updateBeforeRender();
         boolean provider = providerMode();
+        boolean wireless = menu.getPart().isWireless();
         for (IconButton b : new IconButton[]{blocking, insert, groupButton, range, pulse})
-            b.setVisibility(provider);     // the machine's settings are the provider's
+            b.setVisibility(provider && !menu.isHatch());     // the machine's settings are the provider's; a hatch has none of them
+        roleButton.setVisibility(provider && wireless);       // a bound block is a machine or a hatch of the machine before it
+        slotButton.setVisibility(provider && wireless && menu.isNumbered());
         recoverButton.setVisibility(!provider);
         recoverEnergyButton.setVisibility(!provider && menu.recover);     // the FE a machine gives out, taken back as well
         facesButton.setVisibility(!provider && menu.recover);     // the ME interface's: take the output back, from which faces
@@ -244,6 +251,14 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
                     : "gui.ae2_gvt.machine_access.no_block") : icon.getHoverName());
             if (pos != null)
                 lines.add(Component.literal(pos.getX() + ", " + pos.getY() + ", " + pos.getZ()).withStyle(ChatFormatting.GRAY));
+            if (providerMode() && part.isWireless() && part.settings(index).getRole() != IMachineAccess.PortRole.MACHINE) {
+                IMachineAccess.PortRole role = part.settings(index).getRole();
+                int number = part.effectiveSlot(index);
+                lines.add(Component.translatable("gui.ae2_gvt.machine_access.role." + role.name().toLowerCase(Locale.ROOT))
+                        .withStyle(ChatFormatting.AQUA));
+                if (number > 0)
+                    lines.add(Component.translatable("gui.ae2_gvt.machine_access.slot_is", number).withStyle(ChatFormatting.GRAY));
+            }
             var slot = providerMode() && index == menu.selected ? menu.machineSlot() : null;
             if (slot != null && !slot.getItem().isEmpty())
                 lines.add(Component.translatable("gui.ae2_gvt.machine_access.also", slot.getItem().getHoverName()).withStyle(ChatFormatting.GRAY));
@@ -369,6 +384,26 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
                 ItemStack icon = iconAt(level, pos);
                 if (!icon.isEmpty())
                     g.renderItem(icon, CELL_X + i * CELL, CELL_Y);
+            }
+            if (providerMode() && part.isWireless()) {
+                // a hatch: what it is for, small in the corner, and an input's slot number under it
+                IMachineAccess.PortRole role = part.settings(index).getRole();
+                if (role != IMachineAccess.PortRole.MACHINE) {
+                    g.pose().pushPose();
+                    g.pose().translate(CELL_X + i * CELL + 8, CELL_Y + 8, 150);
+                    g.pose().scale(0.5f, 0.5f, 1f);
+                    g.renderItem(roleIcon(role), 0, 0);
+                    g.pose().popPose();
+                    int number = part.effectiveSlot(index);
+                    if (number > 0) {
+                        String n = Integer.toString(number);
+                        g.pose().pushPose();
+                        g.pose().translate(CELL_X + i * CELL + 1, CELL_Y + 9, 200);
+                        g.pose().scale(0.5f, 0.5f, 1f);
+                        g.drawString(font, n, 0, 0, 0xFFFFFFFF, true);
+                        g.pose().popPose();
+                    }
+                }
             }
             if (index == menu.selected) {       // the selected one: a frame round its cell
                 int x = CELL_X + i * CELL - 1, y = CELL_Y - 1;
@@ -698,6 +733,99 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
             };
             return List.of(Component.translatable("gui.ae2_gvt.machine_access.blocking"),
                     Component.translatable("gui.ae2_gvt.machine_access." + mode).withStyle(ChatFormatting.GRAY));
+        }
+    }
+
+    /** What a role looks like: an item that does the same (no letters or colours to tell them by). */
+    private static ItemStack roleIcon(IMachineAccess.PortRole role) {
+        return switch (role) {
+            case MACHINE -> appeng.core.definitions.AEBlocks.MOLECULAR_ASSEMBLER.stack();
+            case ITEM_IN -> new ItemStack(Items.HOPPER);
+            case FLUID_IN -> new ItemStack(Items.BUCKET);
+            case OUTPUT -> new ItemStack(Items.DROPPER);
+            case ENERGY -> appeng.core.definitions.AEBlocks.ENERGY_CELL.stack();
+        };
+    }
+
+    /** What the selected bound block is: a machine, or a hatch of the machine before it (left click next, right click the one before). */
+    private final class RoleButton extends IconButton {
+        RoleButton() {
+            super(btn -> {
+            });
+        }
+
+        @Override
+        protected Icon getIcon() {
+            return null;    // the background only; the item is drawn on it
+        }
+
+        @Override
+        public void onPress() {
+            menu.cycleRole(lastMouseButton == 1);
+        }
+
+        @Override
+        public void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+            super.renderWidget(g, mouseX, mouseY, partialTick);
+            if (!visible)
+                return;
+            g.pose().pushPose();
+            g.pose().translate(0, 0, 100);
+            g.renderItem(roleIcon(menu.getRole()), getX(), getY() + (isHovered() ? 1 : 0));
+            g.pose().popPose();
+        }
+
+        @Override
+        public List<Component> getTooltipMessage() {
+            String role = menu.getRole().name().toLowerCase(Locale.ROOT);
+            return List.of(Component.translatable("gui.ae2_gvt.machine_access.role"),
+                    Component.translatable("gui.ae2_gvt.machine_access.role." + role).withStyle(ChatFormatting.WHITE),
+                    Component.translatable("gui.ae2_gvt.machine_access.role." + role + ".desc").withStyle(ChatFormatting.GRAY),
+                    Component.translatable("gui.ae2_gvt.machine_access.role_click").withStyle(ChatFormatting.DARK_GRAY));
+        }
+    }
+
+    /**
+     * An input hatch's slot number, the one a pattern's material slot names: left click one more, right click one less, shift
+     * ten at a time; 0 goes by the hatch's place among the machine's hatches of its kind. A line under the number says it was set by hand.
+     */
+    private final class SlotButton extends IconButton {
+        SlotButton() {
+            super(btn -> {
+            });
+        }
+
+        @Override
+        protected Icon getIcon() {
+            return null;    // the background only; the number is drawn on it
+        }
+
+        @Override
+        public void onPress() {
+            menu.stepSlot((lastMouseButton == 1 ? -1 : 1) * (hasShiftDown() ? 10 : 1));
+        }
+
+        @Override
+        public void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+            super.renderWidget(g, mouseX, mouseY, partialTick);
+            if (!visible)
+                return;
+            String number = Integer.toString(menu.slotNow);
+            g.pose().pushPose();
+            g.pose().translate(0, 0, 100);
+            int y = getY() + 5 + (isHovered() ? 1 : 0);
+            g.drawString(font, number, getX() + (16 - font.width(number)) / 2, y, 0xFFFFFFFF, true);
+            if (menu.slot > 0)
+                g.fill(getX() + 3, y + 9, getX() + 13, y + 10, 0xFFFFFFFF);
+            g.pose().popPose();
+        }
+
+        @Override
+        public List<Component> getTooltipMessage() {
+            return List.of(Component.translatable("gui.ae2_gvt.machine_access.slot"),
+                    Component.translatable(menu.slot > 0 ? "gui.ae2_gvt.machine_access.slot_set" : "gui.ae2_gvt.machine_access.slot_auto",
+                            menu.slotNow).withStyle(ChatFormatting.GRAY),
+                    Component.translatable("gui.ae2_gvt.machine_access.slot_click").withStyle(ChatFormatting.DARK_GRAY));
         }
     }
 

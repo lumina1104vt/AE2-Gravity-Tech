@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
 
 import com.lumina.ae2_gvt.items.tools.MachineLinkTool;
 import com.lumina.twinstar.api.IMachineAccess;
+import com.lumina.twinstar.api.IMachineAccess.Port;
+import com.lumina.twinstar.api.IMachineAccess.PortRole;
 
 import appeng.api.config.Actionable;
 import appeng.api.inventories.InternalInventory;
@@ -65,6 +67,8 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
     public static final int WIRELESS_RANGE = 64;
     /** machines one ME interface stands for; provider mode has no limit */
     public static final int MAX_INTERFACE_MACHINES = 9;
+    /** a hatch's slot number: far more than any machine has */
+    public static final int MAX_SLOT = 9999;
 
     public enum Mode {
         PROVIDER, INTERFACE
@@ -98,6 +102,14 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         private BlockMode blockMode = BlockMode.NONE;
         private InsertMode insertMode = InsertMode.DEFAULT;
         private int group;
+        /**
+         * What the block is: a machine of its own, or a hatch of the machine before it in the interface's list (an input bus, a
+         * fluid hatch, an output, an energy hatch). The hatches of one machine are numbered by their place in its own list, so
+         * no number is shared with another machine.
+         */
+        private PortRole role = PortRole.MACHINE;
+        /** an input hatch's slot number (what a pattern's material slot names); 0 = its place among the machine's hatches of the kind */
+        private int slot;
         /** how far its sub-machines are looked for */
         private int subRange = 3;
         /** a redstone pulse into the machine once a run's materials are all in */
@@ -144,6 +156,27 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
 
         public int getGroup() {
             return group;
+        }
+
+        public PortRole getRole() {
+            return role;
+        }
+
+        public void setRole(PortRole r) {
+            role = r;
+            markForSave();
+            host.update();
+        }
+
+        public int getSlot() {
+            return slot;
+        }
+
+        /** 0 (by place) and up, no upper limit worth the name. */
+        public void setSlot(int n) {
+            slot = Math.max(0, Math.min(MAX_SLOT, n));
+            markForSave();
+            host.update();
         }
 
         public void setGroup(int g) {
@@ -213,6 +246,8 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
             tag.putString("blockMode", blockMode.name());
             tag.putString("insertMode", insertMode.name());
             tag.putInt("group", group);
+            tag.putString("role", role.name());
+            tag.putInt("slot", slot);
             tag.putInt("subRange", subRange);
             tag.putBoolean("redstonePulse", redstonePulse);
             tag.putBoolean("recover", recover);
@@ -234,6 +269,12 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
                 insertMode = InsertMode.DEFAULT;
             }
             group = tag.getInt("group");
+            try {
+                role = PortRole.valueOf(tag.getString("role"));
+            } catch (IllegalArgumentException e) {
+                role = PortRole.MACHINE;
+            }
+            slot = Math.max(0, tag.getInt("slot"));
             subRange = tag.contains("subRange") ? Math.max(1, Math.min(MAX_SUB_RANGE, tag.getInt("subRange"))) : 3;
             redstonePulse = tag.getBoolean("redstonePulse");
             recover = !tag.contains("recover") || tag.getBoolean("recover");
@@ -376,7 +417,16 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         }
 
         private boolean first() {
-            return !entries.isEmpty() && entries.get(0) == entry;
+            for (Entry e : entries)
+                if (e.settings.role == PortRole.MACHINE)
+                    return e == entry;
+            return false;
+        }
+
+        /** The hatches after this machine, up to the next machine: each with its slot number. */
+        @Override
+        public List<Port> ports() {
+            return portsAfter(entry);
         }
 
         @Override
@@ -408,7 +458,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         }
     }
 
-    /** What the hub may use: nothing in ME interface mode, each bound machine, or the block the part sits on. */
+    /** What the hub may use: nothing in ME interface mode, each bound machine (not its hatches), or the block the part sits on. */
     @Override
     public List<IMachineAccess> accessPoints() {
         if (mode == Mode.INTERFACE)
@@ -417,8 +467,61 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
             return List.of(this);
         List<IMachineAccess> out = new ArrayList<>();
         for (Entry e : entries)
-            out.add(e.access);
+            if (e.settings.role == PortRole.MACHINE)
+                out.add(e.access);
         return out;
+    }
+
+    /** The hatches of machine {@code owner}: the entries after it up to the next machine, an input numbered by its slot or its place. */
+    private List<Port> portsAfter(Entry owner) {
+        int at = entries.indexOf(owner);
+        if (at < 0)
+            return List.of();
+        List<Port> out = new ArrayList<>();
+        int items = 0, fluids = 0;
+        for (int i = at + 1; i < entries.size(); i++) {
+            Entry e = entries.get(i);
+            PortRole role = e.settings.role;
+            if (role == PortRole.MACHINE)
+                break;
+            int slot = 0;
+            if (role == PortRole.ITEM_IN)
+                slot = e.settings.slot > 0 ? e.settings.slot : ++items;
+            else if (role == PortRole.FLUID_IN)
+                slot = e.settings.slot > 0 ? e.settings.slot : ++fluids;
+            out.add(new Port(e.link.pos(), role, slot));
+        }
+        return out;
+    }
+
+    /** The machine entry {@code i} is, or belongs to (a hatch is the machine before it); null when it has none. */
+    public @Nullable IMachineAccess accessOf(int i) {
+        if (entries.isEmpty())
+            return this;
+        for (int k = Math.max(0, Math.min(i, entries.size() - 1)); k >= 0; k--)
+            if (entries.get(k).settings.role == PortRole.MACHINE)
+                return entries.get(k).access;
+        return null;
+    }
+
+    /** The slot number input hatch {@code i} goes by (its own or its place), 0 for the others. */
+    public int effectiveSlot(int i) {
+        if (entries.isEmpty() || i < 0 || i >= entries.size())
+            return 0;
+        Entry e = entries.get(i);
+        if (e.settings.role != PortRole.ITEM_IN && e.settings.role != PortRole.FLUID_IN)
+            return 0;
+        for (int k = i - 1; k >= -1; k--) {
+            if (k < 0 || entries.get(k).settings.role == PortRole.MACHINE) {
+                if (k < 0)
+                    return 0;
+                for (Port p : portsAfter(entries.get(k)))
+                    if (p.pos().equals(e.link.pos()))
+                        return p.slot();
+                return 0;
+            }
+        }
+        return 0;
     }
 
     // ── what the machines put out into it ──
@@ -862,6 +965,8 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         for (Entry e : entries) {
             data.writeBlockPos(e.link.pos());
             data.writeByte(e.link.face().get3DDataValue());
+            data.writeByte(e.settings.role.ordinal());
+            data.writeVarInt(e.settings.slot);
         }
     }
 
@@ -870,20 +975,31 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         int n = data.readVarInt();
         var dim = host.level() == null ? null : host.level().dimension();
         List<MachineLinkTool.Link> now = new ArrayList<>();
+        List<PortRole> roles = new ArrayList<>();
+        List<Integer> slots = new ArrayList<>();
         for (int i = 0; i < n; i++) {
             BlockPos p = data.readBlockPos();
             Direction f = Direction.from3DDataValue(data.readByte());
-            if (dim != null)
+            PortRole role = PortRole.values()[Math.floorMod(data.readByte(), PortRole.values().length)];
+            int slot = data.readVarInt();
+            if (dim != null) {
                 now.add(new MachineLinkTool.Link(dim, p, f));
+                roles.add(role);
+                slots.add(slot);
+            }
         }
         // keep the entries (and their synced slots) that are still there; the client's copies only hold what the menu syncs
         List<Entry> next = new ArrayList<>();
-        for (MachineLinkTool.Link l : now) {
+        for (int i = 0; i < now.size(); i++) {
+            MachineLinkTool.Link l = now.get(i);
             Entry old = null;
             for (Entry e : entries)
                 if (e.link.equals(l))
                     old = e;
-            next.add(old != null ? old : new Entry(l));
+            Entry e = old != null ? old : new Entry(l);
+            e.settings.role = roles.get(i);
+            e.settings.slot = slots.get(i);
+            next.add(e);
         }
         entries.clear();
         entries.addAll(next);

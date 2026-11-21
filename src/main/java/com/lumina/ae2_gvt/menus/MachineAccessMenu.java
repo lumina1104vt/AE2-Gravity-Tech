@@ -45,6 +45,7 @@ public class MachineAccessMenu extends AEBaseMenu {
     private static final String SET_MODE = "setAccessMode";
     private static final String TOGGLE_RECOVER = "toggleRecover", TOGGLE_RECOVER_ENERGY = "toggleRecoverEnergy";
     private static final String RECOVER_FACE = "toggleRecoverFace";
+    private static final String CYCLE_ROLE = "cycleRole", STEP_SLOT = "stepSlot";
     /** Pairing numbers: 0 (none) to this. */
     private static final int MAX_GROUP = 16;
 
@@ -91,6 +92,13 @@ public class MachineAccessMenu extends AEBaseMenu {
     /** whether the FE a machine gives out is taken back too */
     @GuiSync(27)
     public boolean recoverEnergy;
+    /** the selected block's role ({@link IMachineAccess.PortRole} ordinal), its slot number as set (0 = by place) and as it counts */
+    @GuiSync(28)
+    public int role;
+    @GuiSync(29)
+    public int slot;
+    @GuiSync(39)
+    public int slotNow;
     /** the network's count of what the selected machine's stock slots hold, one per slot */
     @GuiSync(30) public long net0;
     @GuiSync(31) public long net1;
@@ -170,6 +178,8 @@ public class MachineAccessMenu extends AEBaseMenu {
         registerClientAction(TOGGLE_RECOVER, this::toggleRecover);
         registerClientAction(TOGGLE_RECOVER_ENERGY, this::toggleRecoverEnergy);
         registerClientAction(RECOVER_FACE, Integer.class, this::toggleRecoverFace);
+        registerClientAction(CYCLE_ROLE, Boolean.class, this::cycleRole);
+        registerClientAction(STEP_SLOT, Integer.class, this::stepSlot);
     }
 
     public MachineAccessCore getPart() {
@@ -227,7 +237,43 @@ public class MachineAccessMenu extends AEBaseMenu {
         return all[Math.floorMod(insertMode, all.length)];
     }
 
+    public IMachineAccess.PortRole getRole() {
+        IMachineAccess.PortRole[] all = IMachineAccess.PortRole.values();
+        return all[Math.floorMod(role, all.length)];
+    }
+
+    /** Whether the selected block is a hatch of a machine (not a machine of its own). */
+    public boolean isHatch() {
+        return getRole() != IMachineAccess.PortRole.MACHINE;
+    }
+
+    /** Whether the selected block is an input, which is numbered. */
+    public boolean isNumbered() {
+        return getRole() == IMachineAccess.PortRole.ITEM_IN || getRole() == IMachineAccess.PortRole.FLUID_IN;
+    }
+
     // ── actions (client asks, server does) ──
+
+    /** The selected block is something else: the next (or, {@code back}, the previous) role. */
+    public void cycleRole(Boolean back) {
+        if (isClientSide()) {
+            sendClientAction(CYCLE_ROLE, back);
+            return;
+        }
+        IMachineAccess.PortRole[] all = IMachineAccess.PortRole.values();
+        var s = part.settings(selected);
+        s.setRole(all[Math.floorMod(s.getRole().ordinal() + (back ? -1 : 1), all.length)]);
+    }
+
+    /** The slot number of an input hatch moves by {@code delta} (0 = by its place among the machine's hatches of the kind). */
+    public void stepSlot(Integer delta) {
+        if (isClientSide()) {
+            sendClientAction(STEP_SLOT, delta);
+            return;
+        }
+        var s = part.settings(selected);
+        s.setSlot(s.getSlot() + delta);
+    }
 
     public void setAccessMode(Integer ordinal) {
         if (isClientSide()) {
@@ -378,6 +424,9 @@ public class MachineAccessMenu extends AEBaseMenu {
             mode = part.getMode().ordinal();
             var s = part.settings(selected);
             group = s.getGroup();
+            role = s.getRole().ordinal();
+            slot = s.getSlot();
+            slotNow = part.effectiveSlot(selected);
             subRange = s.getSubRange();
             redstonePulse = s.isRedstonePulse();
             recover = s.isRecover();
@@ -402,9 +451,9 @@ public class MachineAccessMenu extends AEBaseMenu {
             if (!part.isAccessActive()) {
                 view = TwinStarService.MachineView.of(TwinStarService.MachineState.INACTIVE);
             } else if (grid != null && grid.getService(ITwinStarService.class) instanceof TwinStarService service) {
-                var points = part.accessPoints();
-                if (!points.isEmpty())
-                    view = service.machineView(points.get(Math.min(selected, points.size() - 1)));
+                IMachineAccess machine = part.getMode() == MachineAccessCore.Mode.PROVIDER ? part.accessOf(selected) : null;
+                if (machine != null)
+                    view = service.machineView(machine);
             }
             state = view.state();
             output = view.output() == null ? null : new GenericStack(view.output(), 0);
