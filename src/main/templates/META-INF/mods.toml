@@ -1,0 +1,65 @@
+# Forge 1.20.1 mods.toml (filled in by generateModMetadata from the gradle properties)
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="${mod_authors}"
+description='''
+${mod_description}
+'''
+
+[[dependencies."${mod_id}"]]
+    modId="forge"
+    mandatory=true
+    versionRange="${forge_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies."${mod_id}"]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+# AE2: this is an AE2 addon and extends its classes
+[[dependencies."${mod_id}"]]
+    modId="ae2"
+    mandatory=true
+    versionRange="[15.4,16)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies."${mod_id}"]]
+    modId="geckolib"
+    mandatory=true
+    versionRange="*"
+    ordering="AFTER"
+    side="BOTH"
+
+# GuideME: item guide pages (G over an item)
+[[dependencies."${mod_id}"]]
+    modId="guideme"
+    mandatory=true
+    versionRange="*"
+    ordering="AFTER"
+    side="BOTH"
+
+# The twin-star crafting engine lives in its own lib mod (separate download)
+[[dependencies."${mod_id}"]]
+    modId="twinstar"
+    mandatory=true
+    versionRange="[${twinstar_mod_version},)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies."${mod_id}"]]
+    modId="lumina_multiblock"
+    mandatory=true
+    versionRange="[${lumina_multiblock_mod_version},)"
+    ordering="AFTER"
+    side="BOTH"

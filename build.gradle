@@ -2,13 +2,13 @@
 // which load the two sibling mods beside it:
 //   :core               twinstar - the twin-star crafting engine (lib mod)
 //   :lumina-multiblock  lumina_multiblock - multiblock structure library (lib mod)
-// Shared setup (repositories, Java, NeoForge / Parchment, mods.toml expansion, ...) is in
+// Shared setup (repositories, Java, Forge / Parchment, mods.toml expansion, ...) is in
 // gradle/mod-common.gradle; versions are in gradle.properties.
 plugins {
     id 'java-library'
     id 'maven-publish'
     id 'idea'
-    id 'net.neoforged.moddev' version '2.0.147'
+    id 'net.neoforged.moddev.legacyforge' version '2.0.147'
 }
 
 // mod description: the text lives in description.txt (UTF-8, English then 繁體中文)
@@ -25,27 +25,28 @@ tasks.named('wrapper', Wrapper).configure {
 evaluationDependsOn(':core')
 evaluationDependsOn(':lumina-multiblock')
 
-neoForge {
+legacyForge {
     // access transformers are picked up from META-INF/accesstransformer.cfg automatically
+    validateAccessTransformers = true
 
     runs {
         client {
             client()
             devLogin = true
             // comma-separated namespaces to load gametests from; empty = all
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
         }
 
         server {
             server()
             programArgument '--nogui'
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
         }
 
         // runs every registered gametest, then exits (crashes when there are none)
         gameTestServer {
             type = "gameTestServer"
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
         }
 
         data {
@@ -92,45 +93,39 @@ dependencies {
     jarJar(project(':core'))
     jarJar(project(':lumina-multiblock'))
 
-    // AE2: we build against it (the terminal extends AE2's classes) and run it in the dev client
-    compileOnly "maven.modrinth:ae2:${ae2_version}"
-    compileOnly "maven.modrinth:guideme:${guideme_version}"
-    localRuntime "maven.modrinth:ae2:${ae2_version}"
-    localRuntime "maven.modrinth:guideme:${guideme_version}"
+    // AE2: we build against it (the terminal extends AE2's classes) and run it in the dev client.
+    // The mods on Modrinth are obfuscated (SRG): the mod* configurations remap them to the names we write.
+    modCompileOnly "maven.modrinth:ae2:${ae2_version}"
+    modCompileOnly "maven.modrinth:guideme:${guideme_version}"
+    modRuntimeOnly "maven.modrinth:ae2:${ae2_version}"
+    modRuntimeOnly "maven.modrinth:guideme:${guideme_version}"
 
     // GeckoLib: the anti-gravity armor's 3D model and its animated texture
-    compileOnly "maven.modrinth:geckolib:${geckolib_version}"
-    localRuntime "maven.modrinth:geckolib:${geckolib_version}"
+    modCompileOnly "maven.modrinth:geckolib:${geckolib_version}"
+    modRuntimeOnly "maven.modrinth:geckolib:${geckolib_version}"
 
     // JEI (recipe lookup; the pattern terminal's [+] transfer will hook into it)
-    compileOnly "maven.modrinth:emi:${emi_version}"
-    compileOnly "maven.modrinth:jei:${jei_version}"
-    localRuntime "maven.modrinth:jei:${jei_version}"
-
-    // LDLib2: the twin-star lib's plan screen is built with its UI
-    localRuntime "maven.modrinth:ldlib:${ldlib_version}"
+    modCompileOnly "maven.modrinth:emi:${emi_version}"
+    modCompileOnly "maven.modrinth:jei:${jei_version}"
+    modRuntimeOnly "maven.modrinth:jei:${jei_version}"
 
     // Jade (looking at a block shows what it is); compileOnly for a plugin later
-    compileOnly "maven.modrinth:jade:${jade_version}"
-    localRuntime "maven.modrinth:jade:${jade_version}"
+    modCompileOnly "maven.modrinth:jade:${jade_version}"
+    modRuntimeOnly "maven.modrinth:jade:${jade_version}"
 
     // Immersive Engineering: only to try its machines (the alloy smelter takes its items through a GUI)
-    localRuntime "maven.modrinth:immersiveengineering:${immersiveengineering_version}"
+    modRuntimeOnly "maven.modrinth:immersiveengineering:${immersiveengineering_version}"
 
-    // ExtendedAE (EAE) and ExtendedAE-Plus (EAEP): compile against them for compat later, run them in
-    // the dev client; EAE needs glodium and ae2wtlib (its wireless terminal API)
-    compileOnly "maven.modrinth:extended-ae:${extendedae_version}"
-    localRuntime "maven.modrinth:extended-ae:${extendedae_version}"
-    localRuntime "maven.modrinth:glodium:${glodium_version}"
-    localRuntime "maven.modrinth:applied-energistics-2-wireless-terminals:${ae2wtlib_version}"
-//    compileOnly "maven.modrinth:extendedae-plus:${extendedae_plus_version}"
-//    localRuntime "maven.modrinth:extendedae-plus:${extendedae_plus_version}"
+    // ExtendedAE (EAE): compile against it for compat later, run it in the dev client; EAE needs glodium and ae2wtlib
+    modCompileOnly "maven.modrinth:extended-ae:${extendedae_version}"
+    modRuntimeOnly "maven.modrinth:extended-ae:${extendedae_version}"
+    modRuntimeOnly "maven.modrinth:glodium:${glodium_version}"
+    modRuntimeOnly "maven.modrinth:applied-energistics-2-wireless-terminals:${ae2wtlib_version}"
 
     // dev client only: building helpers (megastructures get big)
-    localRuntime "maven.modrinth:construction-wand-kots:${construction_wand_version}"
-    localRuntime "curse.maven:building-gadgets-298187:${building_gadgets_file}"
+    modRuntimeOnly "maven.modrinth:construction-wand-kots:${construction_wand_version}"
     // dev client only: stops the game swallowing keystrokes from Chinese / other IMEs
-    localRuntime "maven.modrinth:imblocker-original:${imblocker_version}"
+    modRuntimeOnly "maven.modrinth:imblocker-original:${imblocker_version}"
 }
 
 publishing {

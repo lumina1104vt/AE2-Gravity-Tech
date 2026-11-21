@@ -1,6 +1,6 @@
 // Shared by all three mods (root ae2_gvt, :core twinstar, :lumina-multiblock).
 // Applied after the plugins block (`apply from: rootProject.file('gradle/mod-common.gradle')`), so
-// the moddev `neoForge` extension already exists. Versions come from the root gradle.properties;
+// the moddev `legacyForge` extension already exists. Versions come from the root gradle.properties;
 // each module's own gradle.properties only sets its mod identity (mod_id, mod_name, ...).
 
 version = mod_version
@@ -10,7 +10,8 @@ base {
     archivesName = mod_id
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+// Forge 1.20.1 runs on Java 17
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 repositories {
     exclusiveContent {
@@ -38,8 +39,8 @@ repositories {
     }
 }
 
-neoForge {
-    version = project.neo_version
+legacyForge {
+    version = project.forge_version
 
     parchment {
         minecraftVersion = project.parchment_minecraft_version
@@ -55,14 +56,14 @@ sourceSets.main.resources {
     exclude("src/generated/**/.cache")  // datagen cache files
 }
 
-// Fills the ${...} placeholders in src/main/templates (neoforge.mods.toml). Every key is defined
+// Fills the ${...} placeholders in src/main/templates (mods.toml). Every key is defined
 // for every module (root gradle.properties + the module's own), so the templates may use any of them.
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
     var replaceProperties = [
             minecraft_version      : minecraft_version,
             minecraft_version_range: minecraft_version_range,
-            neo_version            : neo_version,
-            neo_version_range      : neo_version_range,
+            forge_version          : forge_version,
+            forge_version_range    : forge_version_range,
             loader_version_range   : loader_version_range,
             mod_id                 : mod_id,
             mod_name               : mod_name,
@@ -80,10 +81,23 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 }
 sourceSets.main.resources.srcDir generateModMetadata
 // regenerate on every IDE sync, so the IDE runs never see a stale mods.toml
-neoForge.ideSyncTask generateModMetadata
+legacyForge.ideSyncTask generateModMetadata
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+// Forge loads a mod's mixin config from the jar manifest (and the refmap maps the names to the runtime's)
+dependencies {
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    compileOnly 'org.spongepowered:mixin:0.8.5'
+}
+mixin {
+    add sourceSets.main, "${mod_id}.refmap.json"
+    config "${mod_id}.mixins.json"
+}
+jar {
+    manifest.attributes(["MixinConfigs": "${mod_id}.mixins.json"])
 }
 
 // IDEA no longer downloads sources / javadoc for dependencies by itself

@@ -1,8 +1,9 @@
 {
   "required": true,
+  "refmap": "ae2_gvt.refmap.json",
   "minVersion": "0.8",
   "package": "com.lumina.ae2_gvt.mixins",
-  "compatibilityLevel": "JAVA_21",
+  "compatibilityLevel": "JAVA_17",
   "mixins": [
     "CraftingServiceMixins",
     "ControllerValidatorMixin",
