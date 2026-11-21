@@ -62,6 +62,13 @@ public final class DevChecks {
                 level.setBlock(spawn.offset(-10, 3, 20), com.lumina.ae2_gvt.hole.GravityHole.WHITE_HOLE.get().defaultBlockState(), 3);
                 AE2GravityTech.LOGGER.info("dev holes placed round {}", spawn);
             });
+            // whoever joins is put in front of them, looking their way
+            MinecraftForge.EVENT_BUS.addListener((net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent e) -> {
+                if (e.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
+                    BlockPos spawn = player.serverLevel().getSharedSpawnPos();
+                    player.teleportTo(player.serverLevel(), spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 5.5, 21f, -20f);
+                }
+            });
         }
         if (!Boolean.getBoolean("ae2_gvt.devNetworkTest"))
             return;
