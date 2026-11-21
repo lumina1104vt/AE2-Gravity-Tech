@@ -17,6 +17,18 @@ import com.lumina.ae2_gvt.recipes.FusionRecipe;
 import com.lumina.ae2_gvt.recipes.GravityProcessingRecipe;
 import com.lumina.ae2_gvt.recipes.Recipes;
 
+import appeng.api.stacks.AEFluidKey;
+import appeng.integration.modules.jeirei.EncodingHelper;
+import com.lumina.ae2_gvt.terminal.TwinStarPatternTermMenu;
+import com.lumina.ae2_gvt.terminal.TwinStarTerminal;
+import dev.emi.emi.api.EmiApi;
+import dev.emi.emi.api.recipe.EmiPlayerInventory;
+import dev.emi.emi.api.recipe.EmiRecipe;
+import dev.emi.emi.api.recipe.handler.EmiCraftContext;
+import dev.emi.emi.api.recipe.handler.EmiRecipeHandler;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.world.level.material.Fluid;
+import org.jetbrains.annotations.Nullable;
 import dev.emi.emi.api.EmiEntrypoint;
 import dev.emi.emi.api.EmiPlugin;
 import dev.emi.emi.api.EmiRegistry;
@@ -54,6 +66,9 @@ public class GravityTechEmi implements EmiPlugin {
         registry.addCategory(FUSION);
         registry.addCategory(WORLD);
         registry.addRecipeDecorator(GravityTechEmi::decorate);
+        // the pattern terminal's [+]: the recipe becomes a pattern (the part terminal and the wireless one have a menu type each)
+        registry.addRecipeHandler(TwinStarTerminal.MENU.get(), new PatternHandler());
+        registry.addRecipeHandler(TwinStarTerminal.WIRELESS_MENU.get(), new PatternHandler());
         WorldInteraction.all(registry.getRecipeManager()).forEach(w -> registry.addRecipe(new World(w)));
         registry.addWorkstation(FACTORY, EmiStack.of(Blocks.GRAVITY_FACTORY.get()));
         registry.addWorkstation(FACTORY, EmiStack.of(Items.CHAOS_MATTER.get()));
@@ -203,6 +218,82 @@ public class GravityTechEmi implements EmiPlugin {
                     widgets.addTooltipText(List.of(i.tip()), i.x(), i.y(), i.sprite().w, i.sprite().h);
             if (layout.ring() != null)
                 widgets.addTooltipText(List.of(layout.ring().tip()), layout.ring().x(), layout.ring().y(), layout.ring().w(), layout.ring().h());
+        }
+    }
+
+    /** [+] in the twin-star pattern terminal: every alternative of each input, the outputs, the machine of the recipe's category. */
+    private static final class PatternHandler implements EmiRecipeHandler<TwinStarPatternTermMenu> {
+        @Override
+        public EmiPlayerInventory getInventory(AbstractContainerScreen<TwinStarPatternTermMenu> screen) {
+            return new EmiPlayerInventory(List.of());
+        }
+
+        @Override
+        public boolean supportsRecipe(EmiRecipe recipe) {
+            return !recipe.getInputs().isEmpty() && !recipe.getOutputs().isEmpty();
+        }
+
+        @Override
+        public boolean canCraft(EmiRecipe recipe, EmiCraftContext<TwinStarPatternTermMenu> context) {
+            return true;
+        }
+
+        @Override
+        public boolean craft(EmiRecipe recipe, EmiCraftContext<TwinStarPatternTermMenu> context) {
+            TwinStarPatternTermMenu menu = context.getScreenHandler();
+            List<List<GenericStack>> inputs = new java.util.ArrayList<>();
+            for (EmiIngredient ingredient : recipe.getInputs()) {
+                List<GenericStack> alternatives = new java.util.ArrayList<>();
+                for (EmiStack stack : ingredient.getEmiStacks()) {
+                    GenericStack converted = toStack(stack, ingredient.getAmount());
+                    if (converted != null)
+                        alternatives.add(converted);
+                }
+                if (!alternatives.isEmpty())
+                    inputs.add(alternatives);
+            }
+            List<GenericStack> outputs = new java.util.ArrayList<>();
+            for (EmiStack stack : recipe.getOutputs()) {
+                GenericStack converted = toStack(stack, stack.getAmount());
+                if (converted != null)
+                    outputs.add(converted);
+            }
+            if (inputs.isEmpty() || outputs.isEmpty())
+                return false;
+            EncodingHelper.encodeProcessingRecipe(menu, inputs, outputs);
+            menu.getMachineSlot().setFilterTo(machineOf(recipe));   // an empty stack clears the slot
+            menu.setRecipeChances(recipe.getId());
+            return true;
+        }
+
+        /** The work block of the recipe's category: its first crafting station. */
+        private static ItemStack machineOf(EmiRecipe recipe) {
+            for (EmiIngredient station : EmiApi.getRecipeManager().getWorkstations(recipe.getCategory())) {
+                for (EmiStack stack : station.getEmiStacks()) {
+                    ItemStack item = stack.getItemStack();
+                    if (!item.isEmpty()) {
+                        ItemStack one = item.copy();
+                        one.setCount(1);
+                        return one;
+                    }
+                }
+            }
+            return ItemStack.EMPTY;
+        }
+
+        private static @Nullable GenericStack toStack(EmiStack stack, long amount) {
+            if (stack.isEmpty())
+                return null;
+            ItemStack item = stack.getItemStack();
+            if (!item.isEmpty()) {
+                ItemStack copy = item.copy();
+                copy.setCount((int) Math.max(1, Math.min(amount, Integer.MAX_VALUE)));
+                return GenericStack.fromItemStack(copy);
+            }
+            Fluid fluid = stack.getKeyOfType(Fluid.class);
+            if (fluid != null)
+                return new GenericStack(AEFluidKey.of(fluid, stack.getNbt()), Math.max(1, amount));
+            return null;
         }
     }
 }
