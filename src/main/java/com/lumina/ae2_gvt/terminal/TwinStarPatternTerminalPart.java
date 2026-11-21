@@ -37,8 +37,8 @@ import org.jetbrains.annotations.Nullable;
  * faces each material goes in through, and the recipe JEI last filled it from.
  */
 public class TwinStarPatternTerminalPart extends PatternEncodingTerminalPart implements ITwinStarTermHost {
-    private static final ResourceLocation SCREEN_OFF = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "part/twin_star_pattern_terminal_off");
-    private static final ResourceLocation SCREEN_ON = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "part/twin_star_pattern_terminal_on");
+    private static final ResourceLocation SCREEN_OFF = new ResourceLocation(AE2GravityTech.MODID, "part/twin_star_pattern_terminal_off");
+    private static final ResourceLocation SCREEN_ON = new ResourceLocation(AE2GravityTech.MODID, "part/twin_star_pattern_terminal_on");
 
     // AE2's display frame and status lights around our own screen (registered in AE2GravityTechClient)
     @PartModels
@@ -66,15 +66,15 @@ public class TwinStarPatternTerminalPart extends PatternEncodingTerminalPart imp
     }
 
     @Override
-    public void readFromNBT(CompoundTag tag, HolderLookup.Provider registries) {
-        super.readFromNBT(tag, registries);
-        state.read(tag, registries);
+    public void readFromNBT(CompoundTag tag) {
+        super.readFromNBT(tag);
+        state.read(tag);
     }
 
     @Override
-    public void writeToNBT(CompoundTag tag, HolderLookup.Provider registries) {
-        super.writeToNBT(tag, registries);
-        state.write(tag, registries);
+    public void writeToNBT(CompoundTag tag) {
+        super.writeToNBT(tag);
+        state.write(tag);
     }
 
     @Override

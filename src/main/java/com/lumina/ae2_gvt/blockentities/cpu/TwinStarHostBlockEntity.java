@@ -15,7 +15,7 @@ import appeng.api.networking.crafting.ICraftingProvider;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.KeyCounter;
 import appeng.api.inventories.InternalInventory;
-import appeng.blockentity.grid.AENetworkedBlockEntity;
+import appeng.blockentity.grid.AENetworkBlockEntity;
 import appeng.helpers.patternprovider.PatternContainer;
 import appeng.util.inv.AppEngInternalInventory;
 import appeng.util.inv.InternalInventoryHost;
@@ -32,7 +32,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -45,7 +45,7 @@ import org.jetbrains.annotations.Nullable;
  * are saved with it and handed back when it joins a grid again. Subclasses give the capacity and the
  * parallel count.
  */
-public abstract class TwinStarHostBlockEntity extends AENetworkedBlockEntity
+public abstract class TwinStarHostBlockEntity extends AENetworkBlockEntity
         implements InternalInventoryHost, ITwinStarHost, ICraftingProvider, PatternContainer {
     /** Pattern slots; the GUI only creates the visible ones (a menu with 50,000 slots would sync them all). */
     public static final int MAX_PATTERNS = 50_000;
@@ -230,7 +230,7 @@ public abstract class TwinStarHostBlockEntity extends AENetworkedBlockEntity
     }
 
     @Override
-    public void saveChangedInventory(AppEngInternalInventory inv) {
+    public void saveChanges() {
         // packing moves up to 50,000 stacks one by one: one save at the end, not one per move
         // (per move, taking out the first of 1,600 patterns cost 2.5 million saves; breaking the
         // block froze the server for 24 s)
@@ -244,7 +244,7 @@ public abstract class TwinStarHostBlockEntity extends AENetworkedBlockEntity
      * changed slot is looked at, never all 50,000.
      */
     @Override
-    public void onChangeInventory(AppEngInternalInventory inv, int slot) {
+    public void onChangeInventory(InternalInventory inv, int slot) {
         if (compacting || isClientSide()) {
             return;
         }
@@ -292,9 +292,9 @@ public abstract class TwinStarHostBlockEntity extends AENetworkedBlockEntity
     }
 
     @Override
-    public void saveAdditional(CompoundTag data, HolderLookup.Provider registries) {
-        super.saveAdditional(data, registries);
-        patterns.writeToNBT(data, "patterns", registries);
+    public void saveAdditional(CompoundTag data) {
+        super.saveAdditional(data);
+        patterns.writeToNBT(data, "patterns");
         TwinStarService service = service();
         CompoundTag jobs = service != null ? service.jobsFor(this) : null;
         if (jobs == null)
@@ -306,9 +306,9 @@ public abstract class TwinStarHostBlockEntity extends AENetworkedBlockEntity
     private static final String JOBS_TAG = "twinstarJobs";
 
     @Override
-    public void loadTag(CompoundTag data, HolderLookup.Provider registries) {
-        super.loadTag(data, registries);
-        patterns.readFromNBT(data, "patterns", registries);
+    public void loadTag(CompoundTag data) {
+        super.loadTag(data);
+        patterns.readFromNBT(data, "patterns");
         repack();
         decoded = null;
         parkedJobs = data.contains(JOBS_TAG, Tag.TAG_COMPOUND) ? data.getCompound(JOBS_TAG).copy() : null;
@@ -350,5 +350,15 @@ public abstract class TwinStarHostBlockEntity extends AENetworkedBlockEntity
         stored = 0;
         patternsChanged();
         saveChanges();
+    }
+
+    // ── capabilities (1.20.1: the block entity answers for them) ──
+
+    @Override
+    public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(net.minecraftforge.common.capabilities.Capability<T> cap,
+                                                                            @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER)
+            return net.minecraftforge.common.util.LazyOptional.of(this::getInsertOnlyHandler).cast();
+        return super.getCapability(cap, side);
     }
 }

@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "a": {
+      "item": "ae2_gvt:gravity_dust"
+    },
+    "b": {
+      "item": "ae2_gvt:gravity_processor"
+    },
+    "c": {
+      "item": "ae2_gvt:graviton_cell_component_1k"
+    },
+    "d": {
+      "item": "ae2:quartz_glass"
+    }
+  },
+  "pattern": [
+    "aba",
+    "cdc",
+    "aca"
+  ],
+  "result": {
+    "item": "ae2_gvt:graviton_cell_component_4k",
+    "count": 1
+  }
+}

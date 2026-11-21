@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "cxc",
+    "xmx",
+    "cxc"
+  ],
+  "key": {
+    "c": {
+      "item": "ae2_gvt:gravity_alloy_ingot"
+    },
+    "x": {
+      "item": "ae2:singularity"
+    },
+    "m": {
+      "item": "ae2_gvt:chaos_matter"
+    }
+  },
+  "result": {
+    "item": "ae2_gvt:black_hole_core",
+    "count": 1
+  }
+}

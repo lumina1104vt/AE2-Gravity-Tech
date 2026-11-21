@@ -10,14 +10,14 @@ import appeng.client.gui.me.common.ClientDisplaySlot;
 import appeng.client.gui.widgets.NumberEntryWidget;
 import appeng.client.gui.widgets.TabButton;
 import appeng.core.localization.GuiText;
-import appeng.core.network.serverbound.InventoryActionPacket;
+import appeng.core.sync.packets.InventoryActionPacket;
 import appeng.helpers.InventoryAction;
 import appeng.menu.SlotSemantics;
 import com.google.common.primitives.Longs;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraftforge.network.PacketDistributor;
 
 /**
  * How much of a stock slot's item the machine access interface keeps in its machine: AE2's own stock
@@ -34,7 +34,7 @@ public class SetStockAmountScreen extends AESubScreen<MachineAccessMenu, Machine
         this.slot = slot;
         widgets.addButton("save", GuiText.Set.text(), this::confirm);
         ItemStack icon = new ItemStack(com.lumina.ae2_gvt.items.Items.MACHINE_ACCESS_INTERFACE.get());
-        widgets.add("back", new TabButton(Icon.BACK, Component.translatable("item.ae2_gvt.machine_access_interface"),
+        widgets.add("back", new TabButton(Icon.ARROW_LEFT, Component.translatable("item.ae2_gvt.machine_access_interface"),
                 btn -> returnToParent()));
         amount = widgets.addNumberEntryWidget("amountToStock", NumberEntryType.of(currentStack.what()));
         amount.setLongValue(currentStack.amount());
@@ -57,7 +57,7 @@ public class SetStockAmountScreen extends AESubScreen<MachineAccessMenu, Machine
         amount.getLongValue().ifPresent(value -> {
             value = Longs.constrainToRange(value, 0, getMaxAmount());
             GenericStack stack = value <= 0 ? null : new GenericStack(currentStack.what(), value);
-            PacketDistributor.sendToServer(new InventoryActionPacket(InventoryAction.SET_FILTER, slot.index,
+            appeng.core.sync.network.NetworkHandler.instance().sendToServer(new InventoryActionPacket(InventoryAction.SET_FILTER, slot.index,
                     GenericStack.wrapInItemStack(stack)));
             returnToParent();
         });

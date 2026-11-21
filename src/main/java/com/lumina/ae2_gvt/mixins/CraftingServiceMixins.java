@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(CraftingService.class)
+@Mixin(value = CraftingService.class, remap = false)
 public abstract class CraftingServiceMixins {
     @Shadow
     public abstract void addLink(CraftingLink link);

@@ -27,9 +27,9 @@ import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureType;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSerializationContext;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceType;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.eventbus.api.IEventBus;
+import com.lumina.ae2_gvt.reg.DeferredHolder;
+import com.lumina.ae2_gvt.reg.DeferredRegister;
 
 /**
  * Natural black holes, placed like AE2's meteorites (same spread and biomes: see the structure set
@@ -39,11 +39,11 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * structure tag {@link #TAG}.
  */
 public final class BlackHoleCrater extends Structure {
-    public static final MapCodec<BlackHoleCrater> CODEC = simpleCodec(BlackHoleCrater::new);
+    public static final com.mojang.serialization.Codec<BlackHoleCrater> CODEC = simpleCodec(BlackHoleCrater::new);
     public static final TagKey<Structure> TAG = TagKey.create(Registries.STRUCTURE,
-            ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "black_holes"));
+            new ResourceLocation(AE2GravityTech.MODID, "black_holes"));
     public static final ResourceKey<Structure> KEY = ResourceKey.create(Registries.STRUCTURE,
-            ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "black_hole"));
+            new ResourceLocation(AE2GravityTech.MODID, "black_hole"));
 
     private static final DeferredRegister<StructureType<?>> TYPES = DeferredRegister.create(Registries.STRUCTURE_TYPE, AE2GravityTech.MODID);
     private static final DeferredRegister<StructurePieceType> PIECES = DeferredRegister.create(Registries.STRUCTURE_PIECE, AE2GravityTech.MODID);
@@ -106,7 +106,7 @@ public final class BlackHoleCrater extends Structure {
 
         Piece(CompoundTag tag) {
             super(PIECE.get(), tag);
-            this.centre = NbtUtils.readBlockPos(tag, "centre").orElse(BlockPos.ZERO);
+            this.centre = NbtUtils.readBlockPos(tag.getCompound("centre"));
             this.radius = tag.getInt("radius");
             this.kind = tag.getInt("kind");
             this.surface = tag.getInt("surface");

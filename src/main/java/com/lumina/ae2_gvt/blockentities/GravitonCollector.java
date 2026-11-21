@@ -2,7 +2,7 @@ package com.lumina.ae2_gvt.blockentities;
 
 import appeng.api.config.Actionable;
 import appeng.api.networking.security.IActionSource;
-import appeng.blockentity.grid.AENetworkedBlockEntity;
+import appeng.blockentity.grid.AENetworkBlockEntity;
 import com.lumina.ae2_gvt.blocks.Blocks;
 import com.lumina.ae2_gvt.graviton.GravitonKey;
 import net.minecraft.core.BlockPos;
@@ -19,7 +19,7 @@ import java.util.WeakHashMap;
  * every collector in range. Only a collector on a powered network catches anything; what the network
  * can't take (cells full) is lost.
  */
-public class GravitonCollector extends AENetworkedBlockEntity {
+public class GravitonCollector extends AENetworkBlockEntity {
     /** How far from a hole a collector still catches its gravitons (blocks, along each axis). */
     public static final int RANGE = 16;
 

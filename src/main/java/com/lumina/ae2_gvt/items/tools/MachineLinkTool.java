@@ -11,7 +11,6 @@ import com.lumina.ae2_gvt.items.parts.MachineAccessInterface;
 import appeng.api.parts.IPartHost;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -24,7 +23,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 
@@ -65,18 +63,21 @@ public class MachineLinkTool extends Item {
     }
 
     public static @Nullable Link getSelected(ItemStack stack) {
-        CustomData data = stack.get(DataComponents.CUSTOM_DATA);
-        if (data == null)
-            return null;
-        CompoundTag tag = data.copyTag();
-        return tag.contains(KEY) ? Link.fromTag(tag.getCompound(KEY)) : null;
+        CompoundTag tag = stack.getTag();
+        return tag != null && tag.contains(KEY) ? Link.fromTag(tag.getCompound(KEY)) : null;
     }
 
     public static void setSelected(ItemStack stack, @Nullable Link link) {
-        if (link == null)
-            CustomData.update(DataComponents.CUSTOM_DATA, stack, t -> t.remove(KEY));
-        else
-            CustomData.update(DataComponents.CUSTOM_DATA, stack, t -> t.put(KEY, link.toTag()));
+        if (link == null) {
+            CompoundTag tag = stack.getTag();
+            if (tag != null) {
+                tag.remove(KEY);
+                if (tag.isEmpty())
+                    stack.setTag(null);
+            }
+        } else {
+            stack.getOrCreateTag().put(KEY, link.toTag());
+        }
     }
 
     /** Picks {@code me} as the interface to set up (again: lets go of it), and says so. */
@@ -158,7 +159,7 @@ public class MachineLinkTool extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> lines, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.Level context, List<Component> lines, TooltipFlag flag) {
         Link picked = getSelected(stack);
         if (picked == null)
             lines.add(Component.translatable("tooltip.ae2_gvt.link_tool.empty"));

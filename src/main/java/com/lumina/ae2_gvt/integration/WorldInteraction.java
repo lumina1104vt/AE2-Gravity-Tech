@@ -19,10 +19,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeHolder;
+import com.lumina.twinstar.util.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.ItemLike;
-import net.neoforged.neoforge.common.crafting.SizedIngredient;
+import com.lumina.ae2_gvt.recipes.SizedIngredient;
 
 /**
  * What happens in the world rather than in a machine, for JEI and EMI to show beside the recipes: things dropped
@@ -35,7 +35,7 @@ public record WorldInteraction(String name, Scene scene, List<ItemStack> inputs,
     public enum Scene {DROP, BLAST, BLOWN, GROWTH, SEED, BUDDING}
 
     public ResourceLocation id() {
-        return ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "world/" + name);
+        return new ResourceLocation(AE2GravityTech.MODID, "world/" + name);
     }
 
     /** The words for what it is: its own line when the language has one, else a general one for how it is pictured. */
@@ -54,9 +54,9 @@ public record WorldInteraction(String name, Scene scene, List<ItemStack> inputs,
      */
     public static List<WorldInteraction> all(RecipeManager recipes) {
         List<WorldInteraction> list = new ArrayList<>();
-        for (RecipeHolder<HoleConversionRecipe> h : recipes.getAllRecipesFor(Recipes.HOLE_CONVERSION.get()))
+        for (RecipeHolder<HoleConversionRecipe> h : RecipeHolder.allOf(recipes.getAllRecipesFor(Recipes.HOLE_CONVERSION.get())))
             list.add(fromConversion(h));
-        recipes.getAllRecipesFor(Recipes.EXPLOSION.get()).stream()
+        RecipeHolder.allOf(recipes.getAllRecipesFor(Recipes.EXPLOSION.get())).stream()
                 .sorted(Comparator.comparingInt((RecipeHolder<ExplosionRecipe> h) -> h.value().priority()).reversed())
                 .forEach(h -> list.add(fromExplosion(h)));
         list.addAll(mechanics());

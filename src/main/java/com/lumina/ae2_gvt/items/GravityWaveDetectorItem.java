@@ -10,17 +10,15 @@ import com.lumina.ae2_gvt.hole.BlackHoleCrater;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.SectionPos;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.LodestoneTracker;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraft.world.level.levelgen.structure.StructureCheckResult;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStructurePlacement;
@@ -54,11 +52,46 @@ public class GravityWaveDetectorItem extends Item {
         if (!selected && player.getOffhandItem() != stack)
             return;
         BlockPos found = nearest(server, entity.blockPosition());
-        LodestoneTracker target = found == null ? null
-                : new LodestoneTracker(Optional.of(GlobalPos.of(level.dimension(), found)), false);
-        LodestoneTracker now = stack.get(DataComponents.LODESTONE_TRACKER);
+        GlobalPos target = found == null ? null : GlobalPos.of(level.dimension(), found);
+        GlobalPos now = target(stack);
         if (target == null ? now != null : !target.equals(now))
-            stack.set(DataComponents.LODESTONE_TRACKER, target);
+            setTarget(stack, target);
+    }
+
+    /** Where the detector points (kept in the stack as a compass keeps its lodestone: 1.20.1 has no tracker component). */
+    public static @Nullable GlobalPos target(ItemStack stack) {
+        var tag = stack.getTag();
+        if (tag == null || !tag.contains("LodestonePos") || !tag.contains("LodestoneDimension"))
+            return null;
+        var dimension = net.minecraft.world.level.Level.RESOURCE_KEY_CODEC.parse(net.minecraft.nbt.NbtOps.INSTANCE, tag.get("LodestoneDimension")).result();
+        return dimension.map(d -> GlobalPos.of(d, net.minecraft.nbt.NbtUtils.readBlockPos(tag.getCompound("LodestonePos")))).orElse(null);
+    }
+
+    public static void setTarget(ItemStack stack, @Nullable GlobalPos target) {
+        if (target == null) {
+            var tag = stack.getTag();
+            if (tag != null) {
+                tag.remove("LodestonePos");
+                tag.remove("LodestoneDimension");
+                if (tag.isEmpty())
+                    stack.setTag(null);
+            }
+            return;
+        }
+        var tag = stack.getOrCreateTag();
+        tag.put("LodestonePos", net.minecraft.nbt.NbtUtils.writeBlockPos(target.pos()));
+        net.minecraft.world.level.Level.RESOURCE_KEY_CODEC.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, target.dimension())
+                .result().ifPresent(t -> tag.put("LodestoneDimension", t));
+    }
+
+    @Override
+    public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.lumina.ae2_gvt.client.WaveDetectorClient.renderer();
+            }
+        });
     }
 
     /** The nearest natural black hole within {@link #SEARCH_CHUNKS} chunks of {@code from}, or null. */
@@ -107,7 +140,7 @@ public class GravityWaveDetectorItem extends Item {
         var structures = level.structureManager();
         if (!placement.isStructureChunk(level.getChunkSource().getGeneratorState(), chunk.x, chunk.z))
             return null;
-        if (structures.checkStructurePresence(chunk, structure, placement, false) == StructureCheckResult.START_NOT_PRESENT)
+        if (structures.checkStructurePresence(chunk, structure, false) == StructureCheckResult.START_NOT_PRESENT)
             return null;
         var access = level.getChunk(chunk.x, chunk.z, ChunkStatus.STRUCTURE_STARTS);
         StructureStart start = structures.getStartForStructure(SectionPos.bottomOf(access), structure, access);

@@ -37,7 +37,7 @@ public class HubControllerScreen extends AEBaseScreen<HubControllerMenu> {
     /** running: blue; not running: orange (told apart without red / green, and in words) */
     private static final int ON = 0xFF2F6FB0, OFF = 0xFFB0601C;
     private static final Blitter SLOT_FRAME = Blitter.texture(
-            ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/twin_star_hub.png"), 256, 256).src(200, 0, 19, 19);
+            new ResourceLocation(AE2GravityTech.MODID, "textures/gui/twin_star_hub.png"), 256, 256).src(200, 0, 19, 19);
 
     private final Scrollbar scrollbar;
     private int shown;

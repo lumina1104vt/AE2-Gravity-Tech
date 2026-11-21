@@ -133,11 +133,6 @@ public final class TwinHoleMesh {
 
     private static void emit(PoseStack.Pose pose, VertexConsumer vc, V v, Frame f) {
         float h = v.p.dot(f.n);
-        vc.addVertex(pose, v.p.x, v.p.y, v.p.z)
-                .setColor(255, 255, 255, 255)
-                .setUv(v.p.dot(f.e1), v.p.dot(f.e2))
-                .setUv1(Math.round(h * 1000), Math.round(f.prox * 1000))
-                .setLight(LightTexture.FULL_BRIGHT)
-                .setNormal(pose, v.n.x, v.n.y, v.n.z);
+        vc.vertex(pose.pose(), v.p.x, v.p.y, v.p.z).color(255, 255, 255, 255).uv(v.p.dot(f.e1), v.p.dot(f.e2)).overlayCoords(Math.round(h * 1000), Math.round(f.prox * 1000)).uv2(LightTexture.FULL_BRIGHT).normal(pose.normal(), v.n.x, v.n.y, v.n.z).endVertex();
     }
 }

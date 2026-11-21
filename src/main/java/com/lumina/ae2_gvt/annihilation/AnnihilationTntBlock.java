@@ -22,6 +22,9 @@ import net.minecraft.world.level.gameevent.GameEvent;
  * spawns a {@link PrimedTnt} that renders as plain TNT.
  */
 public class AnnihilationTntBlock extends TntBlock {
+    /** Marks the primed TNT as ours (1.20.1 has no block state on it). */
+    public static final String MARK = "ae2_gvt_annihilation";
+
     public AnnihilationTntBlock(Properties properties) {
         super(properties);
     }
@@ -51,7 +54,7 @@ public class AnnihilationTntBlock extends TntBlock {
 
     private PrimedTnt primed(Level level, BlockPos pos, @Nullable LivingEntity source) {
         PrimedTnt tnt = new PrimedTnt(level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, source);
-        tnt.setBlockState(defaultBlockState());
+        tnt.getPersistentData().putBoolean(MARK, true);
         return tnt;
     }
 }

@@ -3,7 +3,6 @@ package com.lumina.ae2_gvt.items.armor;
 import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
 import appeng.api.features.IGridLinkableHandler;
-import appeng.api.ids.AEComponents;
 import appeng.api.implementations.blockentities.IWirelessAccessPoint;
 import appeng.api.networking.IGrid;
 import appeng.blockentity.networking.WirelessAccessPointBlockEntity;
@@ -32,14 +31,24 @@ public final class ArmorNetwork {
 
         @Override
         public void link(ItemStack stack, GlobalPos pos) {
-            stack.set(AEComponents.WIRELESS_LINK_TARGET, pos);
+            GlobalPos.CODEC.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, pos).result().ifPresent(t -> stack.getOrCreateTag().put(LINK_KEY, t));
         }
 
         @Override
         public void unlink(ItemStack stack) {
-            stack.remove(AEComponents.WIRELESS_LINK_TARGET);
+            if (stack.getTag() != null)
+                stack.getTag().remove(LINK_KEY);
         }
     };
+
+    /** Where AE2 15 keeps a wireless terminal's link, and so the armor's. */
+    private static final String LINK_KEY = "accessPoint";
+
+    private static @org.jetbrains.annotations.Nullable GlobalPos linkOf(ItemStack stack) {
+        var tag = stack.getTag();
+        return tag == null || !tag.contains(LINK_KEY) ? null
+                : GlobalPos.CODEC.parse(net.minecraft.nbt.NbtOps.INSTANCE, tag.get(LINK_KEY)).result().orElse(null);
+    }
 
     private ArmorNetwork() {
     }
@@ -56,7 +65,7 @@ public final class ArmorNetwork {
             ItemStack stack = player.getItemBySlot(slot);
             if (!(stack.getItem() instanceof AntigravityArmorItem))
                 continue;
-            GlobalPos target = stack.get(AEComponents.WIRELESS_LINK_TARGET);
+            GlobalPos target = linkOf(stack);
             if (target == null)
                 continue;
             var level = player.server.getLevel(target.dimension());

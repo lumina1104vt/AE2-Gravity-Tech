@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
-import appeng.api.config.PowerUnit;
+import appeng.api.config.PowerUnits;
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGridConnection;
 import appeng.api.networking.IGridNode;
@@ -25,7 +25,7 @@ import appeng.api.stacks.AEKey;
 import appeng.api.stacks.AEKeyType;
 import appeng.api.stacks.AEKeyTypes;
 import appeng.api.stacks.GenericStack;
-import appeng.blockentity.grid.AENetworkedBlockEntity;
+import appeng.blockentity.grid.AENetworkBlockEntity;
 import appeng.helpers.externalstorage.GenericStackFluidStorage;
 import appeng.helpers.externalstorage.GenericStackItemStorage;
 import appeng.util.ConfigInventory;
@@ -47,18 +47,18 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Containers;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
+import com.lumina.twinstar.util.RecipeHolder;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -79,7 +79,7 @@ import org.jetbrains.annotations.Nullable;
  * controller asks whether it stands. {@link #chamber} is its low corner while formed (synced, so the
  * client draws the plasma at its centre).
  */
-public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
+public class FusionControllerBlockEntity extends AENetworkBlockEntity {
     /** A cold, unpowered chamber. */
     public static final double AMBIENT = 1500;
     /** Equilibrium Kelvin per FE/t of input. */
@@ -118,11 +118,10 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
     private long energyCap = 0;
     private @Nullable BlockPos chamber;
 
-    private final ConfigInventory inputs = ConfigInventory.storage(12).allowOverstacking(true)
-            .changeListener(this::onInputsChanged).build();
-    private final ConfigInventory outputs = ConfigInventory.storage(20).allowOverstacking(true).changeListener(this::saveChanges).build();
+    private final ConfigInventory inputs = ConfigInventory.storage(12, this::onInputsChanged);
+    private final ConfigInventory outputs = ConfigInventory.storage(20, this::saveChanges);
     /** What each input slot is kept stocked with from the network. */
-    private final ConfigInventory marks = ConfigInventory.configStacks(inputs.size()).allowOverstacking(true).changeListener(this::saveChanges).build();
+    private final ConfigInventory marks = ConfigInventory.configStacks((appeng.api.storage.AEKeyFilter) null, inputs.size(), this::saveChanges, true);
     private final IItemHandler pipes = new PipeHandler(new GenericStackItemStorage(inputs), new GenericStackItemStorage(outputs));
     private final IFluidHandler fluidPipes = new GenericStackFluidStorage(inputs);
     /** A link to each hub port of the formed chamber. */
@@ -264,9 +263,9 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
             burning = Math.min(energyCap, storedFe);
             storedFe -= burning;
             if (burning < energyCap && getMainNode().isActive() && getMainNode().getGrid() != null) {
-                double wanted = PowerUnit.FE.convertTo(PowerUnit.AE, energyCap - burning);
+                double wanted = PowerUnits.FE.convertTo(PowerUnits.AE, energyCap - burning);
                 double got = getMainNode().getGrid().getEnergyService().extractAEPower(wanted, Actionable.MODULATE, PowerMultiplier.CONFIG);
-                burning = Math.min(energyCap, burning + (long) PowerUnit.AE.convertTo(PowerUnit.FE, got));
+                burning = Math.min(energyCap, burning + (long) PowerUnits.AE.convertTo(PowerUnits.FE, got));
             }
         }
     }
@@ -276,7 +275,7 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
             recheck = false;
             FusionRecipe.Input input = new FusionRecipe.Input(inputs);
             if (reaction == null || !reaction.value().matches(input, level)) {
-                reaction = level.getRecipeManager().getAllRecipesFor(Recipes.FUSION.get()).stream()
+                reaction = RecipeHolder.allOf(level.getRecipeManager().getAllRecipesFor(Recipes.FUSION.get())).stream()
                         .filter(r -> r.value().matches(input, level)).findFirst().orElse(null);
                 progress = 0;
             }
@@ -319,9 +318,9 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
             var energy = getMainNode().getGrid().getEnergyService();
             double room = energy.getMaxStoredPower() - energy.getStoredPower();
             if (room > 0) {
-                double offered = Math.min(PowerUnit.FE.convertTo(PowerUnit.AE, left), room);
+                double offered = Math.min(PowerUnits.FE.convertTo(PowerUnits.AE, left), room);
                 double refused = energy.injectPower(offered, Actionable.MODULATE);
-                left -= Math.min(left, (long) PowerUnit.AE.convertTo(PowerUnit.FE, offered - refused));
+                left -= Math.min(left, (long) PowerUnits.AE.convertTo(PowerUnits.FE, offered - refused));
             }
         }
         // then the energy ports' buffer, for the cables that draw it (what it cannot hold is lost)
@@ -388,7 +387,7 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
     }
 
     private boolean resultsFit(FusionRecipe r) {
-        ConfigInventory test = ConfigInventory.storage(outputs.size()).allowOverstacking(true).build();
+        ConfigInventory test = ConfigInventory.storage(outputs.size(), () -> {});
         for (AEKeyType type : AEKeyTypes.getAll())
             test.setCapacity(type, outputs.getCapacity(type));
         for (int i = 0; i < outputs.size(); i++)
@@ -441,13 +440,11 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
         for (BlockPos p : energyPorts) {
             if (!ports.contains(p)) {
                 ENERGY_PORTS.remove(GlobalPos.of(level.dimension(), p));
-                level.invalidateCapabilities(p);
             }
         }
         for (BlockPos p : ports) {
             if (!energyPorts.contains(p)) {
                 ENERGY_PORTS.put(GlobalPos.of(level.dimension(), p), this);
-                level.invalidateCapabilities(p);
             }
         }
         energyPorts = ports;
@@ -672,8 +669,8 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    public void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
         tag.putDouble("temperature", temperature);
         tag.putLong("energyCap", energyCap);
         tag.putLong("storedFe", storedFe);
@@ -681,27 +678,27 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
         if (chamber != null) {
             tag.putLong("chamber", chamber.asLong());
         }
-        inputs.writeToChildTag(tag, "inputs", registries);
-        marks.writeToChildTag(tag, "marks", registries);
-        outputs.writeToChildTag(tag, "output_stacks", registries);
+        inputs.writeToChildTag(tag, "inputs");
+        marks.writeToChildTag(tag, "marks");
+        outputs.writeToChildTag(tag, "output_stacks");
         tag.putInt("progress", progress);
     }
 
     @Override
-    public void loadTag(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadTag(tag, registries);
+    public void loadTag(CompoundTag tag) {
+        super.loadTag(tag);
         temperature = tag.contains("temperature") ? tag.getDouble("temperature") : AMBIENT;
         energyCap = tag.getLong("energyCap");
         storedFe = tag.getLong("storedFe");
         outFe = tag.getLong("outFe");
         chamber = tag.contains("chamber") ? BlockPos.of(tag.getLong("chamber")) : null;
-        inputs.readFromChildTag(tag, "inputs", registries);
-        marks.readFromChildTag(tag, "marks", registries);
-        outputs.readFromChildTag(tag, "output_stacks", registries);
+        inputs.readFromChildTag(tag, "inputs");
+        marks.readFromChildTag(tag, "marks");
+        outputs.readFromChildTag(tag, "output_stacks");
         // controllers saved with plain item slots
         if (tag.contains("outputs")) {
             AppEngInternalInventory old = new AppEngInternalInventory(outputs.size());
-            old.readFromNBT(tag, "outputs", registries);
+            old.readFromNBT(tag, "outputs");
             for (ItemStack stack : old)
                 if (!stack.isEmpty())
                     add(outputs, stack);
@@ -744,7 +741,7 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
     }
 
     @Override
-    protected void writeToStream(RegistryFriendlyByteBuf data) {
+    protected void writeToStream(FriendlyByteBuf data) {
         super.writeToStream(data);
         data.writeDouble(temperature);
         data.writeLong(energyCap);
@@ -753,7 +750,7 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
     }
 
     @Override
-    protected boolean readFromStream(RegistryFriendlyByteBuf data) {
+    protected boolean readFromStream(FriendlyByteBuf data) {
         boolean changed = super.readFromStream(data);
         temperature = data.readDouble();
         energyCap = data.readLong();
@@ -763,4 +760,23 @@ public class FusionControllerBlockEntity extends AENetworkedBlockEntity {
         return changed;
     }
 
+
+    // ── capabilities (1.20.1: the block entity answers for them) ──
+
+    @Override
+    public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(net.minecraftforge.common.capabilities.Capability<T> cap,
+                                                                            @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER)
+            return net.minecraftforge.common.util.LazyOptional.of(this::getPipeHandler).cast();
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER)
+            return net.minecraftforge.common.util.LazyOptional.of(this::getFluidHandler).cast();
+        if (cap == appeng.capabilities.Capabilities.STORAGE || cap == appeng.capabilities.Capabilities.GENERIC_INTERNAL_INV)
+            return net.minecraftforge.common.util.LazyOptional.of(this::getInputs).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return com.lumina.ae2_gvt.client.renderer.FusionPlasmaRenderer.renderBox(this);
+    }
 }

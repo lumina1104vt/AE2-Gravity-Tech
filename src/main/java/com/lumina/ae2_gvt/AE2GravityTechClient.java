@@ -6,28 +6,18 @@ import com.lumina.ae2_gvt.terminal.TwinStarPatternTerminalPart;
 import appeng.api.parts.PartModels;
 import appeng.items.parts.PartModelsHelper;
 import net.minecraft.client.Minecraft;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.neoforge.client.gui.ConfigurationScreen;
-import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.ModLoadingContext;
 
-@Mod(value = AE2GravityTech.MODID, dist = Dist.CLIENT)
-@EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
-public class AE2GravityTechClient {
-    public AE2GravityTechClient(ModContainer container) {
-        // AE2 19 bakes a part's models only if they are registered before its model loading (it reads
-        // the @PartModels fields of each part class); the ae2/parts/*.json of newer AE2 is not read
-        container.registerConfig(net.neoforged.fml.config.ModConfig.Type.CLIENT, com.lumina.ae2_gvt.config.ClientConfig.SPEC);
-        PartModels.registerModels(PartModelsHelper.createModels(MachineAccessInterface.class));
-        PartModels.registerModels(PartModelsHelper.createModels(TwinStarPatternTerminalPart.class));
+/** The client side's own start (called from AE2GravityTech on a client only). */
+public final class AE2GravityTechClient {
+    private AE2GravityTechClient() {
     }
 
-    @SubscribeEvent
-    static void onClientSetup(FMLClientSetupEvent event) {
-
+    public static void init() {
+        // a part's models are baked only if they are registered before AE2's model loading (it reads the @PartModels fields of each part class)
+        ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.CLIENT, com.lumina.ae2_gvt.config.ClientConfig.SPEC);
+        PartModels.registerModels(PartModelsHelper.createModels(MachineAccessInterface.class));
+        PartModels.registerModels(PartModelsHelper.createModels(TwinStarPatternTerminalPart.class));
     }
 }

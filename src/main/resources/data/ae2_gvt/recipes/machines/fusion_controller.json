@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GAG",
+    "PXP",
+    "GAG"
+  ],
+  "key": {
+    "G": {
+      "item": "ae2_gvt:containment_glass"
+    },
+    "A": {
+      "item": "ae2_gvt:antigravity_processor"
+    },
+    "P": {
+      "item": "ae2_gvt:gravity_processor"
+    },
+    "X": {
+      "item": "ae2:controller"
+    }
+  },
+  "result": {
+    "item": "ae2_gvt:fusion_controller",
+    "count": 1
+  }
+}

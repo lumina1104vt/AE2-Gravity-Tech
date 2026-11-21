@@ -18,7 +18,7 @@ import net.minecraft.resources.ResourceLocation;
  * ring, a white hole a bright ball in a dark ring (so the two differ by more than colour). In the real world it draws nothing.
  */
 public final class SimpleHoleRenderer implements BlockEntityRenderer<GravityHoleBlockEntity> {
-    private static final ResourceLocation WHITE = ResourceLocation.withDefaultNamespace("textures/misc/white.png");
+    private static final ResourceLocation WHITE = new ResourceLocation("textures/misc/white.png");
     private static final int LATS = 12, LONS = 20, RING = 32;
     private static final float RING_IN = 1.25f, RING_OUT = 2.7f, TILT = (float) Math.toRadians(70);
 
@@ -81,7 +81,6 @@ public final class SimpleHoleRenderer implements BlockEntityRenderer<GravityHole
 
     private static void vertex(VertexConsumer vc, PoseStack.Pose p, float[] v, float shade) {
         int c = Math.round(Math.max(0, Math.min(1, shade)) * 255);
-        vc.addVertex(p, v[0], v[1], v[2]).setColor(c, c, c, 255).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY)
-                .setLight(0xF000F0).setNormal(p, 0, 1, 0);
+        vc.vertex(p.pose(), v[0], v[1], v[2]).color(c, c, c, 255).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(0xF000F0).normal(p.normal(), 0, 1, 0).endVertex();
     }
 }

@@ -4,7 +4,6 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
 
-import appeng.api.AECapabilities;
 import appeng.blockentity.AEBaseBlockEntity;
 import appeng.blockentity.networking.ControllerBlockEntity;
 import net.minecraft.core.registries.Registries;
@@ -12,13 +11,11 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.MapColor;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
-import net.neoforged.neoforge.registries.DeferredBlock;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredItem;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.eventbus.api.IEventBus;
+import com.lumina.ae2_gvt.reg.DeferredBlock;
+import com.lumina.ae2_gvt.reg.DeferredHolder;
+import com.lumina.ae2_gvt.reg.DeferredItem;
+import com.lumina.ae2_gvt.reg.DeferredRegister;
 
 /** Registration of the quantum controller (textures: tools/quantum_controller_textures.py). */
 public final class QuantumController {
@@ -48,15 +45,5 @@ public final class QuantumController {
 
     public static void register(IEventBus modEventBus) {
         BLOCK_ENTITIES.register(modEventBus);
-        modEventBus.addListener(QuantumController::registerCapabilities);
-    }
-
-    /**
-     * AE2 only hands these out to its own block entity types, so ours needs them registered: the grid
-     * node host (cables connect to it) and FE input (powered straight from a generator, like AE2's).
-     */
-    private static void registerCapabilities(RegisterCapabilitiesEvent event) {
-        event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, ENTITY.get(), (be, ctx) -> be);
-        event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ENTITY.get(), ControllerBlockEntity::getEnergyStorage);
     }
 }

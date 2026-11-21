@@ -1,22 +1,26 @@
 package com.lumina.ae2_gvt.client;
 
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.client.screen.GravityFactoryScreen;
 
 import appeng.init.client.InitScreens;
 import com.lumina.ae2_gvt.menus.Menus;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.minecraftforge.api.distmarker.Dist;
 
-@EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = AE2GravityTech.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class GravityFactoryClient {
     private GravityFactoryClient() {
     }
 
+
+
     @SubscribeEvent
-    static void registerScreens(RegisterMenuScreensEvent event) {
-        InitScreens.register(event, Menus.GRAVITY_FACTORY.get(), GravityFactoryScreen::new, "/screens/gravity_processing_factory.json");
+    public static void registerScreens(FMLClientSetupEvent event) {
+        event.enqueueWork(() -> {
+        InitScreens.register(Menus.GRAVITY_FACTORY.get(), GravityFactoryScreen::new, "/screens/gravity_processing_factory.json");
+    });
     }
 }

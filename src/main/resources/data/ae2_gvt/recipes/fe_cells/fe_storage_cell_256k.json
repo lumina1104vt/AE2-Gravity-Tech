@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "ae2:item_cell_housing"
+    },
+    {
+      "item": "ae2:cell_component_256k"
+    },
+    {
+      "item": "ae2:energy_acceptor"
+    }
+  ],
+  "result": {
+    "item": "ae2_gvt:fe_storage_cell_256k"
+  },
+  "conditions": [
+    {
+      "type": "forge:not",
+      "value": {
+        "type": "forge:mod_loaded",
+        "modid": "appflux"
+      }
+    }
+  ]
+}

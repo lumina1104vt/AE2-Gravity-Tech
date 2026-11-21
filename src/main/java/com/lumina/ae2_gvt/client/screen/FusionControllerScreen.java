@@ -48,7 +48,7 @@ public class FusionControllerScreen extends AEBaseScreen<FusionControllerMenu> {
             {"..#..", ".###.", "#####", ".###.", "..#.."},
             {"#...#", ".#.#.", "..#..", ".#.#.", "#...#"}};
     private static final String[] STATUS = {"idle", "heating", "running", "too_cold"};
-    private static final Blitter SEGMENT = Blitter.texture(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/fusion_controller.png")).src(232, 0, 18, BAR_H);
+    private static final Blitter SEGMENT = Blitter.texture(new ResourceLocation(AE2GravityTech.MODID, "textures/gui/fusion_controller.png")).src(232, 0, 18, BAR_H);
 
     public FusionControllerScreen(FusionControllerMenu menu, Inventory playerInventory, Component title, ScreenStyle style) {
         super(menu, playerInventory, title, style);

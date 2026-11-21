@@ -13,8 +13,8 @@ import guideme.document.block.LytBlock;
 import guideme.document.block.LytSlotGrid;
 import guideme.document.block.recipes.LytStandardRecipeBox;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
-import net.neoforged.neoforge.common.crafting.SizedIngredient;
+import com.lumina.twinstar.util.RecipeHolder;
+import com.lumina.ae2_gvt.recipes.SizedIngredient;
 
 /**
  * Our recipe types for GuideME's recipe tags ({@code <RecipeFor id="ae2_gvt:gravity_dust" />} and the like): the
@@ -28,33 +28,33 @@ public final class GuideRecipes implements RecipeTypeMappingSupplier {
         mappings.add(Recipes.FUSION.get(), GuideRecipes::fusion);
     }
 
-    private static LytBlock gravityProcessing(RecipeHolder<GravityProcessingRecipe> holder) {
-        GravityProcessingRecipe r = holder.value();
+    private static LytBlock gravityProcessing(GravityProcessingRecipe r) {
         return LytStandardRecipeBox.builder()
                 .icon(Blocks.GRAVITY_FACTORY.get())
                 .title(Blocks.GRAVITY_FACTORY.get().getName().getString())
                 .input(LytSlotGrid.rowFromStacks(stacks(r.ingredients()), false))
                 .output(LytSlotGrid.rowFromStacks(r.results(), false))
-                .build(holder);
+                .build(r);
     }
 
-    private static LytBlock fusion(RecipeHolder<FusionRecipe> holder) {
-        FusionRecipe r = holder.value();
+    private static LytBlock fusion(FusionRecipe r) {
         return LytStandardRecipeBox.builder()
                 .icon(Blocks.FUSION_CONTROLLER.get())
                 .title(Blocks.FUSION_CONTROLLER.get().getName().getString())
                 .input(LytSlotGrid.rowFromStacks(stacks(r.ingredients()), false))
                 .output(LytSlotGrid.rowFromStacks(r.results(), false))
-                .build(holder);
+                .build(r);
     }
 
     /** The first item of each ingredient, in its amount. */
     private static List<ItemStack> stacks(List<SizedIngredient> ingredients) {
         List<ItemStack> out = new ArrayList<>();
         for (SizedIngredient in : ingredients) {
-            ItemStack[] items = in.getItems();
+            ItemStack[] items = in.ingredient().getItems();
             if (items.length > 0) {
-                out.add(items[0].copyWithCount(in.count()));
+                ItemStack one = items[0].copy();
+                one.setCount(in.count());
+                out.add(one);
             }
         }
         return out;

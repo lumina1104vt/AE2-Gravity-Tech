@@ -35,13 +35,13 @@ public class ArmorModuleScreen extends AEBaseScreen<ArmorModuleMenu> {
     private static final int SWITCH_X = ROW_X + 86, COG_X = ROW_X + 108, CLEAR_X = ROW_X + 125;
     private static final int TEXT = 0xFF404040, FRAME_OUT = 0xFF14141A, FRAME_IN = 0xFFF4F4FA;
 
-    private static final Blitter SHEET = Blitter.texture(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/armor_modules.png"));
+    private static final Blitter SHEET = Blitter.texture(new ResourceLocation(AE2GravityTech.MODID, "textures/gui/armor_modules.png"));
     private static final Blitter ROW = SHEET.copy().src(0, 234, ROW_W, ROW_H);
     private static final Blitter SWITCH_ON = SHEET.copy().src(204, 0, 22, 12);
     private static final Blitter SWITCH_OFF = SHEET.copy().src(204, 12, 22, 12);
     private static final Blitter TAB_BG = Icon.TAB_BUTTON_BACKGROUND.getBlitter();
     private static final Blitter TAB_BG_SELECTED = Icon.TAB_BUTTON_BACKGROUND_FOCUS.getBlitter();
-    private static final Blitter COG = Icon.COG.getBlitter();
+    private static final Blitter COG = Icon.WRENCH.getBlitter();
     private static final Blitter CLEAR = Icon.CLEAR.getBlitter();
 
     private final Scrollbar scrollbar;

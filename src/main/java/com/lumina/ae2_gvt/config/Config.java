@@ -1,37 +1,37 @@
 package com.lumina.ae2_gvt.config;
 
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
 import com.lumina.twinstar.algorithm.execution.ExecutionSettings;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.event.config.ModConfigEvent;
-import net.neoforged.neoforge.common.ModConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec;
 
 /** What the numbers of the generators and the antigravity armor are (the file is config/ae2_gvt-common.toml). */
-@EventBusSubscriber(modid = com.lumina.ae2_gvt.AE2GravityTech.MODID, bus = EventBusSubscriber.Bus.MOD)
+@Mod.EventBusSubscriber(modid = com.lumina.ae2_gvt.AE2GravityTech.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class Config {
-    private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+    private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
 
     // ---- generators ----
-    public static final ModConfigSpec.LongValue CRYSTAL_OUTPUT;
-    public static final ModConfigSpec.DoubleValue PARADOX_DUST_MULTIPLIER;
-    public static final ModConfigSpec.IntValue DUST_BURN_TICKS;
-    public static final ModConfigSpec.LongValue GRAVITON_OUTPUT;
-    public static final ModConfigSpec.IntValue GRAVITON_TICKS;
-    public static final ModConfigSpec.LongValue ACCRETION_OUTPUT;
-    public static final ModConfigSpec.IntValue ACCRETION_PER_HOLE;
+    public static final ForgeConfigSpec.LongValue CRYSTAL_OUTPUT;
+    public static final ForgeConfigSpec.DoubleValue PARADOX_DUST_MULTIPLIER;
+    public static final ForgeConfigSpec.IntValue DUST_BURN_TICKS;
+    public static final ForgeConfigSpec.LongValue GRAVITON_OUTPUT;
+    public static final ForgeConfigSpec.IntValue GRAVITON_TICKS;
+    public static final ForgeConfigSpec.LongValue ACCRETION_OUTPUT;
+    public static final ForgeConfigSpec.IntValue ACCRETION_PER_HOLE;
 
     // ---- armor: flight and the modules' sizes ----
-    public static final ModConfigSpec.IntValue FLIGHT_INTERVAL;
-    public static final ModConfigSpec.DoubleValue MAX_HEALTH_BONUS, STRENGTH_BONUS, ATTACK_SPEED_BONUS, MOVE_SPEED_BONUS, SWIM_SPEED_BONUS,
+    public static final ForgeConfigSpec.IntValue FLIGHT_INTERVAL;
+    public static final ForgeConfigSpec.DoubleValue MAX_HEALTH_BONUS, STRENGTH_BONUS, ATTACK_SPEED_BONUS, MOVE_SPEED_BONUS, SWIM_SPEED_BONUS,
             JUMP_BONUS, STEP_BONUS, LUCK_BONUS, REACH_BONUS;
-    public static final ModConfigSpec.DoubleValue DAMAGE_REDUCTION, THORNS_DAMAGE, EVASION_CHANCE, UNDYING_HEALTH;
-    public static final ModConfigSpec.IntValue UNDYING_COOLDOWN, MAGNET_RANGE, DASH_COOLDOWN;
-    public static final ModConfigSpec.DoubleValue DASH_SPEED;
-    public static final ModConfigSpec.DoubleValue STOCK_COST, RECHARGE_FE;
-    public static final ModConfigSpec.IntValue PICK_CRAFT_AMOUNT;
-    public static final ModConfigSpec.BooleanValue ARMOR_LINK_RANGE;
-    public static final ModConfigSpec.LongValue FUSION_OUTPUT_BUFFER;
-    public static final ModConfigSpec.IntValue GUI_POLL_TICKS, TOOL_DELAY_TICKS;
+    public static final ForgeConfigSpec.DoubleValue DAMAGE_REDUCTION, THORNS_DAMAGE, EVASION_CHANCE, UNDYING_HEALTH;
+    public static final ForgeConfigSpec.IntValue UNDYING_COOLDOWN, MAGNET_RANGE, DASH_COOLDOWN;
+    public static final ForgeConfigSpec.DoubleValue DASH_SPEED;
+    public static final ForgeConfigSpec.DoubleValue STOCK_COST, RECHARGE_FE;
+    public static final ForgeConfigSpec.IntValue PICK_CRAFT_AMOUNT;
+    public static final ForgeConfigSpec.BooleanValue ARMOR_LINK_RANGE;
+    public static final ForgeConfigSpec.LongValue FUSION_OUTPUT_BUFFER;
+    public static final ForgeConfigSpec.IntValue GUI_POLL_TICKS, TOOL_DELAY_TICKS;
 
     static {
         BUILDER.comment("Generators").push("generators");
@@ -96,11 +96,13 @@ public class Config {
         BUILDER.pop();
     }
 
-    public static final ModConfigSpec SPEC = BUILDER.build();
+    public static final ForgeConfigSpec SPEC = BUILDER.build();
+
+
 
     /** The engine has no config: the mod hands it these when the file is loaded and when it is changed. */
     @SubscribeEvent
-    static void onConfig(ModConfigEvent event) {
+    public static void onConfig(ModConfigEvent event) {
         if (event.getConfig().getSpec() == SPEC)
             ExecutionSettings.set(GUI_POLL_TICKS.get(), TOOL_DELAY_TICKS.get());
     }

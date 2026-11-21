@@ -53,7 +53,7 @@ public class PrototypeHubFrameBlock extends Block {
         final ResourceLocation id;
 
         Kind(String namespace, String path) {
-            this.id = ResourceLocation.fromNamespaceAndPath(namespace, path);
+            this.id = new ResourceLocation(namespace, path);
         }
 
         Block block() {
@@ -90,7 +90,7 @@ public class PrototypeHubFrameBlock extends Block {
     }
 
     @Override
-    protected RenderShape getRenderShape(BlockState state) {
+    public RenderShape getRenderShape(BlockState state) {
         return RenderShape.INVISIBLE;   // the drawn effect takes the placeholders' place
     }
 
@@ -147,11 +147,11 @@ public class PrototypeHubFrameBlock extends Block {
     }
 
     @Override
-    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         // breaking a hidden block gives back the block it stands in for
         if (!level.isClientSide() && !player.getAbilities().instabuild && state.getValue(KIND) != Kind.OTHER) {
             popResource(level, pos, new ItemStack(source(state)));
         }
-        return super.playerWillDestroy(level, pos, state, player);
+        super.playerWillDestroy(level, pos, state, player);
     }
 }

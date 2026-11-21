@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "ae2:interface"
+    },
+    {
+      "item": "ae2:pattern_provider"
+    },
+    {
+      "item": "ae2:wireless_receiver"
+    },
+    {
+      "item": "ae2_gvt:gravity_processor"
+    }
+  ],
+  "result": {
+    "item": "ae2_gvt:machine_access_block",
+    "count": 1
+  }
+}

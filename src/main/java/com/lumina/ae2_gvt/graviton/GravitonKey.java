@@ -10,9 +10,8 @@ import appeng.api.stacks.AEKey;
 import appeng.api.stacks.AEKeyType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.component.DataComponentType;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
@@ -41,14 +40,12 @@ public final class GravitonKey extends AEKey {
     public static final GravitonKey GRAVITON = new GravitonKey(Kind.GRAVITON);
     public static final GravitonKey ANTIGRAVITON = new GravitonKey(Kind.ANTIGRAVITON);
 
-    public static final MapCodec<GravitonKey> MAP_CODEC = Kind.CODEC.fieldOf("id").xmap(GravitonKey::of, GravitonKey::kind);
-
     private final Kind kind;
     private final ResourceLocation id;
 
     private GravitonKey(Kind kind) {
         this.kind = kind;
-        this.id = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, kind.getSerializedName());
+        this.id = new ResourceLocation(AE2GravityTech.MODID, kind.getSerializedName());
     }
 
     public static GravitonKey of(Kind kind) {
@@ -74,9 +71,9 @@ public final class GravitonKey extends AEKey {
         return this;
     }
 
-    /** The same shape {@link #MAP_CODEC} reads back (AE2 loads keys through the type's codec). */
+    /** The same shape {@link GravitonKeyType#loadKeyFromTag} reads back. */
     @Override
-    public CompoundTag toTag(HolderLookup.Provider registries) {
+    public CompoundTag toTag() {
         CompoundTag tag = new CompoundTag();
         tag.putString("id", kind.getSerializedName());
         return tag;
@@ -93,11 +90,11 @@ public final class GravitonKey extends AEKey {
     }
 
     @Override
-    public void writeToPacket(RegistryFriendlyByteBuf buf) {
+    public void writeToPacket(FriendlyByteBuf buf) {
         buf.writeEnum(kind);
     }
 
-    public static GravitonKey fromPacket(RegistryFriendlyByteBuf buf) {
+    public static GravitonKey fromPacket(FriendlyByteBuf buf) {
         return of(buf.readEnum(Kind.class));
     }
 
@@ -109,16 +106,6 @@ public final class GravitonKey extends AEKey {
     @Override
     public void addDrops(long amount, List<ItemStack> drops, Level level, BlockPos pos) {
         // not matter in the usual sense: nothing to drop
-    }
-
-    @Override
-    public <T> T get(DataComponentType<T> type) {
-        return null;
-    }
-
-    @Override
-    public boolean hasComponents() {
-        return false;
     }
 
     @Override

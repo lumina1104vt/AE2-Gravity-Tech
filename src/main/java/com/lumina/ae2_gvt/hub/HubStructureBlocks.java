@@ -11,11 +11,11 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredBlock;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredItem;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.eventbus.api.IEventBus;
+import com.lumina.ae2_gvt.reg.DeferredBlock;
+import com.lumina.ae2_gvt.reg.DeferredHolder;
+import com.lumina.ae2_gvt.reg.DeferredItem;
+import com.lumina.ae2_gvt.reg.DeferredRegister;
 
 /**
  * Building blocks of the new hexagram hub (design 2026-10-27): the black and white strands of the
@@ -98,23 +98,5 @@ public final class HubStructureBlocks {
 
     public static void register(IEventBus modBus) {
         BLOCK_ENTITY_TYPES.register(modBus);
-        modBus.addListener(HubStructureBlocks::registerCapabilities);
-    }
-
-    /** AE2 finds a neighbour's grid node through this capability: without it a cable would not see the port. */
-    private static void registerCapabilities(net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent event) {
-        // standing for a fusion controller: what the controller offers (see BlockEntities)
-        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, PORT_ENTITY.get(),
-                (be, ctx) -> be.getController() == null ? null : be.getController().getPipeHandler());
-        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK, PORT_ENTITY.get(),
-                (be, ctx) -> be.getController() == null ? null : be.getController().getFluidHandler());
-        event.registerBlockEntity(appeng.api.AECapabilities.ME_STORAGE, PORT_ENTITY.get(),
-                (be, ctx) -> be.getController() == null ? null : be.getController().getInputs());
-        event.registerBlockEntity(appeng.api.AECapabilities.GENERIC_INTERNAL_INV, PORT_ENTITY.get(),
-                (be, ctx) -> be.getController() == null ? null : be.getController().getInputs());
-        event.registerBlockEntity(appeng.api.AECapabilities.IN_WORLD_GRID_NODE_HOST, PORT_ENTITY.get(), (be, ctx) -> be);
-        // hoppers and pipes put encoded patterns into the controller, as into the test hub
-        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, CONTROLLER_ENTITY.get(),
-                (be, ctx) -> be.getInsertOnlyHandler());
     }
 }

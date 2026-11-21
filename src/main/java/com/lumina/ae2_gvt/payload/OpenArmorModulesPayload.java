@@ -2,37 +2,41 @@ package com.lumina.ae2_gvt.payload;
 
 import appeng.menu.MenuOpener;
 import appeng.menu.locator.MenuLocators;
-import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.items.armor.ArmorModules;
 import com.lumina.ae2_gvt.menus.Menus;
-import io.netty.buffer.ByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ArmorItem;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.minecraftforge.network.NetworkEvent;
 
-public class OpenArmorModulesPayload implements CustomPacketPayload {
+import java.util.function.Supplier;
+
+/** Client → server: the key that opens the armor's module screen. */
+public class OpenArmorModulesPayload {
     public static final OpenArmorModulesPayload INSTANCE = new OpenArmorModulesPayload();
-    public static final Type<OpenArmorModulesPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "open_armor_modules"));
-    public static final StreamCodec<ByteBuf, OpenArmorModulesPayload> STREAM_CODEC = StreamCodec.unit(INSTANCE);
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
+    public void write(FriendlyByteBuf buf) {
     }
 
-    public static void handle(OpenArmorModulesPayload payload, IPayloadContext context) {
-        Player player = context.player();
-        for (ArmorItem.Type type : ArmorModules.PIECES) {
-            if (ArmorModules.isPiece(player.getItemBySlot(type.getSlot()), type)) {
-                MenuOpener.open(Menus.ARMOR_MODULE_MENU.get(), player, MenuLocators.forInventorySlot(type.getSlot().getIndex(36)));
-                return;
-            }
-        }
+    public static OpenArmorModulesPayload read(FriendlyByteBuf buf) {
+        return INSTANCE;
+    }
 
-        player.displayClientMessage(Component.translatable("gui.ae2_gvt.armor_modules.not_worn"), true);
+    public static void handle(OpenArmorModulesPayload payload, Supplier<NetworkEvent.Context> context) {
+        NetworkEvent.Context ctx = context.get();
+        ctx.enqueueWork(() -> {
+            ServerPlayer player = ctx.getSender();
+            if (player == null)
+                return;
+            for (ArmorItem.Type type : ArmorModules.PIECES) {
+                if (ArmorModules.isPiece(player.getItemBySlot(type.getSlot()), type)) {
+                    MenuOpener.open(Menus.ARMOR_MODULE_MENU.get(), player, MenuLocators.forInventorySlot(type.getSlot().getIndex(36)));
+                    return;
+                }
+            }
+            player.displayClientMessage(Component.translatable("gui.ae2_gvt.armor_modules.not_worn"), true);
+        });
+        ctx.setPacketHandled(true);
     }
 }

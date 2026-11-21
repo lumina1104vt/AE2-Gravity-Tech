@@ -7,9 +7,9 @@ import appeng.api.stacks.GenericStack;
 import appeng.items.storage.BasicStorageCell;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredItem;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.eventbus.api.IEventBus;
+import com.lumina.ae2_gvt.reg.DeferredItem;
+import com.lumina.ae2_gvt.reg.DeferredRegister;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
 
@@ -21,10 +21,9 @@ import com.lumina.ae2_gvt.AE2GravityTech;
  * know two types (graviton / anti-graviton). The housing + a graviton cell component makes a cell.
  */
 public final class Gravitons {
-    private static final DeferredRegister<AEKeyType> KEY_TYPES = DeferredRegister.create(AEKeyType.REGISTRY_KEY, AE2GravityTech.MODID);
 
     static {
-        KEY_TYPES.register("graviton", () -> GravitonKeyType.INSTANCE);
+        appeng.api.stacks.AEKeyTypes.register(GravitonKeyType.INSTANCE);
     }
 
     /** Display-only items: how the two keys look in terminals (not in the creative tab). */
@@ -71,7 +70,7 @@ public final class Gravitons {
         for (Tier t : Tier.values()) {
             t.component = AE2GravityTech.ITEMS.registerSimpleItem("graviton_cell_component_" + t.size);
             t.cell = AE2GravityTech.ITEMS.registerItem("graviton_storage_cell_" + t.size,
-                    p -> new BasicStorageCell(p.stacksTo(1), t.idleDrain, t.kilobytes, t.bytesPerType, 2, GravitonKeyType.INSTANCE));
+                    p -> new BasicStorageCell(p.stacksTo(1), t.component.get(), HOUSING.get(), t.idleDrain, t.kilobytes, t.bytesPerType, 2, GravitonKeyType.INSTANCE));
         }
     }
 
@@ -82,7 +81,6 @@ public final class Gravitons {
     }
 
     public static void register(IEventBus modEventBus) {
-        KEY_TYPES.register(modEventBus);
     }
 
     /** A key as a recipe page shows it: gravitons as their own item, which AE2's wrapped stack does not draw. */

@@ -142,7 +142,12 @@ public class TwinStarPreviewBlockEntity extends BlockEntity implements InternalI
     }
 
     @Override
-    public void saveChangedInventory(AppEngInternalInventory inv) {
+    public void saveChanges() {
+        setChanged();
+    }
+
+    @Override
+    public void onChangeInventory(InternalInventory inv, int slot) {
         setChanged();
     }
 
@@ -194,21 +199,21 @@ public class TwinStarPreviewBlockEntity extends BlockEntity implements InternalI
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
         tag.putBoolean("formed", formed);
         tag.putFloat("sphereX", sphereX);
         tag.putFloat("sphereY", sphereY);
         tag.putFloat("sphereZ", sphereZ);
         tag.putFloat("shellRadius", shellRadius);
         if (!savingForSync) {
-            patterns.writeToNBT(tag, "patterns", registries);
+            patterns.writeToNBT(tag, "patterns");
         }
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    public void load(CompoundTag tag) {
+        super.load(tag);
         boolean wasFormed = formed;
         formed = tag.getBoolean("formed");
         sphereX = tag.contains("sphereX") ? tag.getFloat("sphereX") : 1;
@@ -216,7 +221,7 @@ public class TwinStarPreviewBlockEntity extends BlockEntity implements InternalI
         sphereZ = tag.contains("sphereZ") ? tag.getFloat("sphereZ") : 1;
         shellRadius = tag.contains("shellRadius") ? tag.getFloat("shellRadius") : 11.9f;
         if (level == null || !level.isClientSide()) {
-            patterns.readFromNBT(tag, "patterns", registries);
+            patterns.readFromNBT(tag, "patterns");
         }
         // client: the structure just became complete -> play the formation sequence
         // (on chunk load level is still null, so an already-formed hub just shows its steady state)
@@ -226,10 +231,10 @@ public class TwinStarPreviewBlockEntity extends BlockEntity implements InternalI
     }
 
     @Override
-    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+    public CompoundTag getUpdateTag() {
         savingForSync = true;
         try {
-            return saveCustomOnly(registries);
+            return saveWithoutMetadata();
         } finally {
             savingForSync = false;
         }
@@ -328,5 +333,10 @@ public class TwinStarPreviewBlockEntity extends BlockEntity implements InternalI
 
     static double lerp(double a, double b, double t) {
         return a + (b - a) * t;
+    }
+
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return com.lumina.ae2_gvt.client.renderer.TwinStarPreviewRenderer.renderBox(this);
     }
 }

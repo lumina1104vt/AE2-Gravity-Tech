@@ -37,7 +37,7 @@ import net.minecraft.world.phys.AABB;
  * Rebuilt for 1.21.1 from the 26.1 original (backup/twin_star_preview_26.1).
  */
 public class TwinStarPreviewRenderer implements BlockEntityRenderer<TwinStarPreviewBlockEntity> {
-    private static final ResourceLocation WHITE = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/prototype/white.png");
+    private static final ResourceLocation WHITE = new ResourceLocation(AE2GravityTech.MODID, "textures/prototype/white.png");
     private static final RenderType SOLID = RenderType.entityCutout(WHITE);
     private static final RenderType GLOW = RenderType.entityTranslucentEmissive(WHITE);
 
@@ -142,8 +142,8 @@ public class TwinStarPreviewRenderer implements BlockEntityRenderer<TwinStarPrev
         return 160;
     }
 
-    @Override
-    public AABB getRenderBoundingBox(TwinStarPreviewBlockEntity be) {
+    /** The render box the block entity reports (1.20.1 asks the block entity itself). */
+    public static AABB renderBox(TwinStarPreviewBlockEntity be) {
         BlockPos pos = be.getBlockPos();
         double reach = be.shellRadius + 5;   // outermost ring plus margin
         double cx = pos.getX() + be.sphereX, cy = pos.getY() + be.sphereY, cz = pos.getZ() + be.sphereZ;

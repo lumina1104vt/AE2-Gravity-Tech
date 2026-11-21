@@ -155,7 +155,7 @@ public class TwinStarHubBlockEntity extends TwinStarHostBlockEntity {
 
     /** The units: only saved (the base class packs the pattern slots on their changes). */
     @Override
-    public void onChangeInventory(AppEngInternalInventory inv, int slot) {
+    public void onChangeInventory(InternalInventory inv, int slot) {
         if (inv == units)
             saveChanges();
         else
@@ -165,15 +165,15 @@ public class TwinStarHubBlockEntity extends TwinStarHostBlockEntity {
     // ── saving and drops ──
 
     @Override
-    public void saveAdditional(CompoundTag data, HolderLookup.Provider registries) {
-        super.saveAdditional(data, registries);
-        units.writeToNBT(data, "units", registries);
+    public void saveAdditional(CompoundTag data) {
+        super.saveAdditional(data);
+        units.writeToNBT(data, "units");
     }
 
     @Override
-    public void loadTag(CompoundTag data, HolderLookup.Provider registries) {
-        super.loadTag(data, registries);
-        units.readFromNBT(data, "units", registries);
+    public void loadTag(CompoundTag data) {
+        super.loadTag(data);
+        units.readFromNBT(data, "units");
     }
 
     @Override
@@ -188,5 +188,10 @@ public class TwinStarHubBlockEntity extends TwinStarHostBlockEntity {
     public void clearContent() {
         super.clearContent();
         units.clear();
+    }
+
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return com.lumina.ae2_gvt.client.renderer.HexagramHubRenderer.renderBox(this);
     }
 }

@@ -1,0 +1,13 @@
+{
+  "type": "ae2:inscriber",
+  "ingredients": {
+    "middle": {
+      "item": "ae2_gvt:antigravity_crystal"
+    }
+  },
+  "mode": "inscribe",
+  "result": {
+    "item": "ae2_gvt:antigravity_dust",
+    "count": 1
+  }
+}

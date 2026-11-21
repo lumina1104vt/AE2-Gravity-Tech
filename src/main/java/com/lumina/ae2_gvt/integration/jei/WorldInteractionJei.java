@@ -31,7 +31,7 @@ public class WorldInteractionJei implements IModPlugin {
 
     @Override
     public ResourceLocation getPluginUid() {
-        return ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "world_interaction");
+        return new ResourceLocation(AE2GravityTech.MODID, "world_interaction");
     }
 
     @Override

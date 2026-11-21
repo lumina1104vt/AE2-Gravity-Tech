@@ -14,8 +14,8 @@ import net.minecraft.world.level.block.AmethystClusterBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
-import net.neoforged.neoforge.registries.DeferredBlock;
-import net.neoforged.neoforge.registries.DeferredItem;
+import com.lumina.ae2_gvt.reg.DeferredBlock;
+import com.lumina.ae2_gvt.reg.DeferredItem;
 
 public class BuddingParadox extends BuddingCertusQuartzBlock {
     private static final Direction[] DIRECTIONS = Direction.values();

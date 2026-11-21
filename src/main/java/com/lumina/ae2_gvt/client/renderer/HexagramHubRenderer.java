@@ -30,7 +30,7 @@ import net.minecraft.world.phys.AABB;
  * the black tail dark, the white one glowing. Nothing of that is drawn until the lib reports the hub formed.
  */
 public class HexagramHubRenderer implements BlockEntityRenderer<TwinStarHubBlockEntity> {
-    private static final ResourceLocation WHITE = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/prototype/white.png");
+    private static final ResourceLocation WHITE = new ResourceLocation(AE2GravityTech.MODID, "textures/prototype/white.png");
     private static final RenderType DARK_TAIL = RenderType.entityTranslucent(WHITE);
     private static final RenderType BRIGHT_TAIL = RenderType.entityTranslucentEmissive(WHITE);
 
@@ -102,8 +102,7 @@ public class HexagramHubRenderer implements BlockEntityRenderer<TwinStarHubBlock
 
     private static void cosmosVertex(PoseStack.Pose pose, VertexConsumer vc, float[] dirs, int at, float r) {
         float x = dirs[at], y = dirs[at + 1], z = dirs[at + 2];
-        vc.addVertex(pose, x * r, y * r, z * r).setColor(255, 255, 255, 255).setUv(0, 0)
-                .setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(pose, x, y, z);
+        vc.vertex(pose.pose(), x * r, y * r, z * r).color(255, 255, 255, 255).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(LightTexture.FULL_BRIGHT).normal(pose.normal(), x, y, z).endVertex();
     }
 
     private static float[] sphereDirs;
@@ -159,8 +158,7 @@ public class HexagramHubRenderer implements BlockEntityRenderer<TwinStarHubBlock
     }
 
     private static void vertex(PoseStack.Pose pose, VertexConsumer vc, Vector3f p, int rgb, int a, Vector3f n) {
-        vc.addVertex(pose, p.x, p.y, p.z).setColor((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff, a).setUv(0.5f, 0.5f)
-                .setOverlay(OverlayTexture.NO_OVERLAY).setLight(LightTexture.FULL_BRIGHT).setNormal(pose, n.x, n.y, n.z);
+        vc.vertex(pose.pose(), p.x, p.y, p.z).color((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff, a).uv(0.5f, 0.5f).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(LightTexture.FULL_BRIGHT).normal(pose.normal(), n.x, n.y, n.z).endVertex();
     }
 
     @Override
@@ -173,8 +171,8 @@ public class HexagramHubRenderer implements BlockEntityRenderer<TwinStarHubBlock
         return 192;
     }
 
-    @Override
-    public AABB getRenderBoundingBox(TwinStarHubBlockEntity be) {
+    /** The render box the block entity reports (1.20.1 asks the block entity itself). */
+    public static AABB renderBox(TwinStarHubBlockEntity be) {
         BlockPos p = be.getBlockPos();
         double cy = p.getY() + 0.5 + HexagramHub.SPHERE_ABOVE_CONTROLLER, r = HexagramHub.SPHERE_RADIUS + 1;
         return new AABB(p.getX() + 0.5 - r, cy - r, p.getZ() + 0.5 - r, p.getX() + 0.5 + r, cy + r, p.getZ() + 0.5 + r);

@@ -11,7 +11,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.registries.DeferredItem;
+import com.lumina.ae2_gvt.reg.DeferredItem;
 import oshi.util.tuples.Pair;
 
 import java.util.*;
@@ -49,14 +49,14 @@ public class ArmorModules {
     }
 
     public static Set<InstalledModule> installed(ItemStack stack) {
-        return new TreeSet<>(stack.getOrDefault(DataComponents.INSTALLED_MODULES, List.of()));
+        return new TreeSet<>(DataComponents.INSTALLED_MODULES.getOrDefault(stack, List.of()));
     }
 
     public static void setInstalled(ItemStack stack, Set<InstalledModule> modules) {
         if (modules.isEmpty())
-            stack.remove(DataComponents.INSTALLED_MODULES);
+            DataComponents.INSTALLED_MODULES.remove(stack);
         else
-            stack.set(DataComponents.INSTALLED_MODULES, List.copyOf(modules));
+            DataComponents.INSTALLED_MODULES.set(stack, List.copyOf(modules));
     }
 
     public static List<DeferredItem<Item>> all() {

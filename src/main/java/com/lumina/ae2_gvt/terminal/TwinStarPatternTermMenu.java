@@ -31,7 +31,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
+import com.lumina.twinstar.util.RecipeHolder;
 
 /**
  * AE2's pattern encoding menu, locked to the processing layout, plus the machine ghost slot and the
@@ -167,36 +167,38 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             return;
         }
         if (!pattern.is(TwinStarTerminal.PATTERN.get())) {
-            pattern = pattern.transmuteCopy(TwinStarTerminal.PATTERN.get());
+            ItemStack retyped = new ItemStack(TwinStarTerminal.PATTERN.get(), pattern.getCount());
+            retyped.setTag(pattern.getTag() == null ? null : pattern.getTag().copy());
+            pattern = retyped;
         }
         // the machine; with it, the sub-machines left to right (no repeats, not the machine itself)
         ItemStack machine = this.machineSlot.getItem();
-        List<Holder<Item>> subs = new ArrayList<>();
+        List<Item> subs = new ArrayList<>();
         for (FakeSlot slot : subMachineSlots) {
             ItemStack m = slot.getItem();
-            if (!m.isEmpty() && m.getItem() != machine.getItem() && subs.stream().noneMatch(h -> h.value() == m.getItem())) {
-                subs.add(m.getItemHolder());
+            if (!m.isEmpty() && m.getItem() != machine.getItem() && !subs.contains(m.getItem())) {
+                subs.add(m.getItem());
             }
         }
         if (machine.isEmpty()) {
-            pattern.remove(TwinStarTerminal.PATTERN_MACHINE.get());
+            TwinStarTerminal.PATTERN_MACHINE.remove(pattern);
         } else {
-            pattern.set(TwinStarTerminal.PATTERN_MACHINE.get(), machine.getItemHolder());
+            TwinStarTerminal.PATTERN_MACHINE.set(pattern, machine.getItem());
         }
         ItemStack tool = toolSlot.getItem();
         if (machine.isEmpty() || tool.isEmpty()) {
-            pattern.remove(TwinStarTerminal.PATTERN_TOOL.get());
+            TwinStarTerminal.PATTERN_TOOL.remove(pattern);
         } else {
-            pattern.set(TwinStarTerminal.PATTERN_TOOL.get(), tool.getItemHolder());
+            TwinStarTerminal.PATTERN_TOOL.set(pattern, tool.getItem());
         }
         if (machine.isEmpty() || subs.isEmpty()) {
-            pattern.remove(TwinStarTerminal.PATTERN_SUB_MACHINES.get());
+            TwinStarTerminal.PATTERN_SUB_MACHINES.remove(pattern);
         } else {
-            pattern.set(TwinStarTerminal.PATTERN_SUB_MACHINES.get(), List.copyOf(subs));
+            TwinStarTerminal.PATTERN_SUB_MACHINES.set(pattern, List.copyOf(subs));
         }
         if (!machine.isEmpty()) {
             // the next pattern for this machine starts with them
-            host.state().setLastSubMachines(machine.getItem(), subs.stream().map(Holder::value).toList());
+            host.state().setLastSubMachines(machine.getItem(), List.copyOf(subs));
         }
         List<PatternChances.Entry> chances = new ArrayList<>();
         for (FakeSlot slot : getProcessingOutputSlots()) {
@@ -346,11 +348,11 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
 
     /** A pattern put in: its machine and sub-machines go back in their slots, like AE2 puts back the rest. */
     private void loadMachines(ItemStack pattern) {
-        Holder<Item> machine = pattern.get(TwinStarTerminal.PATTERN_MACHINE.get());
+        Item machine = TwinStarTerminal.PATTERN_MACHINE.get(pattern);
         host.state().getMachineInv().setItemDirect(0, machine == null ? ItemStack.EMPTY : new ItemStack(machine));
-        Holder<Item> tool = pattern.get(TwinStarTerminal.PATTERN_TOOL.get());
+        Item tool = TwinStarTerminal.PATTERN_TOOL.get(pattern);
         host.state().getToolInv().setItemDirect(0, tool == null ? ItemStack.EMPTY : new ItemStack(tool));
-        List<Holder<Item>> subs = pattern.getOrDefault(TwinStarTerminal.PATTERN_SUB_MACHINES.get(), List.of());
+        List<Item> subs = TwinStarTerminal.PATTERN_SUB_MACHINES.getOrDefault(pattern, List.of());
         for (int i = 0; i < TwinStarTerminal.SUB_MACHINES; i++) {
             host.state().getSubMachineInv().setItemDirect(i, i < subs.size() ? new ItemStack(subs.get(i)) : ItemStack.EMPTY);
         }
@@ -612,7 +614,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
         }
         if (!id.equals(readRecipe)) {
             var level = getPlayer().level();
-            RecipeHolder<?> recipe = level.getRecipeManager().byKey(id).orElse(null);
+            RecipeHolder<?> recipe = level.getRecipeManager().byKey(id).map(x -> (RecipeHolder<?>) RecipeHolder.of(x)).orElse(null);
             readRecipe = id;
             readChances = recipe == null ? null : RecipeChances.of(recipe.value(), level.registryAccess());
         }

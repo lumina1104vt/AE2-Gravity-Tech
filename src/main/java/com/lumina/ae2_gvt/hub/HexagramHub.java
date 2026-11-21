@@ -108,7 +108,7 @@ public final class HexagramHub {
         b.anchor(HALF_X, CONTROLLER_LEVEL, HALF_Z);
         RoleField<BlockState> field = b.build();
 
-        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(HexagramHubCommands::register);   // /gvt hub build
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(HexagramHubCommands::register);   // /gvt hub build
         // crystals: drawn joined to their neighbours of the same kind (the world keeps the real blocks)
         FormedLooks.set(ID, "gravity_crystal", s -> HubStructureBlocks.GRAVITY_JOINED.get().defaultBlockState());
         FormedLooks.set(ID, "antigravity_crystal", s -> HubStructureBlocks.ANTIGRAVITY_JOINED.get().defaultBlockState());
@@ -155,7 +155,7 @@ public final class HexagramHub {
 
     /** Why it broke: the first few wrong cells and what is in them now (the listener has no level, so find it). */
     private static void logProblems(Instance<BlockState> s) {
-        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+        var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
         if (server == null) {
             return;
         }

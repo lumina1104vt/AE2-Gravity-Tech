@@ -1,5 +1,8 @@
 package com.lumina.ae2_gvt.client;
 
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
@@ -7,14 +10,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ContainerScreenEvent;
-import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
-import net.neoforged.neoforge.client.event.ScreenEvent;
-import net.neoforged.neoforge.client.settings.KeyConflictContext;
-import net.neoforged.neoforge.client.settings.KeyModifier;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ContainerScreenEvent;
+import net.minecraftforge.client.event.ScreenEvent;
+import net.minecraftforge.client.settings.KeyConflictContext;
+import net.minecraftforge.client.settings.KeyModifier;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -22,7 +22,7 @@ import org.lwjgl.glfw.GLFW;
  * from 1 over the slots that are not the player's inventory, in the menu's order). For finding out which slot of a
  * machine's GUI a material goes into.
  */
-@EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
 public final class SlotNumbers {
     private static boolean shown;
 
@@ -32,13 +32,14 @@ public final class SlotNumbers {
     private static final KeyMapping TOGGLE = new KeyMapping("key.ae2_gvt.slot_numbers", KeyConflictContext.GUI, KeyModifier.CONTROL,
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, "key.categories.ae2_gvt");
 
-    @SubscribeEvent
-    static void keys(RegisterKeyMappingsEvent event) {
-        event.register(TOGGLE);
-    }
+
+
+
+
+
 
     @SubscribeEvent
-    static void pressed(ScreenEvent.KeyPressed.Pre event) {
+    public static void pressed(ScreenEvent.KeyPressed.Pre event) {
         if (event.getScreen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?>
                 && TOGGLE.isActiveAndMatches(InputConstants.getKey(event.getKeyCode(), event.getScanCode()))) {
             shown = !shown;
@@ -47,7 +48,7 @@ public final class SlotNumbers {
     }
 
     @SubscribeEvent
-    static void draw(ContainerScreenEvent.Render.Foreground event) {
+    public static void draw(ContainerScreenEvent.Render.Foreground event) {
         if (!shown || Minecraft.getInstance().player == null)
             return;
         GuiGraphics g = event.getGuiGraphics();
@@ -66,5 +67,15 @@ public final class SlotNumbers {
             g.drawString(font, text, 0, 0, 0xFFFF55, true);
             pose.popPose();
         }
+    }
+
+    /** The events on the mod bus (1.20.1: a subscriber class takes one bus). */
+    @Mod.EventBusSubscriber(modid = AE2GravityTech.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    public static final class ModBus {
+        @SubscribeEvent
+        public static void keys(RegisterKeyMappingsEvent event) {
+            event.register(TOGGLE);
+        }
+    
     }
 }

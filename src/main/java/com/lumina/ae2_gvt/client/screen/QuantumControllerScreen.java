@@ -282,7 +282,7 @@ public class QuantumControllerScreen extends AEBaseScreen<QuantumControllerMenu>
 
         @Override
         protected Icon getIcon() {
-            return Icon.BACK;
+            return Icon.ARROW_LEFT;
         }
 
         @Override

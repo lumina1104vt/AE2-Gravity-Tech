@@ -249,12 +249,7 @@ public final class FusionActivity {
     }
 
     private static void vertex(PoseStack.Pose pose, VertexConsumer vc, Vec3 p, int rgb, float alpha, float layer, float v, float nx, float ny) {
-        vc.addVertex(pose, (float) p.x, (float) p.y, (float) p.z)
-                .setColor((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff, Math.round(Math.max(0, Math.min(1, alpha)) * 255))
-                .setUv(layer, v)
-                .setOverlay(OverlayTexture.NO_OVERLAY)
-                .setLight(LightTexture.FULL_BRIGHT)
-                .setNormal(nx, ny, 0);
+        vc.vertex(pose.pose(), (float) p.x, (float) p.y, (float) p.z).uv(layer, v).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(LightTexture.FULL_BRIGHT).normal(nx, ny, 0).endVertex();
     }
 
     // ---- easing / random ----

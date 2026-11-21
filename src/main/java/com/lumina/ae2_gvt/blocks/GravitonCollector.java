@@ -44,7 +44,7 @@ public class GravitonCollector extends appeng.block.AEBaseEntityBlock<com.lumina
     }
 
     @Override
-    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return SHAPES[state.getValue(PART)];
     }
 
@@ -72,7 +72,7 @@ public class GravitonCollector extends appeng.block.AEBaseEntityBlock<com.lumina
     }
 
     @Override
-    protected BlockState updateShape(BlockState state, Direction dir, BlockState neighbour,
+    public BlockState updateShape(BlockState state, Direction dir, BlockState neighbour,
                                      LevelAccessor level, BlockPos pos, BlockPos neighbourPos) {
         int part = state.getValue(PART);
         if (dir == Direction.UP && part < HEIGHT - 1 && !isPart(neighbour, part + 1) ||
@@ -84,7 +84,7 @@ public class GravitonCollector extends appeng.block.AEBaseEntityBlock<com.lumina
     }
 
     @Override
-    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (!level.isClientSide() && player.isCreative()) {
             int part = state.getValue(PART);
             BlockPos basePos = pos.below(part);
@@ -94,7 +94,7 @@ public class GravitonCollector extends appeng.block.AEBaseEntityBlock<com.lumina
             }
         }
 
-        return super.playerWillDestroy(level, pos, state, player);
+        super.playerWillDestroy(level, pos, state, player);
     }
 
     @Override

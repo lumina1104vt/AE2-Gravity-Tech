@@ -34,16 +34,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
-import net.minecraft.world.level.portal.DimensionTransition;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredBlock;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.eventbus.api.IEventBus;
+import com.lumina.ae2_gvt.reg.DeferredBlock;
+import com.lumina.ae2_gvt.reg.DeferredHolder;
+import com.lumina.ae2_gvt.reg.DeferredRegister;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -54,7 +53,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class SpaceRift {
     public static final ResourceKey<Level> STARFIELD =
-            ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "shattered_starfield"));
+            ResourceKey.create(Registries.DIMENSION, new ResourceLocation(AE2GravityTech.MODID, "shattered_starfield"));
     /** Height of the tear in 破碎星空. */
     private static final int STARFIELD_Y = 128;
     /** How far from the middle of the tear's block it catches: half width, half height. */
@@ -62,7 +61,7 @@ public final class SpaceRift {
 
     private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES =
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, AE2GravityTech.MODID);
-    private static final DeferredRegister<MapCodec<? extends ChunkGenerator>> GENERATORS =
+    private static final DeferredRegister<com.mojang.serialization.Codec<? extends ChunkGenerator>> GENERATORS =
             DeferredRegister.create(Registries.CHUNK_GENERATOR, AE2GravityTech.MODID);
 
     public static final DeferredBlock<RiftBlock> BLOCK = AE2GravityTech.BLOCKS.registerBlock("space_rift", RiftBlock::new,
@@ -119,12 +118,12 @@ public final class SpaceRift {
         }
 
         @Override
-        protected RenderShape getRenderShape(BlockState state) {
+        public RenderShape getRenderShape(BlockState state) {
             return RenderShape.INVISIBLE;
         }
 
         @Override
-        protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
             return Shapes.empty();
         }
     }
@@ -156,7 +155,7 @@ public final class SpaceRift {
                     e.setPortalCooldown();     // stays on until it has stepped out
                     continue;
                 }
-                if (!e.isPassenger() && !e.isVehicle() && e.canUsePortal(false))
+                if (!e.isPassenger() && !e.isVehicle() && e.canChangeDimensions())
                     travel(server, e);
             }
         }
@@ -172,8 +171,20 @@ public final class SpaceRift {
             if (targetPos == null)
                 link(target, to);
             Vec3 arrive = new Vec3(to.getX() + 0.5, to.getY() - 3, to.getZ() + 0.5);
-            Entity arrived = entity.changeDimension(new DimensionTransition(there, arrive, Vec3.ZERO, entity.getYRot(), entity.getXRot(),
-                    DimensionTransition.DO_NOTHING));
+            Entity arrived = entity.changeDimension(there, new net.minecraftforge.common.util.ITeleporter() {
+                @Override
+                public Entity placeEntity(Entity e, ServerLevel current, ServerLevel destination, float yaw,
+                                          java.util.function.Function<Boolean, Entity> reposition) {
+                    Entity moved = reposition.apply(false);
+                    moved.moveTo(arrive.x, arrive.y, arrive.z, e.getYRot(), e.getXRot());
+                    return moved;
+                }
+
+                @Override
+                public boolean isVanilla() {
+                    return false;
+                }
+            });
             if (arrived != null)
                 arrived.setPortalCooldown();
         }
@@ -198,8 +209,8 @@ public final class SpaceRift {
         }
 
         @Override
-        protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-            super.saveAdditional(tag, registries);
+        protected void saveAdditional(CompoundTag tag) {
+            super.saveAdditional(tag);
             if (target != null)
                 tag.putString("target", target.location().toString());
             if (targetPos != null)
@@ -207,11 +218,10 @@ public final class SpaceRift {
         }
 
         @Override
-        protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-            super.loadAdditional(tag, registries);
-            target = tag.contains("target") ? ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(tag.getString("target"))) : null;
-            Optional<BlockPos> pos = NbtUtils.readBlockPos(tag, "target_pos");
-            targetPos = pos.orElse(null);
+        public void load(CompoundTag tag) {
+            super.load(tag);
+            target = tag.contains("target") ? ResourceKey.create(Registries.DIMENSION, new ResourceLocation(tag.getString("target"))) : null;
+            targetPos = tag.contains("target_pos") ? NbtUtils.readBlockPos(tag.getCompound("target_pos")) : null;
         }
 
         @Override

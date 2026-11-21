@@ -18,7 +18,7 @@ public class DummyTwinStarCPU extends AEBaseEntityBlock<DummyTwinStarCPUBlockEnt
     }
 
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof DummyTwinStarCPUBlockEntity cpu) {
             MenuOpener.open(Menus.DUMMY_CPU.get(), player, MenuLocators.forBlockEntity(cpu));
         }

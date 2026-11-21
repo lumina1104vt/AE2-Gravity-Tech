@@ -51,7 +51,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
  */
 final class TwinStarBlueprint {
     /** The hub structure (structure block name); a copy saved in the world overrides the bundled one. */
-    static final ResourceLocation STRUCTURE_ID = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "calculator");
+    static final ResourceLocation STRUCTURE_ID = new ResourceLocation(AE2GravityTech.MODID, "calculator");
 
     /**
      * {@code offset} is relative to the controller centre; {@code state} is the template's block

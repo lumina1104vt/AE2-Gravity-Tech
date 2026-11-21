@@ -10,7 +10,7 @@ import appeng.api.stacks.KeyCounter;
 import appeng.api.storage.IStorageMounts;
 import appeng.api.storage.IStorageProvider;
 import appeng.api.storage.MEStorage;
-import appeng.blockentity.grid.AENetworkedBlockEntity;
+import appeng.blockentity.grid.AENetworkBlockEntity;
 import com.lumina.ae2_gvt.blockentities.BlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -22,7 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * twin-star engine takes for an infinite source and machine access interfaces hand to their machines.
  * It gives; it takes nothing in.
  */
-public class WhiteHoleEnergyCellBlockEntity extends AENetworkedBlockEntity implements IStorageProvider, IAEPowerStorage {
+public class WhiteHoleEnergyCellBlockEntity extends AENetworkBlockEntity implements IStorageProvider, IAEPowerStorage {
     /** What AE2 is told it holds: it wants a number, any large one. */
     private static final double SHOWN_POWER = 1e15;
 

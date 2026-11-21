@@ -26,14 +26,14 @@ public final class BlackHoleDisks extends SavedData {
     }
 
     public static BlackHoleDisks of(MinecraftServer server) {
-        return server.overworld().getDataStorage().computeIfAbsent(new Factory<>(BlackHoleDisks::new, BlackHoleDisks::load), NAME);
+        return server.overworld().getDataStorage().computeIfAbsent(BlackHoleDisks::load, BlackHoleDisks::new, NAME);
     }
 
     Map<AEKey, BigInteger> contents(UUID id) {
         return disks.computeIfAbsent(id, k -> new ConcurrentHashMap<>());
     }
 
-    private static BlackHoleDisks load(CompoundTag tag, HolderLookup.Provider registries) {
+    private static BlackHoleDisks load(CompoundTag tag) {
         BlackHoleDisks data = new BlackHoleDisks();
         ListTag list = tag.getList("disks", Tag.TAG_COMPOUND);
         for (int i = 0; i < list.size(); i++) {
@@ -42,7 +42,7 @@ public final class BlackHoleDisks extends SavedData {
             ListTag stored = disk.getList("stored", Tag.TAG_COMPOUND);
             for (int j = 0; j < stored.size(); j++) {
                 CompoundTag entry = stored.getCompound(j);
-                AEKey key = AEKey.fromTagGeneric(registries, entry.getCompound("key"));
+                AEKey key = AEKey.fromTagGeneric(entry.getCompound("key"));
                 if (key == null)
                     continue;
                 try {
@@ -58,7 +58,7 @@ public final class BlackHoleDisks extends SavedData {
     }
 
     @Override
-    public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
+    public CompoundTag save(CompoundTag tag) {
         ListTag list = new ListTag();
         disks.forEach((id, contents) -> {
             if (contents.isEmpty())
@@ -66,7 +66,7 @@ public final class BlackHoleDisks extends SavedData {
             ListTag stored = new ListTag();
             contents.forEach((key, amount) -> {
                 CompoundTag entry = new CompoundTag();
-                entry.put("key", key.toTagGeneric(registries));
+                entry.put("key", key.toTagGeneric());
                 entry.putString("amount", amount.toString());
                 stored.add(entry);
             });

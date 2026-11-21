@@ -1,12 +1,15 @@
 package com.lumina.ae2_gvt.items.armor;
 
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.living.LivingDamageEvent;
+import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import java.util.List;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.config.Config;
 import com.lumina.ae2_gvt.items.Items;
-import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.DamageTypeTags;
@@ -22,46 +25,46 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.bus.api.EventPriority;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.common.NeoForgeMod;
-import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
-import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
-import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-import net.neoforged.neoforge.registries.DeferredItem;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.common.ForgeMod;
+import net.minecraftforge.event.entity.living.LivingFallEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import com.lumina.ae2_gvt.reg.DeferredItem;
 
 /**
  * What the antigravity armor does. Built in, with the whole set on: flight and no fall damage (knockback resistance is in the
  * armor's material). The modules act while they are installed and switched on in any worn piece: potion effects and attribute
  * changes are kept up every few ticks, the rest is done where the damage or the breaking happens.
  */
-@EventBusSubscriber(modid = AE2GravityTech.MODID)
+@Mod.EventBusSubscriber(modid = AE2GravityTech.MODID)
 public final class ArmorEffects {
     private static final EquipmentSlot[] SLOTS = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
     private static final String FLIGHT_GIVEN = "ae2_gvt_armor_flight", UNDYING_READY = "ae2_gvt_undying_ready";
 
     /** One attribute change a module makes: its size is the module's single level. */
-    private record Change(DeferredItem<Item> module, Holder<Attribute> attribute, java.util.function.DoubleSupplier amount,
-                          AttributeModifier.Operation operation) {
-        ResourceLocation id() {
-            return ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "armor_" + module.getId().getPath());
+    private record Change(DeferredItem<Item> module, java.util.function.Supplier<Attribute> attribute, java.util.function.DoubleSupplier amount,
+                          AttributeModifier.Operation operation, int index) {
+        /** 1.20.1 identifies a modifier by a UUID: this one's is made from its place and the module's name. */
+        java.util.UUID id() {
+            return java.util.UUID.nameUUIDFromBytes(("ae2_gvt_armor_" + module.getId().getPath() + "_" + index).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
+
+        String name() {
+            return AE2GravityTech.MODID + ":armor_" + module.getId().getPath();
         }
     }
 
     private static final List<Change> CHANGES = List.of(
-            new Change(Items.MAX_HEALTH_MODULE, Attributes.MAX_HEALTH, Config.MAX_HEALTH_BONUS::get, AttributeModifier.Operation.ADD_VALUE),
-            new Change(Items.STRENGTH_MODULE, Attributes.ATTACK_DAMAGE, Config.STRENGTH_BONUS::get, AttributeModifier.Operation.ADD_VALUE),
-            new Change(Items.ATTACK_SPEED_MODULE, Attributes.ATTACK_SPEED, Config.ATTACK_SPEED_BONUS::get, AttributeModifier.Operation.ADD_VALUE),
-            new Change(Items.MOVE_SPEED_MODULE, Attributes.MOVEMENT_SPEED, Config.MOVE_SPEED_BONUS::get, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL),
-            new Change(Items.SWIM_SPEED_MODULE, NeoForgeMod.SWIM_SPEED, Config.SWIM_SPEED_BONUS::get, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL),
-            new Change(Items.JUMP_HEIGHT_MODULE, Attributes.JUMP_STRENGTH, Config.JUMP_BONUS::get, AttributeModifier.Operation.ADD_VALUE),
-            new Change(Items.STEP_ASSIST_MODULE, Attributes.STEP_HEIGHT, Config.STEP_BONUS::get, AttributeModifier.Operation.ADD_VALUE),
-            new Change(Items.LUCK_MODULE, Attributes.LUCK, Config.LUCK_BONUS::get, AttributeModifier.Operation.ADD_VALUE),
-            new Change(Items.REACH_MODULE, Attributes.BLOCK_INTERACTION_RANGE, Config.REACH_BONUS::get, AttributeModifier.Operation.ADD_VALUE),
-            new Change(Items.REACH_MODULE, Attributes.ENTITY_INTERACTION_RANGE, Config.REACH_BONUS::get, AttributeModifier.Operation.ADD_VALUE));
+            new Change(Items.MAX_HEALTH_MODULE, () -> Attributes.MAX_HEALTH, Config.MAX_HEALTH_BONUS::get, AttributeModifier.Operation.ADDITION, 0),
+            new Change(Items.STRENGTH_MODULE, () -> Attributes.ATTACK_DAMAGE, Config.STRENGTH_BONUS::get, AttributeModifier.Operation.ADDITION, 0),
+            new Change(Items.ATTACK_SPEED_MODULE, () -> Attributes.ATTACK_SPEED, Config.ATTACK_SPEED_BONUS::get, AttributeModifier.Operation.ADDITION, 0),
+            new Change(Items.MOVE_SPEED_MODULE, () -> Attributes.MOVEMENT_SPEED, Config.MOVE_SPEED_BONUS::get, AttributeModifier.Operation.MULTIPLY_TOTAL, 0),
+            new Change(Items.SWIM_SPEED_MODULE, ForgeMod.SWIM_SPEED, Config.SWIM_SPEED_BONUS::get, AttributeModifier.Operation.MULTIPLY_TOTAL, 0),
+            // 1.20.1 has no jump attribute: the jump module gives the jump boost effect instead (see effects)
+            new Change(Items.STEP_ASSIST_MODULE, ForgeMod.STEP_HEIGHT_ADDITION, Config.STEP_BONUS::get, AttributeModifier.Operation.ADDITION, 0),
+            new Change(Items.LUCK_MODULE, () -> Attributes.LUCK, Config.LUCK_BONUS::get, AttributeModifier.Operation.ADDITION, 0),
+            new Change(Items.REACH_MODULE, ForgeMod.BLOCK_REACH, Config.REACH_BONUS::get, AttributeModifier.Operation.ADDITION, 0),
+            new Change(Items.REACH_MODULE, ForgeMod.ENTITY_REACH, Config.REACH_BONUS::get, AttributeModifier.Operation.ADDITION, 1));
 
     private ArmorEffects() {
     }
@@ -94,18 +97,7 @@ public final class ArmorEffects {
         return false;
     }
 
-    @SubscribeEvent
-    public static void onTick(PlayerTickEvent.Post event) {
-        if (!(event.getEntity() instanceof ServerPlayer player))
-            return;
-        flight(player);
-        if (player.tickCount % 2 == 0 && !player.isShiftKeyDown() && has(player, Items.MAGNET_MODULE))
-            magnet(player);
-        if (player.tickCount % 10 != 0)
-            return;
-        attributes(player);
-        effects(player);
-    }
+
 
     private static void flight(ServerPlayer player) {
         if (player.isCreative() || player.isSpectator())
@@ -162,22 +154,23 @@ public final class ArmorEffects {
 
     private static void attributes(ServerPlayer player) {
         for (Change c : CHANGES) {
-            var instance = player.getAttribute(c.attribute());
+            var instance = player.getAttribute(c.attribute().get());
             if (instance == null)
                 continue;
             boolean want = has(player, c.module());
-            boolean present = instance.hasModifier(c.id());
+            boolean present = instance.getModifier(c.id()) != null;
             if (want && !present)
-                instance.addTransientModifier(new AttributeModifier(c.id(), c.amount().getAsDouble(), c.operation()));
+                instance.addTransientModifier(new AttributeModifier(c.id(), c.name(), c.amount().getAsDouble(), c.operation()));
             else if (!want && present) {
                 instance.removeModifier(c.id());
-                if (c.attribute() == Attributes.MAX_HEALTH && player.getHealth() > player.getMaxHealth())
+                if (c.attribute().get() == Attributes.MAX_HEALTH && player.getHealth() > player.getMaxHealth())
                     player.setHealth(player.getMaxHealth());
             }
         }
     }
 
     private static void effects(ServerPlayer player) {
+        refresh(player, Items.JUMP_HEIGHT_MODULE, MobEffects.JUMP, 1, 60);
         refresh(player, Items.NIGHT_VISION_MODULE, MobEffects.NIGHT_VISION, 0, 400);
         refresh(player, Items.WATER_BREATHING_MODULE, MobEffects.WATER_BREATHING, 0, 400);
         refresh(player, Items.REGENERATION_MODULE, MobEffects.REGENERATION, 0, 60);
@@ -190,7 +183,7 @@ public final class ArmorEffects {
             player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 400, 1, true, false, true));
         if (has(player, Items.CLEANSE_MODULE)) {
             for (var effect : List.copyOf(player.getActiveEffects())) {
-                if (effect.getEffect().value().getCategory() == MobEffectCategory.HARMFUL)
+                if (effect.getEffect().getCategory() == MobEffectCategory.HARMFUL)
                     player.removeEffect(effect.getEffect());
             }
         }
@@ -204,7 +197,7 @@ public final class ArmorEffects {
     }
 
     /** Keeps a potion effect on without particles, topped up before it runs out. */
-    private static void refresh(ServerPlayer player, DeferredItem<Item> module, Holder<net.minecraft.world.effect.MobEffect> effect, int amplifier, int duration) {
+    private static void refresh(ServerPlayer player, DeferredItem<Item> module, net.minecraft.world.effect.MobEffect effect, int amplifier, int duration) {
         if (!has(player, module))
             return;
         var now = player.getEffect(effect);
@@ -216,13 +209,36 @@ public final class ArmorEffects {
         var inventory = player.getInventory();
         for (int i = 0; i < inventory.getContainerSize(); i++) {
             ItemStack stack = inventory.getItem(i);
-            var food = stack.get(DataComponents.FOOD);
-            if (food != null && food.nutrition() > 0) {
-                player.getFoodData().eat(food);
+            var food = stack.getItem().getFoodProperties(stack, player);
+            if (food != null && food.getNutrition() > 0) {
+                player.getFoodData().eat(stack.getItem(), stack);
                 stack.shrink(1);
                 return;
             }
         }
+    }
+
+
+
+
+
+
+
+
+
+    @SubscribeEvent
+    public static void onTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END)
+            return;
+        if (!(event.player instanceof ServerPlayer player))
+            return;
+        flight(player);
+        if (player.tickCount % 2 == 0 && !player.isShiftKeyDown() && has(player, Items.MAGNET_MODULE))
+            magnet(player);
+        if (player.tickCount % 10 != 0)
+            return;
+        attributes(player);
+        effects(player);
     }
 
     /** Whole set on: no fall damage. */
@@ -233,7 +249,7 @@ public final class ArmorEffects {
     }
 
     @SubscribeEvent(priority = EventPriority.HIGH)
-    public static void onHurt(LivingIncomingDamageEvent event) {
+    public static void onHurt(LivingHurtEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player))
             return;
         var source = event.getSource();
@@ -267,7 +283,7 @@ public final class ArmorEffects {
 
     /** Thorns: a melee hit is hurt back. */
     @SubscribeEvent
-    public static void onHurtPost(LivingDamageEvent.Post event) {
+    public static void onHurtPost(LivingDamageEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player) || !has(player, Items.THORNS_MODULE))
             return;
         var source = event.getSource();
@@ -287,7 +303,7 @@ public final class ArmorEffects {
         if (!player.onGround())
             speed *= 5f;
         if (player.isEyeInFluid(net.minecraft.tags.FluidTags.WATER))
-            speed /= (float) Math.max(0.01, Math.min(1, player.getAttributeValue(Attributes.SUBMERGED_MINING_SPEED)));
+            speed *= 5f;
         event.setNewSpeed(speed);
     }
 }

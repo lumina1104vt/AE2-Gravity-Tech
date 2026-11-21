@@ -8,7 +8,6 @@ import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -27,12 +26,12 @@ import net.minecraft.client.renderer.RenderStateShard;
  * With Fabulous graphics the translucent layers live in separate targets until the end of the
  * frame, so they are not in the copy.
  */
-public final class SceneSnapshot {
+public final class SceneSnapshot extends ShardBase {
     private static TextureTarget target;
     private static boolean warned;
 
     /** For the effects: drawn at endBatch, whatever other mods do to the shared buffers. */
-    public static final MultiBufferSource.BufferSource BUFFERS = MultiBufferSource.immediate(new ByteBufferBuilder(1 << 18));
+    public static final MultiBufferSource.BufferSource BUFFERS = MultiBufferSource.immediate(new com.mojang.blaze3d.vertex.BufferBuilder(1 << 18));
 
     /** Binds the snapshot as Sampler0. */
     public static final RenderStateShard.EmptyTextureStateShard TEXTURE = new RenderStateShard.EmptyTextureStateShard(

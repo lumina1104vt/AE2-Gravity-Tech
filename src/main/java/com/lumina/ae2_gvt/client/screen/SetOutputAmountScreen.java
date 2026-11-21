@@ -17,12 +17,11 @@ import appeng.client.gui.AESubScreen;
 import appeng.client.gui.Icon;
 import appeng.client.gui.NumberEntryType;
 import appeng.client.gui.me.common.ClientDisplaySlot;
-import appeng.client.gui.widgets.AE2Button;
 import appeng.client.gui.widgets.AETextField;
 import appeng.client.gui.widgets.NumberEntryWidget;
 import appeng.client.gui.widgets.TabButton;
 import appeng.core.localization.GuiText;
-import appeng.core.network.serverbound.InventoryActionPacket;
+import appeng.core.sync.packets.InventoryActionPacket;
 import appeng.helpers.InventoryAction;
 import appeng.menu.SlotSemantics;
 import com.google.common.primitives.Longs;
@@ -31,7 +30,7 @@ import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraftforge.network.PacketDistributor;
 
 /**
  * AE2's amount dialog of a processing output slot (same layout and behaviour as AE2's
@@ -50,13 +49,13 @@ public class SetOutputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, 
     private final int outputIndex;
     private final boolean advanced;
     private final @Nullable AETextField chance;
-    private final AE2Button save;
-    private final @Nullable AE2Button fromRecipe;
+    private final net.minecraft.client.gui.components.Button save;
+    private final @Nullable net.minecraft.client.gui.components.Button fromRecipe;
     /** the probability as typed, kept while the advanced part is hidden */
     private String chanceText;
     /** the slot of the machine's GUI the product is taken out of (0 = any result slot) */
     private int guiSlot;
-    private final @Nullable AE2Button guiLess, guiMore;
+    private final @Nullable net.minecraft.client.gui.components.Button guiLess, guiMore;
 
     public SetOutputAmountScreen(TwinStarPatternTermScreen parent, GenericStack currentStack, Slot slot, int outputIndex) {
         this(parent, currentStack, slot, outputIndex, chanceTextOf(parent.getMenu().getOutputChance(outputIndex)),
@@ -74,7 +73,7 @@ public class SetOutputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, 
         this.outputIndex = outputIndex;
         save = widgets.addButton("save", GuiText.Set.text(), this::confirm);
         ItemStack icon = getMenu().getHost().getMainMenuIcon();
-        widgets.add("back", new TabButton(Icon.BACK, icon.getHoverName(), btn -> returnToParent()));
+        widgets.add("back", new TabButton(Icon.ARROW_LEFT, icon.getHoverName(), btn -> returnToParent()));
         amount = widgets.addNumberEntryWidget("amountToStock", NumberEntryType.of(currentStack.what()));
         amount.setLongValue(currentStack.amount());
         amount.setMaxValue(getMaxAmount());
@@ -186,7 +185,7 @@ public class SetOutputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, 
         amount.getLongValue().ifPresent(value -> {
             value = Longs.constrainToRange(value, 0, getMaxAmount());
             GenericStack stack = value <= 0 ? null : new GenericStack(currentStack.what(), value);
-            PacketDistributor.sendToServer(new InventoryActionPacket(InventoryAction.SET_FILTER, slot.index,
+            appeng.core.sync.network.NetworkHandler.instance().sendToServer(new InventoryActionPacket(InventoryAction.SET_FILTER, slot.index,
                     GenericStack.wrapInItemStack(stack)));
             if (stack != null) {
                 getMenu().setOutputChance(outputIndex, p);

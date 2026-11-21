@@ -1,0 +1,26 @@
+{
+  "type": "ae2_gvt:gravity_processing",
+  "ingredients": [
+    {
+      "item": "ae2_gvt:singular_crafting_unit",
+      "count": 256
+    },
+    {
+      "item": "ae2:singularity",
+      "count": 1
+    },
+    {
+      "item": "ae2_gvt:gravity_alloy_ingot",
+      "count": 4
+    }
+  ],
+  "results": [
+    {
+      "id": "ae2_gvt:imaginary_crafting_unit",
+      "count": 1
+    }
+  ],
+  "time": 20,
+  "energy": 50000,
+  "gravitons": 256
+}

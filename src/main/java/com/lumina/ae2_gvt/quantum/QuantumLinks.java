@@ -1,5 +1,8 @@
 package com.lumina.ae2_gvt.quantum;
 
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,9 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import appeng.api.networking.GridHelper;
 import appeng.api.networking.IGridNode;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
 
@@ -19,7 +19,7 @@ import com.lumina.ae2_gvt.AE2GravityTech;
  * Links quantum controllers of one frequency: a slave gets a grid connection to the master, so the two networks are one (any
  * distance, any dimension, as long as both are loaded). Looked over once a second, and at once after a change.
  */
-@EventBusSubscriber(modid = AE2GravityTech.MODID)
+@Mod.EventBusSubscriber(modid = AE2GravityTech.MODID)
 public final class QuantumLinks {
     /** what a controller's link is doing (QuantumControllerBlockEntity#getLinkState) */
     public static final int NONE = 0, MASTER_OK = 1, SLAVE_OK = 2, NO_MASTER = 3, TWO_MASTERS = 4, FAILED = 5;
@@ -51,13 +51,7 @@ public final class QuantumLinks {
         repathNext = true;
     }
 
-    @SubscribeEvent
-    static void tick(ServerTickEvent.Post event) {
-        if (!dirty && ++ticks % 20 != 0)
-            return;
-        dirty = false;
-        reconcile();
-    }
+
 
     /**
      * Every frequency in use by the controllers that are loaded, for the screen's list: a line each (LINE apart), name, masters
@@ -151,5 +145,15 @@ public final class QuantumLinks {
             for (QuantumControllerBlockEntity be : ALL)
                 be.getMainNode().ifPresent(grid -> grid.getPathingService().repath());
         }
+    }
+
+    @SubscribeEvent
+    public static void tick(TickEvent.ServerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END)
+            return;
+        if (!dirty && ++ticks % 20 != 0)
+            return;
+        dirty = false;
+        reconcile();
     }
 }

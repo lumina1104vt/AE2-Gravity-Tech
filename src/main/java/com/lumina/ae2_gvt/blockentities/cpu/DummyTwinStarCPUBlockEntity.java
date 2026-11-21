@@ -52,15 +52,15 @@ public class DummyTwinStarCPUBlockEntity extends TwinStarHostBlockEntity {
     }
 
     @Override
-    public void saveAdditional(CompoundTag data, HolderLookup.Provider registries) {
-        super.saveAdditional(data, registries);
+    public void saveAdditional(CompoundTag data) {
+        super.saveAdditional(data);
         data.putString("capacity", capacity.toString());
         data.putString("parallel", parallel.toString());
     }
 
     @Override
-    public void loadTag(CompoundTag data, HolderLookup.Provider registries) {
-        super.loadTag(data, registries);
+    public void loadTag(CompoundTag data) {
+        super.loadTag(data);
         capacity = readAmount(data, "capacity");
         parallel = readAmount(data, "parallel");
     }

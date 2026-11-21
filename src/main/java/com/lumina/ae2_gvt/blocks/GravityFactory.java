@@ -66,7 +66,7 @@ public class GravityFactory extends appeng.block.AEBaseEntityBlock<GravityFactor
     }
 
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof GravityFactoryBlockEntity factory) {
             MenuOpener.open(Menus.GRAVITY_FACTORY.get(), player, MenuLocators.forBlockEntity(factory));
         }

@@ -14,12 +14,12 @@ import com.lumina.twinstar.api.IMachineAccess;
 import appeng.api.networking.IManagedGridNode;
 import appeng.api.networking.security.IActionHost;
 import appeng.api.stacks.AEKey;
-import appeng.blockentity.grid.AENetworkedBlockEntity;
+import appeng.blockentity.grid.AENetworkBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -31,7 +31,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * is bound to it from afar with the 機器連結器 (up to 64 blocks, same dimension). Everything else is
  * {@link MachineAccessCore}, shared with the cable part.
  */
-public class MachineAccessBlockEntity extends AENetworkedBlockEntity implements IMachineAccess, MachineAccessHost, MachineAccessCore.Host {
+public class MachineAccessBlockEntity extends AENetworkBlockEntity implements IMachineAccess, MachineAccessHost, MachineAccessCore.Host {
     private final MachineAccessCore core = new MachineAccessCore(this);
 
     public MachineAccessBlockEntity(BlockPos pos, BlockState state) {
@@ -108,25 +108,25 @@ public class MachineAccessBlockEntity extends AENetworkedBlockEntity implements 
     // ── saving, the client ──
 
     @Override
-    public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        core.write(tag, registries);
+    public void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
+        core.write(tag);
     }
 
     @Override
-    public void loadTag(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadTag(tag, registries);
-        core.read(tag, registries);
+    public void loadTag(CompoundTag tag) {
+        super.loadTag(tag);
+        core.read(tag);
     }
 
     @Override
-    protected void writeToStream(RegistryFriendlyByteBuf data) {
+    protected void writeToStream(FriendlyByteBuf data) {
         super.writeToStream(data);
         core.writeStream(data);
     }
 
     @Override
-    protected boolean readFromStream(RegistryFriendlyByteBuf data) {
+    protected boolean readFromStream(FriendlyByteBuf data) {
         boolean changed = super.readFromStream(data);
         core.readStream(data);
         return changed || true;
@@ -142,5 +142,17 @@ public class MachineAccessBlockEntity extends AENetworkedBlockEntity implements 
     public void clearContent() {
         super.clearContent();
         core.clear();
+    }
+
+    // ── capabilities (1.20.1: the block entity answers for them) ──
+
+    @Override
+    public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(net.minecraftforge.common.capabilities.Capability<T> cap,
+                                                                            @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER)
+            return net.minecraftforge.common.util.LazyOptional.of(() -> core().getReceivedItems()).cast();
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER)
+            return net.minecraftforge.common.util.LazyOptional.of(() -> core().getReceivedFluids()).cast();
+        return super.getCapability(cap, side);
     }
 }

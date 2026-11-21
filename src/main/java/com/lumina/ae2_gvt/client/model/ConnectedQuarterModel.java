@@ -20,11 +20,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.client.ChunkRenderTypeSet;
-import net.neoforged.neoforge.client.model.IDynamicBakedModel;
-import net.neoforged.neoforge.client.model.data.ModelData;
-import net.neoforged.neoforge.client.model.data.ModelProperty;
-import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer;
+import net.minecraftforge.client.ChunkRenderTypeSet;
+import net.minecraftforge.client.model.IDynamicBakedModel;
+import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelProperty;
+import net.minecraftforge.client.model.pipeline.QuadBakingVertexConsumer;
 
 /**
  * A block connected 8 ways: every face is drawn as four quarters; each quarter looks at its two
@@ -181,7 +181,8 @@ abstract class ConnectedQuarterModel implements IDynamicBakedModel {
 
     /** Part of a face: texture-space rectangle (u0, v0)-(u1, v1), positioned on the face to match. */
     private BakedQuad quad(Direction side, List<Vector3f> c, int tile, int row, float u0, float v0, float u1, float v1) {
-        QuadBakingVertexConsumer builder = new QuadBakingVertexConsumer();
+        BakedQuad[] baked = new BakedQuad[1];
+        QuadBakingVertexConsumer builder = new QuadBakingVertexConsumer(q -> baked[0] = q);
         builder.setSprite(sheet);
         builder.setDirection(side);
         builder.setShade(true);
@@ -189,7 +190,7 @@ abstract class ConnectedQuarterModel implements IDynamicBakedModel {
         vertex(builder, side, c, tile, row, u0, v1);
         vertex(builder, side, c, tile, row, u1, v1);
         vertex(builder, side, c, tile, row, u1, v0);
-        return builder.bakeQuad();
+        return baked[0];
     }
 
     // corner 0 is texture (0,0), corner 1 is (0,1), corner 3 is (1,0): the face is a parallelogram on those
@@ -197,11 +198,10 @@ abstract class ConnectedQuarterModel implements IDynamicBakedModel {
         Vector3f p = new Vector3f(c.get(0))
                 .add(new Vector3f(c.get(3)).sub(c.get(0)).mul(u))
                 .add(new Vector3f(c.get(1)).sub(c.get(0)).mul(v));
-        builder.addVertex(p.x(), p.y(), p.z());
-        builder.setColor(255, 255, 255, 255);
-        builder.setUv(sheet.getU((row + u) / variants), sheet.getV((tile + v) / TILES));
-        builder.setUv2(0, 0);
-        builder.setNormal(side.getStepX(), side.getStepY(), side.getStepZ());
+        builder.vertex(p.x(), p.y(), p.z()).color(255, 255, 255, 255)
+                .uv(sheet.getU((row + u) / variants * 16.0), sheet.getV((tile + v) / TILES * 16.0))
+                .uv2(0, 0).normal(side.getStepX(), side.getStepY(), side.getStepZ());
+        builder.endVertex();
     }
 
     // the same corner order AE2's RenderHelper uses, so the edge bits above line up with the texture

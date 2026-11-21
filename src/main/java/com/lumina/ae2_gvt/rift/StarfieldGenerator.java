@@ -3,7 +3,6 @@ package com.lumina.ae2_gvt.rift;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import appeng.core.definitions.AEBlocks;
@@ -34,9 +33,9 @@ import net.minecraft.world.level.levelgen.synth.SimplexNoise;
  * masses, a finer one cracks them apart into shards.
  */
 public final class StarfieldGenerator extends ChunkGenerator {
-    public static final MapCodec<StarfieldGenerator> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
+    public static final com.mojang.serialization.Codec<StarfieldGenerator> CODEC = RecordCodecBuilder.create(i -> i.group(
             BiomeSource.CODEC.fieldOf("biome_source").forGetter(StarfieldGenerator::getBiomeSource)).apply(i, StarfieldGenerator::new));
-    private static final ResourceLocation SEED = ResourceLocation.fromNamespaceAndPath("ae2_gvt", "shattered_starfield");
+    private static final ResourceLocation SEED = new ResourceLocation("ae2_gvt", "shattered_starfield");
     private static final int HEIGHT = 256, MARGIN = 32;
     /** The masses: noise over this; the cracks: fine noise within this of zero. */
     private static final double SOLID = 0.42, CRACK = 0.07;
@@ -46,12 +45,12 @@ public final class StarfieldGenerator extends ChunkGenerator {
     }
 
     @Override
-    protected MapCodec<? extends ChunkGenerator> codec() {
+    protected com.mojang.serialization.Codec<? extends ChunkGenerator> codec() {
         return CODEC;
     }
 
     @Override
-    public CompletableFuture<ChunkAccess> fillFromNoise(Blender blender, RandomState random, StructureManager structures, ChunkAccess chunk) {
+    public CompletableFuture<ChunkAccess> fillFromNoise(java.util.concurrent.Executor executor, Blender blender, RandomState random, StructureManager structures, ChunkAccess chunk) {
         RandomSource seeds = random.getOrCreateRandomFactory(SEED).at(0, 0, 0);
         SimplexNoise masses = new SimplexNoise(seeds), cracks = new SimplexNoise(seeds);
         BlockState rock = AEBlocks.SKY_STONE_BLOCK.block().defaultBlockState();

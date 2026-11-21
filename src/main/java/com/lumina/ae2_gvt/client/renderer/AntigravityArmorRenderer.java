@@ -14,7 +14,7 @@ import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
  */
 public class AntigravityArmorRenderer extends GeoArmorRenderer<AntigravityArmorItem> {
     public AntigravityArmorRenderer() {
-        super(new DefaultedItemGeoModel<>(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "antigravity_armor")));
+        super(new DefaultedItemGeoModel<>(new ResourceLocation(AE2GravityTech.MODID, "antigravity_armor")));
         addRenderLayer(new AutoGlowingGeoLayer<>(this));
     }
 }

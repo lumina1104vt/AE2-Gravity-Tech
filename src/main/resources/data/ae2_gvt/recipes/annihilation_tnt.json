@@ -1,0 +1,35 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "W": {
+      "item": "ae2_gvt:antigravity_dust"
+    },
+    "B": {
+      "item": "ae2_gvt:gravity_dust"
+    },
+    "P": {
+      "item": "ae2_gvt:paradox_dust"
+    },
+    "S": {
+      "item": "ae2:singularity"
+    },
+    "A": {
+      "item": "ae2_gvt:anti_singularity"
+    }
+  },
+  "pattern": [
+    "WSB",
+    "APA",
+    "BSW"
+  ],
+  "result": {
+    "item": "ae2_gvt:annihilation_tnt"
+  },
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "ae2"
+    }
+  ]
+}

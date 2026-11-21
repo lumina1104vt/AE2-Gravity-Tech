@@ -1,7 +1,7 @@
 package com.lumina.ae2_gvt.client;
 
 import org.joml.Matrix4f;
-import org.joml.Matrix4fStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
@@ -13,7 +13,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexSorting;
 
 import net.minecraft.client.Minecraft;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 
 /**
  * Draws in the world with the matrices the world itself was drawn with. Everything the mod puts in the frame after the world (holes,
@@ -67,18 +67,18 @@ final class LevelPass {
     }
 
     static void run(RenderLevelStageEvent event, Runnable draw) {
-        Matrix4fStack view = RenderSystem.getModelViewStack();
+        PoseStack view = RenderSystem.getModelViewStack();
         Matrix4f projection = new Matrix4f(RenderSystem.getProjectionMatrix());
         VertexSorting sorting = RenderSystem.getVertexSorting();
-        VIEW.set(event.getModelViewMatrix());
+        VIEW.set(event.getPoseStack().last().pose());
         PROJECTION.set(event.getProjectionMatrix());
         int[] viewport = new int[4], scissor = new int[4];
         GL11.glGetIntegerv(GL11.GL_VIEWPORT, viewport);
         GL11.glGetIntegerv(GL11.GL_SCISSOR_BOX, scissor);
         boolean scissorOn = GL11.glIsEnabled(GL11.GL_SCISSOR_TEST);
         RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
-        view.pushMatrix();
-        view.set(event.getModelViewMatrix());
+        view.pushPose();
+        view.last().pose().set(event.getPoseStack().last().pose());
         RenderSystem.applyModelViewMatrix();
         RenderSystem.setProjectionMatrix(event.getProjectionMatrix(), VertexSorting.DISTANCE_TO_ORIGIN);
         RenderSystem.viewport(0, 0, main.width, main.height);
@@ -91,7 +91,7 @@ final class LevelPass {
                 GlStateManager._enableScissorTest();
                 GlStateManager._scissorBox(scissor[0], scissor[1], scissor[2], scissor[3]);
             }
-            view.popMatrix();
+            view.popPose();
             RenderSystem.applyModelViewMatrix();
             RenderSystem.setProjectionMatrix(projection, sorting);
         }

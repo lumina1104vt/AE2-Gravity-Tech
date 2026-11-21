@@ -1,7 +1,7 @@
 package com.lumina.ae2_gvt.client;
 
 import org.joml.Matrix4f;
-import org.joml.Matrix4fStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 
@@ -30,7 +30,7 @@ import net.minecraft.client.renderer.RenderStateShard;
  * Between {@link #begin} and {@link #end} draw with a RenderType using {@link #INPUT}, no depth test (the target has none: the shader
  * leaves what is nearer than the effect alone, by the frame's depth) and an opaque result (alpha 1 where it drew, 0 elsewhere).
  */
-public final class LensPass {
+public final class LensPass extends ShardBase {
     private static TextureTarget target;
     private static int mainColor, mainDepth, bound;
     private static final int[] VIEWPORT = new int[4];
@@ -105,11 +105,11 @@ public final class LensPass {
         RenderSystem.viewport(VIEWPORT[0], VIEWPORT[1], VIEWPORT[2], VIEWPORT[3]);
 
         float w = VIEWPORT[2], h = VIEWPORT[3];
-        Matrix4fStack view = RenderSystem.getModelViewStack();
+        PoseStack view = RenderSystem.getModelViewStack();
         Matrix4f projection = new Matrix4f(RenderSystem.getProjectionMatrix());
         VertexSorting sorting = RenderSystem.getVertexSorting();
-        view.pushMatrix();
-        view.identity();
+        view.pushPose();
+        view.setIdentity();
         RenderSystem.applyModelViewMatrix();
         RenderSystem.setProjectionMatrix(new Matrix4f(), VertexSorting.ORTHOGRAPHIC_Z);
         RenderSystem.disableDepthTest();
@@ -120,16 +120,17 @@ public final class LensPass {
         RenderSystem.setShaderTexture(0, target.getColorTextureId());
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
         float nx0 = x0 / w * 2 - 1, nx1 = x1 / w * 2 - 1, ny0 = y0 / h * 2 - 1, ny1 = y1 / h * 2 - 1;
-        BufferBuilder builder = Tesselator.getInstance().begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-        builder.addVertex(nx0, ny0, 0f).setUv(x0 / w, y0 / h);
-        builder.addVertex(nx1, ny0, 0f).setUv(x1 / w, y0 / h);
-        builder.addVertex(nx1, ny1, 0f).setUv(x1 / w, y1 / h);
-        builder.addVertex(nx0, ny1, 0f).setUv(x0 / w, y1 / h);
-        BufferUploader.drawWithShader(builder.buildOrThrow());
+        BufferBuilder builder = Tesselator.getInstance().getBuilder();
+        builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        builder.vertex(nx0, ny0, 0f).uv(x0 / w, y0 / h).endVertex();
+        builder.vertex(nx1, ny0, 0f).uv(x1 / w, y0 / h).endVertex();
+        builder.vertex(nx1, ny1, 0f).uv(x1 / w, y1 / h).endVertex();
+        builder.vertex(nx0, ny1, 0f).uv(x0 / w, y1 / h).endVertex();
+        BufferUploader.drawWithShader(builder.end());
         RenderSystem.disableBlend();
         RenderSystem.depthMask(true);
         RenderSystem.enableDepthTest();
-        view.popMatrix();
+        view.popPose();
         RenderSystem.applyModelViewMatrix();
         RenderSystem.setProjectionMatrix(projection, sorting);
     }

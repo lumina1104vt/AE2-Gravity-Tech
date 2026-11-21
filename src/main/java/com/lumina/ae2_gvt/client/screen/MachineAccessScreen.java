@@ -40,7 +40,7 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/machine_access_interface.png");
+            new ResourceLocation(AE2GravityTech.MODID, "textures/gui/machine_access_interface.png");
     private static final int TEXT = 0x404040, MUTED = 0x808080, BUSY = 0x2E7D32, ERROR = 0xC03030, ACCENT = 0xFF2F86C8;
     private static final int BAR_X = 8, BAR_W = 160, BAR_H = 6;
     /** the machine cells: x of the first, y, spacing */
@@ -530,7 +530,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
 
         @Override
         protected Icon getIcon() {
-            return isHoveredOrFocused() ? Icon.COG : Icon.COG_DISABLED;
+            return isHoveredOrFocused() ? Icon.WRENCH : Icon.WRENCH_DISABLED;
         }
 
         @Override
@@ -568,7 +568,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
             super.renderWidget(g, mouseX, mouseY, partialTick);
             if (!visible)
                 return;
-            Blitter.texture(TEXTURE).src(192 + (menu.recover ? 0 : 16), 68, 16, 16).dest(getX(), getY() + 1 + (isHovered() ? 1 : 0)).zOffset(3).blit(g);
+            Blitter.texture(TEXTURE).src(192 + (menu.recover ? 0 : 16), 68, 16, 16).dest(getX(), getY() + 1 + (isHovered() ? 1 : 0)).blit(g);
         }
 
         @Override
@@ -938,7 +938,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
             if (!visible)
                 return;
             int u = 176 + 16 * menu.getInsertMode().ordinal();
-            Blitter.texture(TEXTURE).src(u, 0, 16, 16).dest(getX(), getY() + 1 + (isHovered() ? 1 : 0)).zOffset(3).blit(g);
+            Blitter.texture(TEXTURE).src(u, 0, 16, 16).dest(getX(), getY() + 1 + (isHovered() ? 1 : 0)).blit(g);
         }
 
         @Override

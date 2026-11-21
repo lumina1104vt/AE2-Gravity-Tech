@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "a": {
+      "item": "ae2:quartz_glass"
+    },
+    "b": {
+      "item": "ae2_gvt:gravity_dust"
+    },
+    "c": {
+      "tag": "forge:ingots/iron"
+    },
+    "d": {
+      "item": "ae2_gvt:gravity_crystal"
+    }
+  },
+  "pattern": [
+    "aba",
+    "b b",
+    "cdc"
+  ],
+  "result": {
+    "item": "ae2_gvt:graviton_cell_housing",
+    "count": 1
+  }
+}

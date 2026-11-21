@@ -84,8 +84,8 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
-import net.neoforged.neoforge.common.crafting.SizedIngredient;
+import com.lumina.twinstar.util.RecipeHolder;
+import com.lumina.ae2_gvt.recipes.SizedIngredient;
 
 /**
  * 核融合發生器 reactions in JEI: the inputs (anything AE2 holds that isn't an item as its wrapped stack),
@@ -95,11 +95,11 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
 @JeiPlugin
 public class FusionJei implements IModPlugin {
     public static final RecipeType<RecipeHolder<FusionRecipe>> TYPE =
-            RecipeType.createRecipeHolderType(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "fusion"));
+            new RecipeType<>(new ResourceLocation(AE2GravityTech.MODID, "fusion"), (Class<RecipeHolder<FusionRecipe>>) (Class<?>) RecipeHolder.class);
 
     @Override
     public ResourceLocation getPluginUid() {
-        return ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "fusion");
+        return new ResourceLocation(AE2GravityTech.MODID, "fusion");
     }
 
     @Override
@@ -111,7 +111,7 @@ public class FusionJei implements IModPlugin {
     public void registerRecipes(IRecipeRegistration registration) {
         var level = Minecraft.getInstance().level;
         if (level != null)
-            registration.addRecipes(TYPE, level.getRecipeManager().getAllRecipesFor(Recipes.FUSION.get()));
+            registration.addRecipes(TYPE, RecipeHolder.allOf(level.getRecipeManager().getAllRecipesFor(Recipes.FUSION.get())));
     }
 
     @Override

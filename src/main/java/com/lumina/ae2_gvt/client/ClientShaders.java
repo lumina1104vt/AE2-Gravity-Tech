@@ -1,5 +1,8 @@
 package com.lumina.ae2_gvt.client;
 
+import net.minecraftforge.client.event.RegisterShadersEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import java.io.IOException;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
@@ -7,25 +10,28 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RegisterShadersEvent;
+import net.minecraftforge.api.distmarker.Dist;
 
 /**
  * The mod's core shaders (assets/ae2_gvt/shaders/core/*.json + .vsh/.fsh), all on the entity vertex
  * format. Loaded with the resources; the render types read them through suppliers, so a reload
  * swaps them in place.
  */
-@EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = AE2GravityTech.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ClientShaders {
     static ShaderInstance holeLens, holeBody, holeRipple, fusionPlasma, collectorLens, spaceRift, starfieldSky, starfieldBake;
 
     private ClientShaders() {
     }
 
+
+
+    private static ResourceLocation id(String name) {
+        return new ResourceLocation(AE2GravityTech.MODID, name);
+    }
+
     @SubscribeEvent
-    static void register(RegisterShadersEvent event) throws IOException {
+    public static void register(RegisterShadersEvent event) throws IOException {
         var provider = event.getResourceProvider();
         event.registerShader(new ShaderInstance(provider, id("hole_lens"), DefaultVertexFormat.NEW_ENTITY), s -> holeLens = s);
         event.registerShader(new ShaderInstance(provider, id("hole_body"), DefaultVertexFormat.NEW_ENTITY), s -> holeBody = s);
@@ -35,9 +41,5 @@ public final class ClientShaders {
         event.registerShader(new ShaderInstance(provider, id("starfield_bake"), DefaultVertexFormat.NEW_ENTITY), s -> starfieldBake = s);
         event.registerShader(new ShaderInstance(provider, id("fusion_plasma"), DefaultVertexFormat.NEW_ENTITY), s -> fusionPlasma = s);
         event.registerShader(new ShaderInstance(provider, id("collector_lens"), DefaultVertexFormat.NEW_ENTITY), s -> collectorLens = s);
-    }
-
-    private static ResourceLocation id(String name) {
-        return ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, name);
     }
 }

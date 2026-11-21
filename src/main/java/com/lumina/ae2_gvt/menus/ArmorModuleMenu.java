@@ -35,7 +35,7 @@ public class ArmorModuleMenu extends AEBaseMenu {
         this.player = inventory.player;
 
         List<ArmorItem.Type> worn = worn();
-        this.selected = ArmorModules.PIECES.indexOf(worn.getFirst());
+        this.selected = ArmorModules.PIECES.indexOf(worn.get(0));
         this.installSlot = addSlot(new Slot(install, 0, 0, 0) {
             @Override
             public boolean mayPlace(ItemStack stack) {

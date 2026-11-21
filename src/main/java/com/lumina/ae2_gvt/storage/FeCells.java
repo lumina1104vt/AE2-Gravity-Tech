@@ -6,8 +6,8 @@ import java.util.List;
 import appeng.items.storage.BasicStorageCell;
 import com.lumina.ae2_gvt.AE2GravityTech;
 import net.minecraft.world.item.Item;
-import net.neoforged.fml.ModList;
-import net.neoforged.neoforge.registries.DeferredItem;
+import net.minecraftforge.fml.ModList;
+import com.lumina.ae2_gvt.reg.DeferredItem;
 
 /**
  * Somewhere in an ME network to keep FE: AE2's own cell housing with a cell component of the tier and an energy acceptor makes
@@ -34,6 +34,16 @@ public final class FeCells {
             this.kilobytes = kilobytes;
         }
 
+        public net.minecraft.world.level.ItemLike component() {
+            return switch (this) {
+                case T1K -> appeng.core.definitions.AEItems.CELL_COMPONENT_1K;
+                case T4K -> appeng.core.definitions.AEItems.CELL_COMPONENT_4K;
+                case T16K -> appeng.core.definitions.AEItems.CELL_COMPONENT_16K;
+                case T64K -> appeng.core.definitions.AEItems.CELL_COMPONENT_64K;
+                case T256K -> appeng.core.definitions.AEItems.CELL_COMPONENT_256K;
+            };
+        }
+
         public DeferredItem<BasicStorageCell> cell() {
             return cell;
         }
@@ -43,7 +53,7 @@ public final class FeCells {
         for (Tier t : Tier.values()) {
             // one type (FE); the bytes per type do not matter with only one
             t.cell = AE2GravityTech.ITEMS.registerItem("fe_storage_cell_" + t.size,
-                    p -> new BasicStorageCell(p.stacksTo(1), t.idleDrain, t.kilobytes, 8, 1, FeKeyType.INSTANCE));
+                    p -> new BasicStorageCell(p.stacksTo(1), t.component(), appeng.core.definitions.AEItems.ITEM_CELL_HOUSING, t.idleDrain, t.kilobytes, 8, 1, FeKeyType.INSTANCE));
         }
     }
 

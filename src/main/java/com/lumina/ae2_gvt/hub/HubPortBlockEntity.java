@@ -1,6 +1,6 @@
 package com.lumina.ae2_gvt.hub;
 
-import appeng.blockentity.grid.AENetworkedBlockEntity;
+import appeng.blockentity.grid.AENetworkBlockEntity;
 import com.lumina.ae2_gvt.blockentities.FusionControllerBlockEntity;
 import com.lumina.twinstar.api.IMachineAccess;
 import net.minecraft.core.BlockPos;
@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
  * so a pattern provider or pipe against it fills the controller's inputs, and one port of the chamber
  * is its machine access interface: the hub finds the machine without anything else to set up.
  */
-public class HubPortBlockEntity extends AENetworkedBlockEntity implements IMachineAccess {
+public class HubPortBlockEntity extends AENetworkBlockEntity implements IMachineAccess {
     private @Nullable FusionControllerBlockEntity machine;
     /** The chamber's one port that speaks for it to the hub: several would make it several machines. */
     private boolean access;
@@ -37,8 +37,6 @@ public class HubPortBlockEntity extends AENetworkedBlockEntity implements IMachi
         this.access = access;
         if (this.machine != machine) {
             this.machine = machine;
-            if (level != null)
-                level.invalidateCapabilities(worldPosition);
         }
     }
 
@@ -77,5 +75,22 @@ public class HubPortBlockEntity extends AENetworkedBlockEntity implements IMachi
     @Override
     public boolean isAccessActive() {
         return access && machine != null && !machine.isRemoved() && getMainNode().isActive();
+    }
+
+    // ── capabilities (1.20.1: the block entity answers for them) ──
+
+    @Override
+    public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(net.minecraftforge.common.capabilities.Capability<T> cap,
+                                                                            @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        var controller = getController();
+        if (controller == null)
+            return super.getCapability(cap, side);
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER)
+            return net.minecraftforge.common.util.LazyOptional.of(controller::getPipeHandler).cast();
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER)
+            return net.minecraftforge.common.util.LazyOptional.of(controller::getFluidHandler).cast();
+        if (cap == appeng.capabilities.Capabilities.STORAGE || cap == appeng.capabilities.Capabilities.GENERIC_INTERNAL_INV)
+            return net.minecraftforge.common.util.LazyOptional.of(controller::getInputs).cast();
+        return super.getCapability(cap, side);
     }
 }

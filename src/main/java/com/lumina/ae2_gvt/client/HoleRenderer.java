@@ -1,5 +1,7 @@
 package com.lumina.ae2_gvt.client;
 
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,10 +20,10 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RenderGuiEvent;
+import net.minecraftforge.client.event.RenderHighlightEvent;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
 
@@ -42,7 +44,7 @@ import com.lumina.ae2_gvt.AE2GravityTech;
  * Vertex colour flags (red = white hole, green = disc layer) and UV0 (position in hole radii) carry
  * the per-vertex data to the shaders.
  */
-@EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
 public final class HoleRenderer {
     /** Lens panel half-size and accretion disc radii, in hole radii. */
     static final float LENS = 7f, DISC_IN = 1.25f, DISC_OUT = 2.7f;
@@ -63,11 +65,7 @@ public final class HoleRenderer {
     private HoleRenderer() {
     }
 
-    @SubscribeEvent
-    static void afterParticles(RenderLevelStageEvent event) {
-        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES)
-            LevelPass.run(event, () -> draw(event));
-    }
+
 
     private static void draw(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
@@ -91,7 +89,7 @@ public final class HoleRenderer {
             }
         }
         MultiBufferSource.BufferSource buffers = SceneSnapshot.BUFFERS;
-        double now = mc.level.getGameTime() + mc.getTimer().getGameTimeDeltaPartialTick(true);
+        double now = mc.level.getGameTime() + mc.getFrameTime();
         if (holes.isEmpty()) {
             HoleRipples.bursts(buffers, cam, now);
             return;
@@ -144,29 +142,9 @@ public final class HoleRenderer {
         HoleRipples.bursts(buffers, cam, now);
     }
 
-    /**
-     * The selection box of a hole is a wireframe drawn before the hole is, so the lens copied it with the rest of the frame and bent it
-     * (a cube of lines warped around the hole); a hole is not selected visibly at all.
-     */
-    @SubscribeEvent
-    static void noHoleOutline(net.neoforged.neoforge.client.event.RenderHighlightEvent.Block event) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level != null && mc.level.getBlockState(event.getTarget().getBlockPos()).getBlock() instanceof com.lumina.ae2_gvt.hole.GravityHoleBlock)
-            event.setCanceled(true);
-    }
 
-    /** The white flash of an 湮滅 TNT, over everything. */
-    @SubscribeEvent
-    static void flash(net.neoforged.neoforge.client.event.RenderGuiEvent.Post event) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null)
-            return;
-        float partial = mc.getTimer().getGameTimeDeltaPartialTick(true);
-        float white = HoleRipples.flash(mc.gameRenderer.getMainCamera().getPosition(), mc.level.getGameTime() + partial);
-        if (white > 0)
-            event.getGuiGraphics().fill(0, 0, event.getGuiGraphics().guiWidth(), event.getGuiGraphics().guiHeight(),
-                    (int) (white * 255) << 24 | 0xFFFFFF);
-    }
+
+
 
     /** The middle of the hole's block. */
     private static Vec3 centre(GravityHoleBlockEntity hole) {
@@ -213,11 +191,36 @@ public final class HoleRenderer {
 
     private static void vertex(VertexConsumer vc, PoseStack.Pose pose, Vector3f p, float u, float v, int white, int disc,
                                float nx, float ny, float nz) {
-        vc.addVertex(pose, p.x, p.y, p.z)
-                .setColor(white, disc, 0, 255)
-                .setUv(u, v)
-                .setOverlay(OverlayTexture.NO_OVERLAY)
-                .setLight(LightTexture.FULL_BRIGHT)
-                .setNormal(nx, ny, nz);
+        vc.vertex(pose.pose(), p.x, p.y, p.z).color(white, disc, 0, 255).uv(u, v).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(LightTexture.FULL_BRIGHT).normal(nx, ny, nz).endVertex();
+    }
+
+    @SubscribeEvent
+    public static void afterParticles(RenderLevelStageEvent event) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES)
+            LevelPass.run(event, () -> draw(event));
+    }
+
+    /**
+     * The selection box of a hole is a wireframe drawn before the hole is, so the lens copied it with the rest of the frame and bent it
+     * (a cube of lines warped around the hole); a hole is not selected visibly at all.
+     */
+    @SubscribeEvent
+    public static void noHoleOutline(RenderHighlightEvent.Block event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level != null && mc.level.getBlockState(event.getTarget().getBlockPos()).getBlock() instanceof com.lumina.ae2_gvt.hole.GravityHoleBlock)
+            event.setCanceled(true);
+    }
+
+    /** The white flash of an 湮滅 TNT, over everything. */
+    @SubscribeEvent
+    public static void flash(RenderGuiEvent.Post event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null)
+            return;
+        float partial = mc.getFrameTime();
+        float white = HoleRipples.flash(mc.gameRenderer.getMainCamera().getPosition(), mc.level.getGameTime() + partial);
+        if (white > 0)
+            event.getGuiGraphics().fill(0, 0, event.getGuiGraphics().guiWidth(), event.getGuiGraphics().guiHeight(),
+                    (int) (white * 255) << 24 | 0xFFFFFF);
     }
 }

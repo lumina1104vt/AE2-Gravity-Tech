@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "BKB",
+    "FCF",
+    "BWB"
+  ],
+  "key": {
+    "B": {
+      "item": "ae2_gvt:blank_unit"
+    },
+    "K": {
+      "item": "ae2_gvt:black_hole_core"
+    },
+    "W": {
+      "item": "ae2_gvt:white_hole_core"
+    },
+    "F": {
+      "item": "ae2_gvt:machine_frame"
+    },
+    "C": {
+      "item": "ae2:controller"
+    }
+  },
+  "result": {
+    "item": "ae2_gvt:twin_star_hub",
+    "count": 1
+  }
+}

@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * AE2's network status screen is the main screen of a controller. For a quantum controller it also tells how many channels are
  * left, and has a way to its settings page.
  */
-@Mixin(NetworkStatusMenu.class)
+@Mixin(value = NetworkStatusMenu.class, remap = false)
 public abstract class NetworkStatusMenuMixin extends AEBaseMenu implements QuantumStatusAccess {
     @Unique
     private static final String ae2_gvt$OPEN_SETTINGS = "openQuantumSettings";

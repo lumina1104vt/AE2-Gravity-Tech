@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "IDI",
+    "D D",
+    "IDI"
+  ],
+  "key": {
+    "I": {
+      "tag": "forge:ingots/iron"
+    },
+    "D": {
+      "item": "ae2_gvt:gravity_dust"
+    }
+  },
+  "result": {
+    "item": "ae2_gvt:machine_frame",
+    "count": 8
+  }
+}

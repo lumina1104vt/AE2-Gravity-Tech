@@ -10,37 +10,37 @@ import com.lumina.ae2_gvt.menus.host.ArmorMenuHost;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.MenuType;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.eventbus.api.IEventBus;
+import com.lumina.ae2_gvt.reg.DeferredHolder;
+import com.lumina.ae2_gvt.reg.DeferredRegister;
 
 public class Menus {
     public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(Registries.MENU, AE2GravityTech.MODID);
 
     public static final DeferredHolder<MenuType<?>, MenuType<ArmorModuleMenu>> ARMOR_MODULE_MENU = MENUS.register("armor_modules",
             () -> MenuTypeBuilder.create(ArmorModuleMenu::new, ArmorMenuHost.class)
-                    .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "armor_modules")));
+                    .build("armor_modules"));
     public static final DeferredHolder<MenuType<?>, MenuType<GravityFactoryMenu>> GRAVITY_FACTORY = MENUS.register("gravity_processing_factory",
             () -> MenuTypeBuilder.create(GravityFactoryMenu::new, GravityFactoryBlockEntity.class)
-                    .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "gravity_processing_factory")));
+                    .build("gravity_processing_factory"));
     public static final DeferredHolder<MenuType<?>, MenuType<FusionControllerMenu>> FUSION_CONTROLLER = MENUS.register("fusion_controller",
             () -> MenuTypeBuilder.create(FusionControllerMenu::new, FusionControllerBlockEntity.class)
-                    .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "fusion_controller")));
+                    .build("fusion_controller"));
     public static final DeferredHolder<MenuType<?>, MenuType<DummyCpuMenu>> DUMMY_CPU = MENUS.register("dummy_twinstar_cpu",
             () -> MenuTypeBuilder.create(DummyCpuMenu::new, DummyTwinStarCPUBlockEntity.class)
-                    .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "dummy_twinstar_cpu")));
+                    .build("dummy_twinstar_cpu"));
 
     public static final DeferredHolder<MenuType<?>, MenuType<HubControllerMenu>> TWIN_STAR_HUB = MENUS.register("twin_star_hub",
             () -> MenuTypeBuilder.create(HubControllerMenu::new, com.lumina.ae2_gvt.hub.TwinStarHubBlockEntity.class)
-                    .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "twin_star_hub")));
+                    .build("twin_star_hub"));
 
     public static final DeferredHolder<MenuType<?>, MenuType<MachineAccessMenu>> MACHINE_ACCESS = MENUS.register("machine_access_interface",
             () -> MenuTypeBuilder.create(MachineAccessMenu::new, MachineAccessHost.class)
-                    .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "machine_access_interface")));
+                    .build("machine_access_interface"));
 
     public static final DeferredHolder<MenuType<?>, MenuType<QuantumControllerMenu>> QUANTUM_CONTROLLER = MENUS.register("quantum_controller",
             () -> MenuTypeBuilder.create(QuantumControllerMenu::new, com.lumina.ae2_gvt.quantum.QuantumControllerBlockEntity.class)
-                    .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "quantum_controller")));
+                    .build("quantum_controller"));
 
     public static final DeferredHolder<MenuType<?>, MenuType<GeneratorMenu>> CRYSTAL_GENERATOR = generatorMenu("crystal_generator");
     public static final DeferredHolder<MenuType<?>, MenuType<GeneratorMenu>> GRAVITON_GENERATOR = generatorMenu("graviton_generator");
@@ -48,7 +48,7 @@ public class Menus {
 
     private static DeferredHolder<MenuType<?>, MenuType<GeneratorMenu>> generatorMenu(String name) {
         return MENUS.register(name, () -> MenuTypeBuilder.create(GeneratorMenu::new, com.lumina.ae2_gvt.blockentities.PowerGeneratorBlockEntity.class)
-                .buildUnregistered(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, name)));
+                .build(name));
     }
 
     public static DeferredHolder<MenuType<?>, MenuType<GeneratorMenu>> generator(com.lumina.ae2_gvt.blockentities.PowerGeneratorBlockEntity.Kind kind) {

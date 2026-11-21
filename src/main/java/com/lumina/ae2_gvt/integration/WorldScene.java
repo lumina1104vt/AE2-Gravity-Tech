@@ -16,7 +16,7 @@ import net.minecraft.resources.ResourceLocation;
  */
 public final class WorldScene {
     public static final int WIDTH = 200, HEIGHT = 56, SLOT = 18;
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/world_scene.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation(AE2GravityTech.MODID, "textures/gui/world_scene.png");
 
     /** the sprites of textures/gui/world_scene.png (tools/world_scene_textures.py) */
     public enum Sprite {

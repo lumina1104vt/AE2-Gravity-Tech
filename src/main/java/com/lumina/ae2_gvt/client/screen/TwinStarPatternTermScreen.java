@@ -38,7 +38,7 @@ import net.minecraft.world.item.ItemStack;
  */
 public class TwinStarPatternTermScreen extends PatternEncodingTermScreen<TwinStarPatternTermMenu> {
     private static final Blitter PANEL = Blitter
-            .texture(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/twin_star_pattern_panel.png"))
+            .texture(new ResourceLocation(AE2GravityTech.MODID, "textures/gui/twin_star_pattern_panel.png"))
             .src(0, 0, 124, 66);
 
     public TwinStarPatternTermScreen(TwinStarPatternTermMenu menu, Inventory playerInventory, Component title, ScreenStyle style) {
@@ -155,7 +155,7 @@ public class TwinStarPatternTermScreen extends PatternEncodingTermScreen<TwinSta
      */
     private final class SubMachineButton extends AbstractWidget implements ITooltip {
         private static final Blitter FRAME = Blitter
-                .texture(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/twin_star_pattern_panel.png"))
+                .texture(new ResourceLocation(AE2GravityTech.MODID, "textures/gui/twin_star_pattern_panel.png"))
                 .src(3, 6, 18, 18);
 
         SubMachineButton() {

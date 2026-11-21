@@ -19,9 +19,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.BlockAndTintGetter;
-import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
-import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
-import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
+import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
+import net.minecraftforge.client.model.geometry.IGeometryLoader;
+import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
 
 /**
  * Formed structure frame, connected 8 ways ({@link ConnectedQuarterModel}): tiles from
@@ -29,9 +29,9 @@ import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
  * between two frames are culled as usual. Used by models/block/structure_frame_formed.json.
  */
 public final class StructureFrameModel extends ConnectedQuarterModel {
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "structure_frame_formed");
+    public static final ResourceLocation ID = new ResourceLocation(AE2GravityTech.MODID, "structure_frame_formed");
     private static final Material SHEET = new Material(InventoryMenu.BLOCK_ATLAS,
-            ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "block/structure_frame_formed"));
+            new ResourceLocation(AE2GravityTech.MODID, "block/structure_frame_formed"));
 
     private StructureFrameModel(TextureAtlasSprite sheet) {
         super(sheet, RenderType.solid());
@@ -50,7 +50,7 @@ public final class StructureFrameModel extends ConnectedQuarterModel {
     public static final class Geometry implements IUnbakedGeometry<Geometry> {
         @Override
         public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> sprites,
-                               ModelState state, ItemOverrides overrides) {
+                               ModelState state, ItemOverrides overrides, ResourceLocation modelLocation) {
             return new StructureFrameModel(sprites.apply(SHEET));
         }
     }

@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SPS",
+    "PXP",
+    "SPS"
+  ],
+  "key": {
+    "S": {
+      "item": "ae2_gvt:paradox_quantum_entangled_singularity"
+    },
+    "P": {
+      "item": "ae2_gvt:paradox_alloy_plate"
+    },
+    "X": {
+      "item": "ae2:controller"
+    }
+  },
+  "result": {
+    "item": "ae2_gvt:quantum_controller",
+    "count": 1
+  }
+}

@@ -115,8 +115,6 @@ public final class GravityLattice {
     }
 
     private static void vertex(PoseStack.Pose pose, VertexConsumer vc, Vector3f p, float alpha, float nx, float ny, float nz) {
-        vc.addVertex(pose, p.x, p.y, p.z)
-                .setColor((COLOUR >> 16) & 0xff, (COLOUR >> 8) & 0xff, COLOUR & 0xff, (int) (MAX_ALPHA * alpha))
-                .setNormal(pose, nx, ny, nz);
+        vc.vertex(pose.pose(), p.x, p.y, p.z).color((COLOUR >> 16) & 0xff, (COLOUR >> 8) & 0xff, COLOUR & 0xff, (int) (MAX_ALPHA * alpha)).normal(pose.normal(), nx, ny, nz).endVertex();
     }
 }

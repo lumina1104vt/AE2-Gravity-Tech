@@ -3,14 +3,12 @@ package com.lumina.ae2_gvt.recipes;
 import java.util.Locale;
 
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
@@ -27,7 +25,7 @@ import net.minecraft.world.level.Level;
  *  "ingredient": {"item": "ae2:singularity"}, "result": {"id": "ae2_gvt:anti_singularity", "count": 1}}
  * </pre>
  */
-public record HoleConversionRecipe(Hole hole, Ingredient ingredient, ItemStack result) implements Recipe<Recipes.NoInput> {
+public record HoleConversionRecipe(ResourceLocation id, Hole hole, Ingredient ingredient, ItemStack result) implements Recipe<Container> {
     public enum Hole {
         BLACK, WHITE, ANY;
 
@@ -37,16 +35,20 @@ public record HoleConversionRecipe(Hole hole, Ingredient ingredient, ItemStack r
         }
 
         static final Codec<Hole> CODEC = Codec.STRING.xmap(s -> valueOf(s.toUpperCase(Locale.ROOT)), h -> h.name().toLowerCase(Locale.ROOT));
-        static final StreamCodec<io.netty.buffer.ByteBuf, Hole> STREAM_CODEC = ByteBufCodecs.VAR_INT.map(i -> values()[i], Hole::ordinal);
     }
 
     @Override
-    public boolean matches(Recipes.NoInput input, Level level) {
+    public ResourceLocation getId() {
+        return id;
+    }
+
+    @Override
+    public boolean matches(Container input, Level level) {
         return false;   // the hole does the work, not a crafting grid
     }
 
     @Override
-    public ItemStack assemble(Recipes.NoInput input, HolderLookup.Provider registries) {
+    public ItemStack assemble(Container input, RegistryAccess registries) {
         return result.copy();
     }
 
@@ -56,7 +58,7 @@ public record HoleConversionRecipe(Hole hole, Ingredient ingredient, ItemStack r
     }
 
     @Override
-    public ItemStack getResultItem(HolderLookup.Provider registries) {
+    public ItemStack getResultItem(RegistryAccess registries) {
         return result;
     }
 
@@ -82,26 +84,14 @@ public record HoleConversionRecipe(Hole hole, Ingredient ingredient, ItemStack r
         return Recipes.HOLE_CONVERSION.get();
     }
 
-    public static final class Serializer implements RecipeSerializer<HoleConversionRecipe> {
-        private static final MapCodec<HoleConversionRecipe> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
-                Hole.CODEC.optionalFieldOf("hole", Hole.ANY).forGetter(HoleConversionRecipe::hole),
-                Ingredient.CODEC_NONEMPTY.fieldOf("ingredient").forGetter(HoleConversionRecipe::ingredient),
-                Recipes.RESULT.fieldOf("result").forGetter(HoleConversionRecipe::result)
-        ).apply(i, HoleConversionRecipe::new));
-        private static final StreamCodec<RegistryFriendlyByteBuf, HoleConversionRecipe> STREAM_CODEC = StreamCodec.composite(
-                Hole.STREAM_CODEC, HoleConversionRecipe::hole,
-                Ingredient.CONTENTS_STREAM_CODEC, HoleConversionRecipe::ingredient,
-                ItemStack.STREAM_CODEC, HoleConversionRecipe::result,
-                HoleConversionRecipe::new);
-
+    public static final class Serializer extends RecipeCodecs.JsonSerializer<HoleConversionRecipe> {
         @Override
-        public MapCodec<HoleConversionRecipe> codec() {
-            return CODEC;
-        }
-
-        @Override
-        public StreamCodec<RegistryFriendlyByteBuf, HoleConversionRecipe> streamCodec() {
-            return STREAM_CODEC;
+        protected Codec<HoleConversionRecipe> codec(ResourceLocation id) {
+            return RecordCodecBuilder.create(i -> i.group(
+                    Hole.CODEC.optionalFieldOf("hole", Hole.ANY).forGetter(HoleConversionRecipe::hole),
+                    RecipeCodecs.INGREDIENT.fieldOf("ingredient").forGetter(HoleConversionRecipe::ingredient),
+                    RecipeCodecs.RESULT.fieldOf("result").forGetter(HoleConversionRecipe::result)
+            ).apply(i, (hole, ingredient, result) -> new HoleConversionRecipe(id, hole, ingredient, result)));
         }
     }
 }

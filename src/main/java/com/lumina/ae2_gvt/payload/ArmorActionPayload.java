@@ -1,55 +1,57 @@
 package com.lumina.ae2_gvt.payload;
 
-import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.config.Config;
 import com.lumina.ae2_gvt.items.Items;
 import com.lumina.ae2_gvt.items.armor.ArmorEffects;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.CraftingMenu;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.minecraftforge.network.NetworkEvent;
+
+import java.util.function.Supplier;
 
 /** A key of the antigravity armor: the portable workbench, the dash. The server checks the module is installed and switched on. */
-public record ArmorActionPayload(int action, BlockPos pos) implements CustomPacketPayload {
+public record ArmorActionPayload(int action, BlockPos pos) {
     public static final int WORKBENCH = 0, DASH = 1, PICK = 2;
-    public static final Type<ArmorActionPayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "armor_action"));
-    public static final StreamCodec<ByteBuf, ArmorActionPayload> STREAM_CODEC = StreamCodec.composite(
-            ByteBufCodecs.VAR_INT, ArmorActionPayload::action, BlockPos.STREAM_CODEC, ArmorActionPayload::pos, ArmorActionPayload::new);
+    private static final String DASH_READY = "ae2_gvt_dash_ready";
 
     public ArmorActionPayload(int action) {
         this(action, BlockPos.ZERO);
     }
-    private static final String DASH_READY = "ae2_gvt_dash_ready";
 
-    @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return TYPE;
+    public void write(FriendlyByteBuf buf) {
+        buf.writeVarInt(action);
+        buf.writeBlockPos(pos);
     }
 
-    public static void handle(ArmorActionPayload payload, IPayloadContext context) {
-        if (!(context.player() instanceof ServerPlayer player))
-            return;
-        switch (payload.action) {
-            case WORKBENCH -> {
-                if (ArmorEffects.has(player, Items.WORKBENCH_MODULE))
-                    player.openMenu(new SimpleMenuProvider((id, inventory, p) -> new CraftingMenu(id, inventory, ContainerLevelAccess.NULL),
-                            Component.translatable("container.crafting")));
+    public static ArmorActionPayload read(FriendlyByteBuf buf) {
+        return new ArmorActionPayload(buf.readVarInt(), buf.readBlockPos());
+    }
+
+    public static void handle(ArmorActionPayload payload, Supplier<NetworkEvent.Context> context) {
+        NetworkEvent.Context ctx = context.get();
+        ctx.enqueueWork(() -> {
+            ServerPlayer player = ctx.getSender();
+            if (player == null)
+                return;
+            switch (payload.action) {
+                case WORKBENCH -> {
+                    if (ArmorEffects.has(player, Items.WORKBENCH_MODULE))
+                        player.openMenu(new SimpleMenuProvider((id, inventory, p) -> new CraftingMenu(id, inventory, ContainerLevelAccess.NULL),
+                                Component.translatable("container.crafting")));
+                }
+                case DASH -> dash(player);
+                case PICK -> pick(player, payload.pos);
+                default -> {
+                }
             }
-            case DASH -> dash(player);
-            case PICK -> pick(player, payload.pos);
-            default -> {
-            }
-        }
+        });
+        ctx.setPacketHandled(true);
     }
 
     private static void pick(ServerPlayer player, BlockPos pos) {

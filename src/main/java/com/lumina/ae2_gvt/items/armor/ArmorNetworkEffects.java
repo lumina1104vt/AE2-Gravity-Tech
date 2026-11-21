@@ -8,7 +8,6 @@ import com.lumina.ae2_gvt.items.Items;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.capabilities.Capabilities;
 
 /** The modules that use the linked network: auto stock (top up the hotbar), recharge (charge what is carried), pick craft (middle click). */
 public final class ArmorNetworkEffects {
@@ -57,7 +56,7 @@ public final class ArmorNetworkEffects {
             ItemStack stack = inventory.getItem(i);
             if (stack.isEmpty())
                 continue;
-            var energy = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+            var energy = stack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY).resolve().orElse(null);
             if (energy == null || !energy.canReceive())
                 continue;
             int room = energy.receiveEnergy((int) Math.min(Integer.MAX_VALUE, Config.RECHARGE_FE.get()), true);
@@ -94,7 +93,7 @@ public final class ArmorNetworkEffects {
         var inventory = player.getInventory();
         // already carried: just select it
         for (int i = 0; i < 9; i++) {
-            if (ItemStack.isSameItemSameComponents(inventory.items.get(i), wanted)) {
+            if (ItemStack.isSameItemSameTags(inventory.items.get(i), wanted)) {
                 inventory.selected = i;
                 return;
             }

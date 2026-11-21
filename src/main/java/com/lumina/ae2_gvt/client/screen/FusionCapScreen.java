@@ -19,7 +19,7 @@ public class FusionCapScreen extends AESubScreen<FusionControllerMenu, FusionCon
 
     public FusionCapScreen(FusionControllerScreen parent) {
         super(parent, "/screens/fusion_cap.json");
-        widgets.add("back", new TabButton(Icon.BACK, Blocks.FUSION_CONTROLLER.get().getName(), btn -> returnToParent()));
+        widgets.add("back", new TabButton(Icon.ARROW_LEFT, Blocks.FUSION_CONTROLLER.get().getName(), btn -> returnToParent()));
         cap = widgets.addNumberEntryWidget("cap", NumberEntryType.UNITLESS);
         cap.setTextFieldStyle(style.getWidget("capInput"));
         cap.setMinValue(0);

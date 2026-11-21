@@ -72,12 +72,7 @@ public class FusionPlasmaRenderer implements BlockEntityRenderer<FusionControlle
                     double theta = Math.PI * k[0] / LATS, phi = 2 * Math.PI * k[1] / LONS;
                     float x = (float) (Math.sin(theta) * Math.cos(phi)), y = (float) Math.cos(theta), z = (float) (Math.sin(theta) * Math.sin(phi));
                     float angle = (float) Math.acos(Math.max(-1, Math.min(1, x * e.dir().x + y * e.dir().y + z * e.dir().z)));
-                    vc.addVertex(pose, x * SHELL, y * SHELL, z * SHELL)
-                            .setColor((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff, age)
-                            .setUv(2, angle)
-                            .setOverlay(OverlayTexture.NO_OVERLAY)
-                            .setLight(LightTexture.FULL_BRIGHT)
-                            .setNormal(x, y, z);
+                    vc.vertex(pose.pose(), x * SHELL, y * SHELL, z * SHELL).color((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff, age).uv(2, angle).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(LightTexture.FULL_BRIGHT).normal(x, y, z).endVertex();
                 }
             }
         }
@@ -110,12 +105,7 @@ public class FusionPlasmaRenderer implements BlockEntityRenderer<FusionControlle
     private static void vertex(PoseStack.Pose pose, VertexConsumer vc, int i, int j, float r, int rgb, float layer, float scale) {
         double theta = Math.PI * i / LATS, phi = 2 * Math.PI * j / LONS;
         float x = (float) (Math.sin(theta) * Math.cos(phi)), y = (float) Math.cos(theta), z = (float) (Math.sin(theta) * Math.sin(phi));
-        vc.addVertex(pose, x * r, y * r, z * r)
-                .setColor((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff, 255)
-                .setUv(layer, scale)
-                .setOverlay(OverlayTexture.NO_OVERLAY)
-                .setLight(LightTexture.FULL_BRIGHT)
-                .setNormal(x, y, z);
+        vc.vertex(pose.pose(), x * r, y * r, z * r).color((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff, 255).uv(layer, scale).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(LightTexture.FULL_BRIGHT).normal(x, y, z).endVertex();
     }
 
     /** The star's colour for a temperature, along {@link #PATH} on a log scale. */
@@ -150,8 +140,8 @@ public class FusionPlasmaRenderer implements BlockEntityRenderer<FusionControlle
         return true;
     }
 
-    @Override
-    public AABB getRenderBoundingBox(FusionControllerBlockEntity be) {
+    /** The render box the block entity reports (1.20.1 asks the block entity itself). */
+    public static AABB renderBox(FusionControllerBlockEntity be) {
         Vec3 c = Vec3.atLowerCornerOf(be.getBlockPos()).add(centre(be));
         double reach = SHELL + 0.5;
         return new AABB(c.x - reach, c.y - reach, c.z - reach, c.x + reach, c.y + reach, c.z + reach)

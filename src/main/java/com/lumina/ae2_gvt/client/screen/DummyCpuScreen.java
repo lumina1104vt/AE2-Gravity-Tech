@@ -35,7 +35,7 @@ public class DummyCpuScreen extends AEBaseScreen<DummyCpuMenu> {
     private static final int COLUMNS = DummyCpuMenu.COLUMNS, VISIBLE_ROWS = DummyCpuMenu.VISIBLE_ROWS;
     private static final int LABEL = 0xFF404040, COUNT = 0xFF606070;
     private static final Blitter SLOT_FRAME = Blitter.texture(
-            ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/dummy_twinstar_cpu.png"), 256, 256).src(200, 0, 19, 19);
+            new ResourceLocation(AE2GravityTech.MODID, "textures/gui/dummy_twinstar_cpu.png"), 256, 256).src(200, 0, 19, 19);
 
     private final Scrollbar scrollbar;
     private final AETextField capacity;

@@ -1,10 +1,13 @@
 package com.lumina.ae2_gvt.client;
 
+import net.minecraftforge.client.event.RegisterDimensionSpecialEffectsEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.joml.Matrix4f;
-import org.joml.Matrix4fStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
@@ -34,11 +37,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RegisterDimensionSpecialEffectsEvent;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 
 /**
  * What the eye sees of torn space: the tear itself (an irregular slit of stars with cracks branching
@@ -46,8 +46,8 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
  * space_rift), the broken pieces of space adrift round it, and the sky of 破碎星空 (stars crossed by the
  * cracks of a broken sky; shader starfield_sky).
  */
-@EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
-public final class RiftClient {
+@Mod.EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
+public final class RiftClient extends ShardBase {
     private static final RenderType TEAR = RenderType.create("ae2_gvt_space_rift", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256,
             false, false, RenderType.CompositeState.builder()
                     .setShaderState(new RenderStateShard.ShaderStateShard(() -> ClientShaders.spaceRift))
@@ -112,10 +112,7 @@ public final class RiftClient {
     private RiftClient() {
     }
 
-    @SubscribeEvent
-    static void effects(RegisterDimensionSpecialEffectsEvent event) {
-        event.register(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "shattered_starfield"), new StarfieldEffects());
-    }
+
 
     private static final class StarfieldEffects extends DimensionSpecialEffects {
         StarfieldEffects() {
@@ -133,11 +130,11 @@ public final class RiftClient {
         }
 
         @Override
-        public boolean renderSky(ClientLevel level, int ticks, float partialTick, Matrix4f modelViewMatrix, Camera camera,
+        public boolean renderSky(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, Camera camera,
                                  Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
-            Matrix4fStack view = RenderSystem.getModelViewStack();
-            view.pushMatrix();
-            view.mul(modelViewMatrix);
+            PoseStack view = RenderSystem.getModelViewStack();
+            view.pushPose();
+            view.last().pose().mul(poseStack.last().pose());
             RenderSystem.applyModelViewMatrix();
             MultiBufferSource.BufferSource buffers = SceneSnapshot.BUFFERS;
             if (skyFaces == null)
@@ -146,7 +143,7 @@ public final class RiftClient {
                 face(buffers.getBuffer(SKY[i]), CUBE[i]);
                 buffers.endBatch(SKY[i]);
             }
-            view.popMatrix();
+            view.popPose();
             RenderSystem.applyModelViewMatrix();
             return true;
         }
@@ -154,9 +151,7 @@ public final class RiftClient {
 
     private static void face(VertexConsumer vc, float[][] corners) {
         for (int k = 0; k < corners.length; k++)
-            vc.addVertex(corners[k][0] * 50, corners[k][1] * 50, corners[k][2] * 50)
-                    .setColor(255, 255, 255, 255).setUv(FACE_UV[k][0], FACE_UV[k][1]).setOverlay(OverlayTexture.NO_OVERLAY)
-                    .setLight(LightTexture.FULL_BRIGHT).setNormal(0, 1, 0);
+            vc.vertex(corners[k][0] * 50, corners[k][1] * 50, corners[k][2] * 50).color(255, 255, 255, 255).uv(FACE_UV[k][0], FACE_UV[k][1]).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(LightTexture.FULL_BRIGHT).normal(0, 1, 0).endVertex();
     }
 
     private static void bakeSky(MultiBufferSource.BufferSource buffers) {
@@ -180,11 +175,7 @@ public final class RiftClient {
         RenderSystem.viewport(viewport[0], viewport[1], viewport[2], viewport[3]);
     }
 
-    @SubscribeEvent
-    static void afterParticles(RenderLevelStageEvent event) {
-        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES)
-            LevelPass.run(event, () -> draw(event));
-    }
+
 
     private static void draw(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES)
@@ -204,7 +195,7 @@ public final class RiftClient {
             rifts = rifts.subList(rifts.size() - MAX, rifts.size());
         MultiBufferSource.BufferSource buffers = SceneSnapshot.BUFFERS;
         PoseStack.Pose pose = new PoseStack().last();
-        double now = mc.level.getGameTime() + mc.getTimer().getGameTimeDeltaPartialTick(true);
+        double now = mc.level.getGameTime() + mc.getFrameTime();
         for (SpaceRift.RiftEntity rift : rifts) {
             // before the copy: the tear bends the shards behind it too
             shards(buffers.getBuffer(SHARD), pose, Vec3.atCenterOf(rift.getBlockPos()).subtract(cam), rift.getBlockPos().hashCode(), now);
@@ -219,12 +210,7 @@ public final class RiftClient {
             float seed = (rift.getBlockPos().hashCode() & 255) / 255f;
             VertexConsumer vc = buffers.getBuffer(TEAR);
             for (int[] k : new int[][] {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}})
-                vc.addVertex(pose, (float) at.x + right.x * k[0], (float) at.y + TALL * k[1], (float) at.z + right.z * k[0])
-                        .setColor(seed, 1f, 1f, 1f)
-                        .setUv(k[0], k[1])
-                        .setOverlay(OverlayTexture.NO_OVERLAY)
-                        .setLight(LightTexture.FULL_BRIGHT)
-                        .setNormal(0, 0, 1);
+                vc.vertex(pose.pose(), (float) at.x + right.x * k[0], (float) at.y + TALL * k[1], (float) at.z + right.z * k[0]).color(seed, 1f, 1f, 1f).uv(k[0], k[1]).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(LightTexture.FULL_BRIGHT).normal(0, 0, 1).endVertex();
             buffers.endBatch(TEAR);
         }
     }
@@ -261,11 +247,22 @@ public final class RiftClient {
     }
 
     private static void vertex(VertexConsumer vc, PoseStack.Pose pose, Vector3f p, Vector3f n) {
-        vc.addVertex(pose, p.x, p.y, p.z)
-                .setColor(0, 0, 0, 255)
-                .setUv(0, 0)
-                .setOverlay(OverlayTexture.NO_OVERLAY)
-                .setLight(LightTexture.FULL_BRIGHT)
-                .setNormal(n.x, n.y, n.z);
+        vc.vertex(pose.pose(), p.x, p.y, p.z).color(0, 0, 0, 255).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(LightTexture.FULL_BRIGHT).normal(n.x, n.y, n.z).endVertex();
+    }
+
+    @SubscribeEvent
+    public static void afterParticles(RenderLevelStageEvent event) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES)
+            LevelPass.run(event, () -> draw(event));
+    }
+
+    /** The events on the mod bus (1.20.1: a subscriber class takes one bus). */
+    @Mod.EventBusSubscriber(modid = AE2GravityTech.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    public static final class ModBus {
+        @SubscribeEvent
+        public static void effects(RegisterDimensionSpecialEffectsEvent event) {
+            event.register(new ResourceLocation(AE2GravityTech.MODID, "shattered_starfield"), new StarfieldEffects());
+        }
+    
     }
 }

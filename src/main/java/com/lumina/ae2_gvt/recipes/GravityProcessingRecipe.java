@@ -3,24 +3,21 @@ package com.lumina.ae2_gvt.recipes;
 import java.util.List;
 
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import appeng.api.stacks.AEItemKey;
 import appeng.util.ConfigInventory;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.common.crafting.SizedIngredient;
 
 /**
  * A 引力加工工廠 recipe ({@code ae2_gvt:gravity_processing}): items with counts in, in any of the input
@@ -33,21 +30,37 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
  *  "time": 100, "energy": 2000, "gravitons": 8, "antigravitons": 0}
  * </pre>
  */
-public record GravityProcessingRecipe(List<SizedIngredient> ingredients, List<ItemStack> results, int time, int energy,
+public record GravityProcessingRecipe(ResourceLocation id, List<SizedIngredient> ingredients, List<ItemStack> results, int time, int energy,
                                       long gravitons, long antigravitons)
-        implements Recipe<GravityProcessingRecipe.Input> {
+        implements Recipe<Container> {
 
-    /** The factory's input slots. */
-    public record Input(ConfigInventory slots) implements RecipeInput {
+    /** The factory's input slots (as a container the recipe is asked about). */
+    public static final class Input extends SimpleContainer {
+        private final ConfigInventory slots;
+
+        public Input(ConfigInventory slots) {
+            super(0);
+            this.slots = slots;
+        }
+
+        public ConfigInventory slots() {
+            return slots;
+        }
+
         @Override
         public ItemStack getItem(int index) {
             return slots.getKey(index) instanceof AEItemKey item ? item.toStack() : ItemStack.EMPTY;
         }
 
         @Override
-        public int size() {
+        public int getContainerSize() {
             return slots.size();
         }
+    }
+
+    @Override
+    public ResourceLocation getId() {
+        return id;
     }
 
     /**
@@ -55,10 +68,10 @@ public record GravityProcessingRecipe(List<SizedIngredient> ingredients, List<It
      * Greedy: each ingredient takes from the first slots that hold it.
      */
     public long[] take(Input input, long runs) {
-        long[] left = new long[input.size()];
+        long[] left = new long[input.getContainerSize()];
         for (int i = 0; i < left.length; i++)
             left[i] = input.slots().getAmount(i);
-        long[] taken = new long[input.size()];
+        long[] taken = new long[input.getContainerSize()];
         for (SizedIngredient ingredient : ingredients) {
             long need = ingredient.count() * runs;
             for (int i = 0; i < left.length && need > 0; i++) {
@@ -76,12 +89,12 @@ public record GravityProcessingRecipe(List<SizedIngredient> ingredients, List<It
     }
 
     @Override
-    public boolean matches(Input input, Level level) {
-        return take(input, 1) != null;
+    public boolean matches(Container input, Level level) {
+        return input instanceof Input in && take(in, 1) != null;
     }
 
     @Override
-    public ItemStack assemble(Input input, HolderLookup.Provider registries) {
+    public ItemStack assemble(Container input, RegistryAccess registries) {
         return results.isEmpty() ? ItemStack.EMPTY : results.get(0).copy();
     }
 
@@ -91,7 +104,7 @@ public record GravityProcessingRecipe(List<SizedIngredient> ingredients, List<It
     }
 
     @Override
-    public ItemStack getResultItem(HolderLookup.Provider registries) {
+    public ItemStack getResultItem(RegistryAccess registries) {
         return results.isEmpty() ? ItemStack.EMPTY : results.get(0);
     }
 
@@ -117,32 +130,18 @@ public record GravityProcessingRecipe(List<SizedIngredient> ingredients, List<It
         return Recipes.GRAVITY_PROCESSING.get();
     }
 
-    public static final class Serializer implements RecipeSerializer<GravityProcessingRecipe> {
-        private static final MapCodec<GravityProcessingRecipe> CODEC = RecordCodecBuilder.mapCodec(i -> i.group(
-                SizedIngredient.FLAT_CODEC.listOf().fieldOf("ingredients").forGetter(GravityProcessingRecipe::ingredients),
-                Recipes.RESULT.listOf().fieldOf("results").forGetter(GravityProcessingRecipe::results),
-                Codec.INT.optionalFieldOf("time", 100).forGetter(GravityProcessingRecipe::time),
-                Codec.INT.optionalFieldOf("energy", 2000).forGetter(GravityProcessingRecipe::energy),
-                Codec.LONG.optionalFieldOf("gravitons", 0L).forGetter(GravityProcessingRecipe::gravitons),
-                Codec.LONG.optionalFieldOf("antigravitons", 0L).forGetter(GravityProcessingRecipe::antigravitons)
-        ).apply(i, GravityProcessingRecipe::new));
-        private static final StreamCodec<RegistryFriendlyByteBuf, GravityProcessingRecipe> STREAM_CODEC = StreamCodec.composite(
-                SizedIngredient.STREAM_CODEC.apply(ByteBufCodecs.list()), GravityProcessingRecipe::ingredients,
-                ItemStack.STREAM_CODEC.apply(ByteBufCodecs.list()), GravityProcessingRecipe::results,
-                ByteBufCodecs.VAR_INT, GravityProcessingRecipe::time,
-                ByteBufCodecs.VAR_INT, GravityProcessingRecipe::energy,
-                ByteBufCodecs.VAR_LONG, GravityProcessingRecipe::gravitons,
-                ByteBufCodecs.VAR_LONG, GravityProcessingRecipe::antigravitons,
-                GravityProcessingRecipe::new);
-
+    public static final class Serializer extends RecipeCodecs.JsonSerializer<GravityProcessingRecipe> {
         @Override
-        public MapCodec<GravityProcessingRecipe> codec() {
-            return CODEC;
-        }
-
-        @Override
-        public StreamCodec<RegistryFriendlyByteBuf, GravityProcessingRecipe> streamCodec() {
-            return STREAM_CODEC;
+        protected Codec<GravityProcessingRecipe> codec(ResourceLocation id) {
+            return RecordCodecBuilder.create(i -> i.group(
+                    RecipeCodecs.SIZED.listOf().fieldOf("ingredients").forGetter(GravityProcessingRecipe::ingredients),
+                    RecipeCodecs.RESULT.listOf().fieldOf("results").forGetter(GravityProcessingRecipe::results),
+                    Codec.INT.optionalFieldOf("time", 100).forGetter(GravityProcessingRecipe::time),
+                    Codec.INT.optionalFieldOf("energy", 2000).forGetter(GravityProcessingRecipe::energy),
+                    Codec.LONG.optionalFieldOf("gravitons", 0L).forGetter(GravityProcessingRecipe::gravitons),
+                    Codec.LONG.optionalFieldOf("antigravitons", 0L).forGetter(GravityProcessingRecipe::antigravitons)
+            ).apply(i, (ingredients, results, time, energy, gravitons, antigravitons) ->
+                    new GravityProcessingRecipe(id, ingredients, results, time, energy, gravitons, antigravitons)));
         }
     }
 }

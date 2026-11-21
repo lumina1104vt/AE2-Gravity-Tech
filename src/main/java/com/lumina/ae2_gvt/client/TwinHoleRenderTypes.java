@@ -11,7 +11,7 @@ import net.minecraft.client.renderer.RenderType;
  * (registered in {@link TwinStarPreviewClient}). Uses the entity vertex format with the pair-frame
  * data packed into UV0 / UV1 (see the .vsh).
  */
-public final class TwinHoleRenderTypes {
+public final class TwinHoleRenderTypes extends ShardBase {
     public static final RenderType TWIN_HOLE = RenderType.create("ae2_gvt_prototype_twin_hole", DefaultVertexFormat.NEW_ENTITY,
             VertexFormat.Mode.QUADS, 1 << 18, false, false, RenderType.CompositeState.builder()
                     .setShaderState(new RenderStateShard.ShaderStateShard(() -> TwinStarPreviewClient.twinHole))

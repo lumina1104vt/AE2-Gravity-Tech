@@ -5,7 +5,7 @@ import java.util.List;
 
 import appeng.api.config.Actionable;
 import appeng.api.config.PowerMultiplier;
-import appeng.api.config.PowerUnit;
+import appeng.api.config.PowerUnits;
 import appeng.api.inventories.InternalInventory;
 import appeng.api.networking.security.IActionSource;
 import appeng.api.stacks.AEItemKey;
@@ -21,7 +21,7 @@ import appeng.util.ConfigInventory;
 import appeng.util.inv.AppEngInternalInventory;
 import appeng.util.inv.InternalInventoryHost;
 import appeng.util.inv.filter.IAEItemFilter;
-import appeng.blockentity.grid.AENetworkedBlockEntity;
+import appeng.blockentity.grid.AENetworkBlockEntity;
 import com.lumina.ae2_gvt.graviton.GravitonKey;
 import com.lumina.ae2_gvt.blocks.Blocks;
 import com.lumina.ae2_gvt.items.Items;
@@ -31,14 +31,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
+import com.lumina.twinstar.util.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.items.IItemHandler;
+import net.minecraftforge.energy.IEnergyStorage;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -57,15 +57,15 @@ import org.jetbrains.annotations.Nullable;
  * Upgrades: up to 4 AE2 acceleration cards, each one more run step a tick (5× with all four); a
  * recipe still takes the same energy in all.
  */
-public class GravityFactoryBlockEntity extends AENetworkedBlockEntity implements InternalInventoryHost, IUpgradeableObject {
+public class GravityFactoryBlockEntity extends AENetworkBlockEntity implements InternalInventoryHost, IUpgradeableObject {
     public static final int MAX_SPEED_CARDS = 4;
     public static final long ENERGY_CAPACITY = 10_000_000, ENERGY_INPUT = 1_000_000;   // FE, FE/t, without chaos matter
     public static final int MAX_CHAOS_MATTER = 16;
     /** What a slot holds: items, or buckets and the like. */
     public static final long SLOT_UNITS = 262_144;
 
-    private final ConfigInventory inputs = ConfigInventory.storage(12).allowOverstacking(true).changeListener(this::onSlotsChanged).build();
-    private final ConfigInventory outputs = ConfigInventory.storage(12).allowOverstacking(true).changeListener(this::onSlotsChanged).build();
+    private final ConfigInventory inputs = ConfigInventory.storage(12, this::onSlotsChanged);
+    private final ConfigInventory outputs = ConfigInventory.storage(12, this::onSlotsChanged);
     private final AppEngInternalInventory catalyst = new AppEngInternalInventory(this, 1, MAX_CHAOS_MATTER, new IAEItemFilter() {
         @Override
         public boolean allowInsert(InternalInventory inv, int slot, ItemStack stack) {
@@ -176,9 +176,9 @@ public class GravityFactoryBlockEntity extends AENetworkedBlockEntity implements
         long room = Math.min(ENERGY_INPUT * parallel(), energy.capacity() - energy.stored);
         if (room <= 0 || !getMainNode().isActive() || getMainNode().getGrid() == null)
             return;
-        double got = getMainNode().getGrid().getEnergyService().extractAEPower(PowerUnit.FE.convertTo(PowerUnit.AE, room),
+        double got = getMainNode().getGrid().getEnergyService().extractAEPower(PowerUnits.FE.convertTo(PowerUnits.AE, room),
                 Actionable.MODULATE, PowerMultiplier.CONFIG);
-        energy.add((long) PowerUnit.AE.convertTo(PowerUnit.FE, got));
+        energy.add((long) PowerUnits.AE.convertTo(PowerUnits.FE, got));
     }
 
     /** One step of the recipe (its share of the energy); finishes it on the last. False when it can't go on now. */
@@ -265,7 +265,7 @@ public class GravityFactoryBlockEntity extends AENetworkedBlockEntity implements
             return null;
         if (recipe != null && recipe.value().matches(input, level))
             return recipe;
-        for (RecipeHolder<GravityProcessingRecipe> holder : level.getRecipeManager().getAllRecipesFor(Recipes.GRAVITY_PROCESSING.get()))
+        for (RecipeHolder<GravityProcessingRecipe> holder : RecipeHolder.allOf(level.getRecipeManager().getAllRecipesFor(Recipes.GRAVITY_PROCESSING.get())))
             if (holder.value().matches(input, level))
                 return holder;
         return null;
@@ -277,7 +277,7 @@ public class GravityFactoryBlockEntity extends AENetworkedBlockEntity implements
 
     /** The results of that many runs fit into the outputs together. */
     private boolean resultsFit(GravityProcessingRecipe r, long runs) {
-        ConfigInventory test = ConfigInventory.storage(outputs.size()).allowOverstacking(true).build();
+        ConfigInventory test = ConfigInventory.storage(outputs.size(), () -> {});
         for (AEKeyType type : AEKeyTypes.getAll())
             test.setCapacity(type, outputs.getCapacity(type));
         for (int i = 0; i < outputs.size(); i++)
@@ -295,12 +295,12 @@ public class GravityFactoryBlockEntity extends AENetworkedBlockEntity implements
     }
 
     @Override
-    public void saveChangedInventory(AppEngInternalInventory inv) {
+    public void saveChanges() {
         setChanged();
     }
 
     @Override
-    public void onChangeInventory(AppEngInternalInventory inv, int slot) {
+    public void onChangeInventory(InternalInventory inv, int slot) {
         recheck = true;
     }
 
@@ -310,38 +310,38 @@ public class GravityFactoryBlockEntity extends AENetworkedBlockEntity implements
     }
 
     @Override
-    public void saveAdditional(CompoundTag output, HolderLookup.Provider registries) {
-        super.saveAdditional(output, registries);
-        inputs.writeToChildTag(output, "input_stacks", registries);
-        outputs.writeToChildTag(output, "output_stacks", registries);
-        catalyst.writeToNBT(output, "catalyst", registries);
-        upgrades.writeToNBT(output, "upgrades", registries);
+    public void saveAdditional(CompoundTag output) {
+        super.saveAdditional(output);
+        inputs.writeToChildTag(output, "input_stacks");
+        outputs.writeToChildTag(output, "output_stacks");
+        catalyst.writeToNBT(output, "catalyst");
+        upgrades.writeToNBT(output, "upgrades");
         output.putLong("energy", energy.stored);
         output.putInt("progress", progress);
         output.putLong("runs", runs);
     }
 
     @Override
-    public void loadTag(CompoundTag input, HolderLookup.Provider registries) {
-        super.loadTag(input, registries);
-        inputs.readFromChildTag(input, "input_stacks", registries);
-        outputs.readFromChildTag(input, "output_stacks", registries);
+    public void loadTag(CompoundTag input) {
+        super.loadTag(input);
+        inputs.readFromChildTag(input, "input_stacks");
+        outputs.readFromChildTag(input, "output_stacks");
         // factories saved with plain item slots
-        loadOldSlots(input, "inputs", inputs, registries);
-        loadOldSlots(input, "outputs", outputs, registries);
-        catalyst.readFromNBT(input, "catalyst", registries);
-        upgrades.readFromNBT(input, "upgrades", registries);
+        loadOldSlots(input, "inputs", inputs);
+        loadOldSlots(input, "outputs", outputs);
+        catalyst.readFromNBT(input, "catalyst");
+        upgrades.readFromNBT(input, "upgrades");
         energy.stored = input.getLong("energy");
         progress = input.getInt("progress");
         runs = Math.max(1, input.getLong("runs"));
         recheck = true;
     }
 
-    private void loadOldSlots(CompoundTag input, String name, ConfigInventory slots, HolderLookup.Provider registries) {
+    private void loadOldSlots(CompoundTag input, String name, ConfigInventory slots) {
         if (!input.contains(name))
             return;
         AppEngInternalInventory old = new AppEngInternalInventory(slots.size());
-        old.readFromNBT(input, name, registries);
+        old.readFromNBT(input, name);
         for (int i = 0; i < old.size(); i++) {
             ItemStack stack = old.getStackInSlot(i);
             if (!stack.isEmpty())
@@ -450,5 +450,21 @@ public class GravityFactoryBlockEntity extends AENetworkedBlockEntity implements
         public boolean isItemValid(int slot, ItemStack stack) {
             return slot < in.getSlots() && in.isItemValid(slot, stack);
         }
+    }
+
+    // ── capabilities (1.20.1: the block entity answers for them) ──
+
+    @Override
+    public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(net.minecraftforge.common.capabilities.Capability<T> cap,
+                                                                            @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER)
+            return net.minecraftforge.common.util.LazyOptional.of(this::getPipeHandler).cast();
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY)
+            return net.minecraftforge.common.util.LazyOptional.of(this::getEnergy).cast();
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER)
+            return net.minecraftforge.common.util.LazyOptional.of(this::getFluidHandler).cast();
+        if (cap == appeng.capabilities.Capabilities.GENERIC_INTERNAL_INV)
+            return net.minecraftforge.common.util.LazyOptional.of(this::getInputs).cast();
+        return super.getCapability(cap, side);
     }
 }

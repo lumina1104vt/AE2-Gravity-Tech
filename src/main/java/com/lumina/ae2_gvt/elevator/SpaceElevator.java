@@ -27,8 +27,8 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.MapColor;
-import net.neoforged.neoforge.registries.DeferredBlock;
-import net.neoforged.neoforge.registries.DeferredItem;
+import com.lumina.ae2_gvt.reg.DeferredBlock;
+import com.lumina.ae2_gvt.reg.DeferredItem;
 
 /**
  * The space elevator (太空電梯) for the lumina-multiblock lib: shape in {@link SpaceElevatorShape}, 320
@@ -81,7 +81,7 @@ public final class SpaceElevator {
         }
         b.anchor(SpaceElevatorShape.CTRL_X + r, SpaceElevatorShape.CTRL_Y, SpaceElevatorShape.CTRL_Z + r);
 
-        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(SpaceElevatorCommands::register);   // /gvt elevator build
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(SpaceElevatorCommands::register);   // /gvt elevator build
         FormedLooks.set(ID, "controller", s -> s.hasProperty(SpaceElevatorBlock.FORMED) ? s.setValue(SpaceElevatorBlock.FORMED, true) : s);
         Multiblocks.register(Definition.builder(ID, Shape.fixed(b.build()))
                 // the unturned controller faces south, out of the core's south face
@@ -122,7 +122,7 @@ public final class SpaceElevator {
 
     /** A block from another mod, looked up when first needed (registries are not filled at construction). */
     static Supplier<Block> lookup(String id) {
-        ResourceLocation key = ResourceLocation.parse(id);
+        ResourceLocation key = new ResourceLocation(id);
         Block[] cache = new Block[1];
         return () -> {
             if (cache[0] == null) cache[0] = BuiltInRegistries.BLOCK.get(key);

@@ -73,22 +73,22 @@ public class GravityHoleBlock extends Block implements EntityBlock {
     }
 
     @Override
-    protected RenderShape getRenderShape(BlockState state) {
+    public RenderShape getRenderShape(BlockState state) {
         return RenderShape.INVISIBLE;
     }
 
     @Override
-    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return HOLE;
     }
 
     @Override
-    protected VoxelShape getBlockSupportShape(BlockState state, BlockGetter level, BlockPos pos) {
+    public VoxelShape getBlockSupportShape(BlockState state, BlockGetter level, BlockPos pos) {
         return Shapes.block();     // buds need a sturdy face to stand on
     }
 
     @Override
-    protected boolean propagatesSkylightDown(BlockState state, BlockGetter level, BlockPos pos) {
+    public boolean propagatesSkylightDown(BlockState state, BlockGetter level, BlockPos pos) {
         return true;
     }
 
@@ -97,13 +97,13 @@ public class GravityHoleBlock extends Block implements EntityBlock {
     public void wasExploded(Level level, BlockPos pos, net.minecraft.world.level.Explosion explosion) {
         if (!(level instanceof ServerLevel server))
             return;
-        net.neoforged.neoforge.network.PacketDistributor.sendToPlayersNear(server, null, pos.getX() + 0.5, pos.getY() + 0.5,
+        com.lumina.ae2_gvt.payload.ModNet.near(server, pos.getX() + 0.5, pos.getY() + 0.5,
                 pos.getZ() + 0.5, 160, new com.lumina.ae2_gvt.payload.HoleBurstPayload(pos, 48));
         GravitonCollector.release(level, pos, white ? GravitonKey.ANTIGRAVITON : GravitonKey.GRAVITON, GRAVITONS_ON_EXPLOSION);
     }
 
     @Override
-    protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+    public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         if (random.nextInt(5) != 0 || !(level.getBlockEntity(pos) instanceof GravityHoleBlockEntity hole) || hole.nutrients() <= 0)
             return;
         Direction direction = Util.getRandom(DIRECTIONS, random);

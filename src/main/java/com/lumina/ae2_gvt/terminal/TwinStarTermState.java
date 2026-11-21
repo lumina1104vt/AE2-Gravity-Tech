@@ -265,25 +265,25 @@ public class TwinStarTermState implements InternalInventoryHost {
         recipe = null;
     }
 
-    public void read(CompoundTag tag, HolderLookup.Provider registries) {
-        machineInv.readFromNBT(tag, "machine", registries);
-        subMachineInv.readFromNBT(tag, "subMachines", registries);
-        toolInv.readFromNBT(tag, "tool", registries);
+    public void read(CompoundTag tag) {
+        machineInv.readFromNBT(tag, "machine");
+        subMachineInv.readFromNBT(tag, "subMachines");
+        toolInv.readFromNBT(tag, "tool");
         outputChances.clear();
         if (tag.contains("outputChances"))
-            PatternChances.CODEC.parse(new Dynamic<>(registries.createSerializationContext(NbtOps.INSTANCE), tag.get("outputChances")))
+            PatternChances.CODEC.parse(new Dynamic<>(NbtOps.INSTANCE, tag.get("outputChances")))
                     .result().ifPresent(c -> c.entries().forEach(e -> outputChances.put(e.key(), e.chance())));
         inputFaces.clear();
         if (tag.contains("inputFaces"))
-            PatternInputFaces.CODEC.parse(new Dynamic<>(registries.createSerializationContext(NbtOps.INSTANCE), tag.get("inputFaces")))
+            PatternInputFaces.CODEC.parse(new Dynamic<>(NbtOps.INSTANCE, tag.get("inputFaces")))
                     .result().ifPresent(f -> f.entries().forEach(e -> inputFaces.put(e.key(), e.faces())));
         inputTargets.clear();
         if (tag.contains("inputTargets"))
-            PatternInputTargets.CODEC.parse(new Dynamic<>(registries.createSerializationContext(NbtOps.INSTANCE), tag.get("inputTargets")))
+            PatternInputTargets.CODEC.parse(new Dynamic<>(NbtOps.INSTANCE, tag.get("inputTargets")))
                     .result().ifPresent(f -> f.entries().forEach(e -> inputTargets.put(e.key(), e.target())));
         inputRoles.clear();
         if (tag.contains("inputRoles"))
-            PatternInputRoles.CODEC.parse(new Dynamic<>(registries.createSerializationContext(NbtOps.INSTANCE), tag.get("inputRoles")))
+            PatternInputRoles.CODEC.parse(new Dynamic<>(NbtOps.INSTANCE, tag.get("inputRoles")))
                     .result().ifPresent(f -> f.entries().forEach(e -> inputRoles.put(e.key(), e.role())));
         inputGuiSlots.clear();
         int[] guiPairs = tag.getIntArray("inputGuiSlotPairs");
@@ -295,13 +295,13 @@ public class TwinStarTermState implements InternalInventoryHost {
             sequenceStarts.put(k, starts.getInt(k));
         outputGuiSlots.clear();
         if (tag.contains("outputGuiSlots"))
-            PatternOutputGuiSlots.CODEC.parse(new Dynamic<>(registries.createSerializationContext(NbtOps.INSTANCE), tag.get("outputGuiSlots")))
+            PatternOutputGuiSlots.CODEC.parse(new Dynamic<>(NbtOps.INSTANCE, tag.get("outputGuiSlots")))
                     .result().ifPresent(f -> f.entries().forEach(e -> outputGuiSlots.put(e.key(), e.slot())));
         recipe = tag.contains("recipe") ? ResourceLocation.tryParse(tag.getString("recipe")) : null;
         ignoreNbtInputs.clear();
         ignoreNbtOutputs.clear();
         if (tag.contains("ignoreNbt"))
-            PatternIgnoreNbt.CODEC.parse(new Dynamic<>(registries.createSerializationContext(NbtOps.INSTANCE), tag.get("ignoreNbt")))
+            PatternIgnoreNbt.CODEC.parse(new Dynamic<>(NbtOps.INSTANCE, tag.get("ignoreNbt")))
                     .result().ifPresent(n -> {
                         ignoreNbtInputs.addAll(n.inputs());
                         ignoreNbtOutputs.addAll(n.outputs());
@@ -320,32 +320,32 @@ public class TwinStarTermState implements InternalInventoryHost {
         }
     }
 
-    public void write(CompoundTag tag, HolderLookup.Provider registries) {
-        machineInv.writeToNBT(tag, "machine", registries);
-        subMachineInv.writeToNBT(tag, "subMachines", registries);
-        toolInv.writeToNBT(tag, "tool", registries);
+    public void write(CompoundTag tag) {
+        machineInv.writeToNBT(tag, "machine");
+        subMachineInv.writeToNBT(tag, "subMachines");
+        toolInv.writeToNBT(tag, "tool");
         if (!outputChances.isEmpty()) {
             List<PatternChances.Entry> entries = new ArrayList<>();
             outputChances.forEach((k, c) -> entries.add(new PatternChances.Entry(k, c)));
-            PatternChances.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), new PatternChances(entries))
+            PatternChances.CODEC.encodeStart(NbtOps.INSTANCE, new PatternChances(entries))
                     .result().ifPresent(t -> tag.put("outputChances", t));
         }
         if (!inputFaces.isEmpty()) {
             List<PatternInputFaces.Entry> entries = new ArrayList<>();
             inputFaces.forEach((k, f) -> entries.add(new PatternInputFaces.Entry(k, f)));
-            PatternInputFaces.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), new PatternInputFaces(entries))
+            PatternInputFaces.CODEC.encodeStart(NbtOps.INSTANCE, new PatternInputFaces(entries))
                     .result().ifPresent(t -> tag.put("inputFaces", t));
         }
         if (!inputTargets.isEmpty()) {
             List<PatternInputTargets.Entry> entries = new ArrayList<>();
             inputTargets.forEach((k, t) -> entries.add(new PatternInputTargets.Entry(k, t)));
-            PatternInputTargets.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), new PatternInputTargets(entries))
+            PatternInputTargets.CODEC.encodeStart(NbtOps.INSTANCE, new PatternInputTargets(entries))
                     .result().ifPresent(t -> tag.put("inputTargets", t));
         }
         if (!inputRoles.isEmpty()) {
             List<PatternInputRoles.Entry> entries = new ArrayList<>();
             inputRoles.forEach((k, r) -> entries.add(new PatternInputRoles.Entry(k, r)));
-            PatternInputRoles.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), new PatternInputRoles(entries))
+            PatternInputRoles.CODEC.encodeStart(NbtOps.INSTANCE, new PatternInputRoles(entries))
                     .result().ifPresent(t -> tag.put("inputRoles", t));
         }
         if (!inputGuiSlots.isEmpty()) {
@@ -365,13 +365,13 @@ public class TwinStarTermState implements InternalInventoryHost {
         if (!outputGuiSlots.isEmpty()) {
             List<PatternOutputGuiSlots.Entry> entries = new ArrayList<>();
             outputGuiSlots.forEach((k, g) -> entries.add(new PatternOutputGuiSlots.Entry(k, g)));
-            PatternOutputGuiSlots.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), new PatternOutputGuiSlots(entries))
+            PatternOutputGuiSlots.CODEC.encodeStart(NbtOps.INSTANCE, new PatternOutputGuiSlots(entries))
                     .result().ifPresent(t -> tag.put("outputGuiSlots", t));
         }
         if (recipe != null)
             tag.putString("recipe", recipe.toString());
         if (!ignoreNbtInputs.isEmpty() || !ignoreNbtOutputs.isEmpty())
-            PatternIgnoreNbt.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE),
+            PatternIgnoreNbt.CODEC.encodeStart(NbtOps.INSTANCE,
                     new PatternIgnoreNbt(List.copyOf(ignoreNbtInputs), List.copyOf(ignoreNbtOutputs))).result().ifPresent(t -> tag.put("ignoreNbt", t));
         if (!lastSubMachines.isEmpty()) {
             CompoundTag last = new CompoundTag();
@@ -396,12 +396,12 @@ public class TwinStarTermState implements InternalInventoryHost {
     }
 
     @Override
-    public void saveChangedInventory(AppEngInternalInventory inv) {
+    public void saveChanges() {
         markForSave();
     }
 
     @Override
-    public void onChangeInventory(AppEngInternalInventory inv, int slot) {
+    public void onChangeInventory(InternalInventory inv, int slot) {
     }
 
     @Override

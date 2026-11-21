@@ -19,9 +19,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.BlockAndTintGetter;
-import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
-import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
-import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
+import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
+import net.minecraftforge.client.model.geometry.IGeometryLoader;
+import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
 
 /**
  * Containment glass, connected 8 ways like the structure frame ({@link ConnectedQuarterModel}):
@@ -31,9 +31,9 @@ import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
  * models/block/containment_glass_connected.json.
  */
 public final class ContainmentGlassModel extends ConnectedQuarterModel {
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "containment_glass");
+    public static final ResourceLocation ID = new ResourceLocation(AE2GravityTech.MODID, "containment_glass");
     private static final Material SHEET = new Material(InventoryMenu.BLOCK_ATLAS,
-            ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "block/containment_glass_tiles"));
+            new ResourceLocation(AE2GravityTech.MODID, "block/containment_glass_tiles"));
 
     private ContainmentGlassModel(TextureAtlasSprite sheet) {
         super(sheet, RenderType.translucent());
@@ -49,7 +49,7 @@ public final class ContainmentGlassModel extends ConnectedQuarterModel {
     public static final class Geometry implements IUnbakedGeometry<Geometry> {
         @Override
         public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> sprites,
-                               ModelState state, ItemOverrides overrides) {
+                               ModelState state, ItemOverrides overrides, ResourceLocation modelLocation) {
             return new ContainmentGlassModel(sprites.apply(SHEET));
         }
     }

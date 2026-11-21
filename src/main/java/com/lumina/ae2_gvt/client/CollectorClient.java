@@ -1,5 +1,7 @@
 package com.lumina.ae2_gvt.client;
 
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,10 +22,8 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 
 /**
  * The graviton collector's space distortion (gravitons themselves are invisible): inside the open
@@ -32,8 +32,8 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
  * ({@link SceneSnapshot}) is redrawn bent on a camera-facing panel at each core; depth-tested, so
  * the pillars and glass in front stay put. Shader: collector_lens ({@link ClientShaders}).
  */
-@EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
-public final class CollectorClient {
+@Mod.EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
+public final class CollectorClient extends ShardBase {
     private static final RenderType LENS = RenderType.create("ae2_gvt_collector_lens", DefaultVertexFormat.NEW_ENTITY,
             VertexFormat.Mode.QUADS, 256, false, false, RenderType.CompositeState.builder()
                     .setShaderState(new RenderStateShard.ShaderStateShard(() -> ClientShaders.collectorLens))
@@ -52,11 +52,7 @@ public final class CollectorClient {
     private CollectorClient() {
     }
 
-    @SubscribeEvent
-    static void afterParticles(RenderLevelStageEvent event) {
-        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES)
-            LevelPass.run(event, () -> draw(event));
-    }
+
 
     private static void draw(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
@@ -94,15 +90,16 @@ public final class CollectorClient {
                         (float) (be.getBlockPos().getZ() + 0.5 - cam.z));
                 for (int[] k : new int[][] {{-1, -1}, {1, -1}, {1, 1}, {-1, 1}}) {
                     Vector3f p = new Vector3f(c).add(new Vector3f(right).mul(k[0] * r[1])).add(new Vector3f(up).mul(k[1] * r[2]));
-                    vc.addVertex(pose, p.x, p.y, p.z)
-                            .setColor(255, 255, 255, 255)
-                            .setUv(k[0], k[1])
-                            .setOverlay(OverlayTexture.NO_OVERLAY)
-                            .setLight(LightTexture.FULL_BRIGHT)
-                            .setNormal(0, 0, 1);
+                    vc.vertex(pose.pose(), p.x, p.y, p.z).color(255, 255, 255, 255).uv(k[0], k[1]).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(LightTexture.FULL_BRIGHT).normal(0, 0, 1).endVertex();
                 }
             }
             buffers.endBatch(LENS);
         }
+    }
+
+    @SubscribeEvent
+    public static void afterParticles(RenderLevelStageEvent event) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES)
+            LevelPass.run(event, () -> draw(event));
     }
 }

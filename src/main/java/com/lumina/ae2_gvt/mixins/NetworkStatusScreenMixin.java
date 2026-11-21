@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /** A quantum controller's network status: a button to its settings, and how many channels are left. */
-@Mixin(NetworkStatusScreen.class)
+@Mixin(value = NetworkStatusScreen.class, remap = false)
 public abstract class NetworkStatusScreenMixin extends AEBaseScreen<NetworkStatusMenu> {
     protected NetworkStatusScreenMixin(NetworkStatusMenu menu, Inventory playerInventory, Component title, ScreenStyle style) {
         super(menu, playerInventory, title, style);

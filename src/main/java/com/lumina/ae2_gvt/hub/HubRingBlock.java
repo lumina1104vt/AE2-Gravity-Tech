@@ -54,7 +54,7 @@ public class HubRingBlock extends RotatedPillarBlock {
     }
 
     @Override
-    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighbor, LevelAccessor level,
+    public BlockState updateShape(BlockState state, Direction direction, BlockState neighbor, LevelAccessor level,
                                      BlockPos pos, BlockPos neighborPos) {
         if (direction.getAxis() != state.getValue(AXIS)) {
             return state;

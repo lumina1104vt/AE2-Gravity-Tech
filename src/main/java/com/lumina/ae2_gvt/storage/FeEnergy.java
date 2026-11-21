@@ -18,12 +18,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Item;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModList;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.registries.DeferredItem;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.ModList;
+import net.minecraftforge.energy.IEnergyStorage;
+import com.lumina.ae2_gvt.reg.DeferredItem;
+import com.lumina.ae2_gvt.reg.DeferredRegister;
 
 /**
  * FE on the ME network: Applied Flux's key when it is installed, else our own {@link FeKey} (with what it
@@ -32,10 +31,9 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  */
 public final class FeEnergy {
     private static final String APPLIED_FLUX = "appflux";
-    private static final DeferredRegister<AEKeyType> KEY_TYPES = DeferredRegister.create(AEKeyType.REGISTRY_KEY, AE2GravityTech.MODID);
 
     static {
-        KEY_TYPES.register("fe", () -> FeKeyType.INSTANCE);
+        appeng.api.stacks.AEKeyTypes.register(FeKeyType.INSTANCE);
     }
 
     /** Display-only: how our key looks in terminals (not in the creative tab). */
@@ -50,7 +48,6 @@ public final class FeEnergy {
     }
 
     public static void register(IEventBus modEventBus) {
-        KEY_TYPES.register(modEventBus);
     }
 
     /** During common setup. */
@@ -74,10 +71,13 @@ public final class FeEnergy {
         for (AEKeyType type : AEKeyTypes.getAll()) {
             if (!type.getId().getNamespace().equals(APPLIED_FLUX))
                 continue;
-            var found = type.codec().decoder().parse(JsonOps.INSTANCE, fe);
-            if (found.isSuccess())
-                return found.getOrThrow();
-            AE2GravityTech.LOGGER.warn("Applied Flux's FE key could not be read: {}", found);
+            try {
+                AEKey found = type.loadKeyFromTag(new net.minecraft.nbt.CompoundTag());
+                if (found != null)
+                    return found;
+            } catch (RuntimeException e) {
+                AE2GravityTech.LOGGER.warn("Applied Flux's FE key could not be read", e);
+            }
         }
         return null;
     }
@@ -86,7 +86,7 @@ public final class FeEnergy {
     private record MachineFe(ServerLevel level, BlockPos pos, Direction side) implements ExternalStorageStrategy {
         @Override
         public MEStorage createWrapper(boolean extractableOnly, Runnable callback) {
-            IEnergyStorage energy = level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, side);
+            IEnergyStorage energy = com.lumina.twinstar.util.Caps.energy(level, pos, side);
             return energy == null ? null : new MachineStorage(energy, extractableOnly);
         }
     }

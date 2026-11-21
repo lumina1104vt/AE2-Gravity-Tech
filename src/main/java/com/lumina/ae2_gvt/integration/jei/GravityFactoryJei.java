@@ -98,8 +98,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
-import net.neoforged.neoforge.common.crafting.SizedIngredient;
+import com.lumina.twinstar.util.RecipeHolder;
+import com.lumina.ae2_gvt.recipes.SizedIngredient;
 
 /**
  * 引力加工工廠 recipes in JEI: the inputs (4 × 3, as the factory's input slots), an arrow, the results,
@@ -108,11 +108,11 @@ import net.neoforged.neoforge.common.crafting.SizedIngredient;
 @JeiPlugin
 public class GravityFactoryJei implements IModPlugin {
     public static final RecipeType<RecipeHolder<GravityProcessingRecipe>> TYPE =
-            RecipeType.createRecipeHolderType(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "gravity_processing"));
+            new RecipeType<>(new ResourceLocation(AE2GravityTech.MODID, "gravity_processing"), (Class<RecipeHolder<GravityProcessingRecipe>>) (Class<?>) RecipeHolder.class);
 
     @Override
     public ResourceLocation getPluginUid() {
-        return ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "gravity_processing");
+        return new ResourceLocation(AE2GravityTech.MODID, "gravity_processing");
     }
 
     @Override
@@ -124,7 +124,7 @@ public class GravityFactoryJei implements IModPlugin {
     public void registerRecipes(IRecipeRegistration registration) {
         var level = Minecraft.getInstance().level;
         if (level != null)
-            registration.addRecipes(TYPE, level.getRecipeManager().getAllRecipesFor(Recipes.GRAVITY_PROCESSING.get()));
+            registration.addRecipes(TYPE, RecipeHolder.allOf(level.getRecipeManager().getAllRecipesFor(Recipes.GRAVITY_PROCESSING.get())));
     }
 
     @Override

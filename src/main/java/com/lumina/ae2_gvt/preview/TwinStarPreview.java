@@ -8,12 +8,12 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.material.MapColor;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
-import net.neoforged.neoforge.registries.DeferredBlock;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredItem;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+import com.lumina.ae2_gvt.reg.DeferredBlock;
+import com.lumina.ae2_gvt.reg.DeferredHolder;
+import com.lumina.ae2_gvt.reg.DeferredItem;
+import com.lumina.ae2_gvt.reg.DeferredRegister;
 
 /** PROTOTYPE - registrations for the Twin-Star Hub animation preview (see package-info). */
 public final class TwinStarPreview {
@@ -46,7 +46,7 @@ public final class TwinStarPreview {
 
     private static void addToTab(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == AE2GravityTech.EXAMPLE_TAB.getKey()) {
-            event.accept(ITEM);
+            event.accept(ITEM.get());
         }
     }
 }

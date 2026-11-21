@@ -51,7 +51,7 @@ public class TwinStarPreviewBlock extends Block implements EntityBlock {
 
     /** The master cell going away: put the hidden structure back and drop its patterns. */
     @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof TwinStarPreviewBlockEntity be) {
             be.onRemoved(pos);
         }
@@ -67,7 +67,7 @@ public class TwinStarPreviewBlock extends Block implements EntityBlock {
     }
 
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
         // act on the controller's master cell (its min corner) whichever cell was clicked
         BlockPos min = TwinStarBlueprint.findControllerMin(level, pos);
         if (!(level.getBlockEntity(min != null ? min : pos) instanceof TwinStarPreviewBlockEntity preview)) {

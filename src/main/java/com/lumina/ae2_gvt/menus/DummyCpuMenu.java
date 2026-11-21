@@ -96,7 +96,7 @@ public class DummyCpuMenu extends AEBaseMenu {
     /** Moves the window; the server then sends the slots whose contents changed. */
     public void setScrollRow(int row) {
         int max = Math.max(0, (DummyTwinStarCPUBlockEntity.MAX_PATTERNS + COLUMNS - 1) / COLUMNS - VISIBLE_ROWS);
-        row = Math.clamp(row, 0, max);
+        row = net.minecraft.util.Mth.clamp(row, 0, max);
         if (isClientSide()) {
             if (row != scrollRow) {
                 scrollRow = row;

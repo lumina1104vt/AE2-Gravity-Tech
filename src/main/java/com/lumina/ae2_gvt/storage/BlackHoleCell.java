@@ -14,7 +14,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.neoforged.neoforge.server.ServerLifecycleHooks;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 /** 黑洞存儲磁盤: goes in an ME drive; holds anything, without limit. The item has an id, the world has the contents. */
 public final class BlackHoleCell extends AEBaseItem {
@@ -23,7 +23,7 @@ public final class BlackHoleCell extends AEBaseItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> lines, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.Level context, List<Component> lines, TooltipFlag flag) {
         lines.add(Component.translatable("item.ae2_gvt.black_hole_storage_cell.tooltip").withStyle(ChatFormatting.GRAY));
     }
 
@@ -43,10 +43,10 @@ public final class BlackHoleCell extends AEBaseItem {
             MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
             if (server == null || !isCell(stack))
                 return null;
-            UUID id = stack.get(DataComponents.BLACK_HOLE_DISK.get());
+            UUID id = DataComponents.BLACK_HOLE_DISK.get(stack);
             if (id == null) {
                 id = UUID.randomUUID();
-                stack.set(DataComponents.BLACK_HOLE_DISK.get(), id);
+                DataComponents.BLACK_HOLE_DISK.set(stack, id);
                 if (host != null)
                     host.saveChanges();
             }

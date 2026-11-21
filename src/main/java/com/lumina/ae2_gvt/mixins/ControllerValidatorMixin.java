@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * like any controller, but AE2's check for "two controller structures in one network" (a conflict) leaves it out, both when it
  * counts the controllers and when it walks the network to find them.
  */
-@Mixin(ControllerValidator.class)
+@Mixin(value = ControllerValidator.class, remap = false)
 public abstract class ControllerValidatorMixin {
     /** the slave structures of the check being made (the check runs on the server thread, one at a time) */
     private static final ThreadLocal<Set<ControllerBlockEntity>> ae2_gvt$slaves = new ThreadLocal<>();

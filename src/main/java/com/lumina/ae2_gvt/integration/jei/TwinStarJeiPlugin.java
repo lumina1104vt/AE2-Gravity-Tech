@@ -13,7 +13,7 @@ import com.lumina.ae2_gvt.terminal.TwinStarPatternTermMenu;
 import com.lumina.ae2_gvt.terminal.TwinStarTerminal;
 
 import appeng.api.stacks.GenericStack;
-import appeng.integration.modules.itemlists.EncodingHelper;
+import appeng.integration.modules.jeirei.EncodingHelper;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.gui.IRecipeLayoutDrawable;
@@ -26,7 +26,7 @@ import mezz.jei.api.gui.ingredient.IRecipeSlotView;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.ingredients.IIngredientType;
 import mezz.jei.api.ingredients.ITypedIngredient;
-import mezz.jei.api.neoforge.NeoForgeTypes;
+import mezz.jei.api.forge.ForgeTypes;
 import mezz.jei.api.recipe.IRecipeManager;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.category.IRecipeCategory;
@@ -44,7 +44,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
+import com.lumina.twinstar.util.RecipeHolder;
 
 /**
  * JEI's [+] for the Twin-Star Pattern Terminal: fills the recipe's inputs and outputs into the
@@ -59,7 +59,7 @@ public class TwinStarJeiPlugin implements IModPlugin {
 
     @Override
     public ResourceLocation getPluginUid() {
-        return ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "jei");
+        return new ResourceLocation(AE2GravityTech.MODID, "jei");
     }
 
     @Override
@@ -198,7 +198,7 @@ public class TwinStarJeiPlugin implements IModPlugin {
             if (item.isPresent()) {
                 return GenericStack.fromItemStack(item.get());
             }
-            Optional<GenericStack> fluid = ingredient.getIngredient(NeoForgeTypes.FLUID_STACK).map(GenericStack::fromFluidStack);
+            Optional<GenericStack> fluid = ingredient.getIngredient(ForgeTypes.FLUID_STACK).map(GenericStack::fromFluidStack);
             return fluid.isPresent() ? fluid.get() : Converters.convert(ingredient);
         }
 

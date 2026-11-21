@@ -15,7 +15,7 @@ import net.minecraft.client.renderer.RenderType;
  *   <li>DISC - the accretion disc, translucent</li>
  * </ul>
  */
-public final class HoleRenderTypes {
+public final class HoleRenderTypes extends ShardBase {
     static final RenderType LENS = RenderType.create("ae2_gvt_hole_lens", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256,
             false, false, RenderType.CompositeState.builder()
                     .setShaderState(new RenderStateShard.ShaderStateShard(() -> ClientShaders.holeLens))

@@ -19,17 +19,17 @@ import net.minecraft.resources.ResourceLocation;
  * tooltip registration, so it works with whichever of them is installed.
  */
 public class GravityTechTooltips implements TooltipProvider {
-    private static final ResourceLocation GENERATOR = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "generator");
-    private static final ResourceLocation PORT = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "energy_port");
-    private static final ResourceLocation FUSION = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "fusion");
+    private static final ResourceLocation GENERATOR = new ResourceLocation(AE2GravityTech.MODID, "generator");
+    private static final ResourceLocation PORT = new ResourceLocation(AE2GravityTech.MODID, "energy_port");
+    private static final ResourceLocation FUSION = new ResourceLocation(AE2GravityTech.MODID, "fusion");
 
     @Override
     public void registerCommon(CommonRegistration registration) {
-        registration.addBlockEntityData(GENERATOR, PowerGeneratorBlockEntity.class, (player, be, tag) -> {
+        registration.addBlockEntityData(PowerGeneratorBlockEntity.class, (player, be, tag) -> {
             tag.putLong("output", be.lastOutput());
             tag.putInt("burn", be.burnTicks());
         });
-        registration.addBlockEntityData(PORT, EnergyPortBlockEntity.class, (player, be, tag) -> {
+        registration.addBlockEntityData(EnergyPortBlockEntity.class, (player, be, tag) -> {
             var controller = be.getLevel() == null ? null : FusionControllerBlockEntity.controllerOf(be.getLevel(), be.getBlockPos());
             if (controller != null) {
                 tag.putLong("out", controller.energyOut());
@@ -38,7 +38,7 @@ public class GravityTechTooltips implements TooltipProvider {
                 tag.putLong("stored", controller.storedFe());
             }
         });
-        registration.addBlockEntityData(FUSION, FusionControllerBlockEntity.class, (player, be, tag) -> {
+        registration.addBlockEntityData(FusionControllerBlockEntity.class, (player, be, tag) -> {
             tag.putDouble("temperature", be.temperature());
             tag.putLong("in", be.energyIn());
             tag.putLong("out", be.energyOut());

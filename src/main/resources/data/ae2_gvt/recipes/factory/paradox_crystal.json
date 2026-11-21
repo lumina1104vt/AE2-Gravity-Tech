@@ -1,0 +1,17 @@
+{
+  "type": "ae2_gvt:gravity_processing",
+  "ingredients": [
+    {
+      "item": "ae2_gvt:paradox_dust",
+      "count": 1
+    }
+  ],
+  "results": [
+    {
+      "id": "ae2_gvt:paradox_crystal",
+      "count": 1
+    }
+  ],
+  "time": 20,
+  "energy": 1000
+}

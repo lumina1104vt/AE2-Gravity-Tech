@@ -17,11 +17,10 @@ import appeng.client.gui.Icon;
 import appeng.client.gui.NumberEntryType;
 import appeng.client.gui.me.common.ClientDisplaySlot;
 import appeng.client.gui.style.Blitter;
-import appeng.client.gui.widgets.AE2Button;
 import appeng.client.gui.widgets.NumberEntryWidget;
 import appeng.client.gui.widgets.TabButton;
 import appeng.core.localization.GuiText;
-import appeng.core.network.serverbound.InventoryActionPacket;
+import appeng.core.sync.packets.InventoryActionPacket;
 import appeng.helpers.InventoryAction;
 import appeng.menu.SlotSemantics;
 import com.google.common.primitives.Longs;
@@ -36,7 +35,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraftforge.network.PacketDistributor;
 
 /**
  * AE2's amount dialog of a processing input slot (same layout and behaviour as AE2's
@@ -48,7 +47,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
  */
 public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, TwinStarPatternTermScreen> {
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/input_faces.png");
+            new ResourceLocation(AE2GravityTech.MODID, "textures/gui/input_faces.png");
     private static final Blitter OFF = Blitter.texture(TEXTURE).src(0, 232, 24, 14);
     private static final Blitter ON = Blitter.texture(TEXTURE).src(24, 232, 24, 14);
     private static final int NET_X = 52, NET_Y = 118, STEP_X = 26, STEP_Y = 15;
@@ -65,8 +64,8 @@ public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, T
     private int role;
     /** the slot of the machine's GUI the material goes into (0 = the first that takes it) */
     private int guiSlot;
-    private final @Nullable AE2Button guiLess, guiMore;
-    private final @Nullable AE2Button targetButton, distanceLess, distanceMore, roleButton;
+    private final @Nullable net.minecraft.client.gui.components.Button guiLess, guiMore;
+    private final @Nullable net.minecraft.client.gui.components.Button targetButton, distanceLess, distanceMore, roleButton;
     private final List<FaceToggle> toggles = new ArrayList<>();
 
     public SetInputAmountScreen(TwinStarPatternTermScreen parent, GenericStack currentStack, Slot slot, int inputIndex) {
@@ -84,7 +83,7 @@ public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, T
         this.inputIndex = inputIndex;
         widgets.addButton("save", GuiText.Set.text(), this::confirm);
         ItemStack icon = getMenu().getHost().getMainMenuIcon();
-        widgets.add("back", new TabButton(Icon.BACK, icon.getHoverName(), btn -> returnToParent()));
+        widgets.add("back", new TabButton(Icon.ARROW_LEFT, icon.getHoverName(), btn -> returnToParent()));
         amount = widgets.addNumberEntryWidget("amountToStock", NumberEntryType.of(currentStack.what()));
         amount.setLongValue(currentStack.amount());
         amount.setMaxValue(getMaxAmount());
@@ -243,7 +242,7 @@ public class SetInputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, T
         amount.getLongValue().ifPresent(value -> {
             value = Longs.constrainToRange(value, 0, getMaxAmount());
             GenericStack stack = value <= 0 ? null : new GenericStack(currentStack.what(), value);
-            PacketDistributor.sendToServer(new InventoryActionPacket(InventoryAction.SET_FILTER, slot.index,
+            appeng.core.sync.network.NetworkHandler.instance().sendToServer(new InventoryActionPacket(InventoryAction.SET_FILTER, slot.index,
                     GenericStack.wrapInItemStack(stack)));
             if (stack != null) {
                 getMenu().setInputFaces(inputIndex, faces);

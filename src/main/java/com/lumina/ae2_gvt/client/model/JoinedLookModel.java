@@ -20,9 +20,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.Block;
-import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
-import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
-import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
+import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
+import net.minecraftforge.client.model.geometry.IGeometryLoader;
+import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
 
 /**
  * A block as the formed hexagram hub draws it: joined to its neighbours of the same block
@@ -33,7 +33,7 @@ import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
  * (sheets from tools/crystal_joined_textures.py and tools/hub_structure_textures.py).
  */
 public final class JoinedLookModel extends ConnectedQuarterModel {
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "joined_look");
+    public static final ResourceLocation ID = new ResourceLocation(AE2GravityTech.MODID, "joined_look");
 
     private final Block block;
 
@@ -50,11 +50,11 @@ public final class JoinedLookModel extends ConnectedQuarterModel {
     public record Geometry(ResourceLocation sheet, ResourceLocation block) implements IUnbakedGeometry<Geometry> {
         @Override
         public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> sprites,
-                               ModelState state, ItemOverrides overrides) {
+                               ModelState state, ItemOverrides overrides, ResourceLocation modelLocation) {
             return new JoinedLookModel(sprites.apply(new Material(InventoryMenu.BLOCK_ATLAS, sheet)), BuiltInRegistries.BLOCK.get(block));
         }
     }
 
     public static final IGeometryLoader<Geometry> LOADER = (JsonObject json, JsonDeserializationContext ctx) -> new Geometry(
-            ResourceLocation.parse(json.get("sheet").getAsString()), ResourceLocation.parse(json.get("block").getAsString()));
+            new ResourceLocation(json.get("sheet").getAsString()), new ResourceLocation(json.get("block").getAsString()));
 }

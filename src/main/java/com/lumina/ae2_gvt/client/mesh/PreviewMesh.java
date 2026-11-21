@@ -29,12 +29,7 @@ public final class PreviewMesh {
     }
 
     public static void vertex(PoseStack.Pose pose, VertexConsumer vc, Vector3f p, Vector3f n, int argb) {
-        vc.addVertex(pose, p.x, p.y, p.z)
-                .setColor((argb >> 16) & 0xff, (argb >> 8) & 0xff, argb & 0xff, (argb >>> 24) & 0xff)
-                .setUv(0.5f, 0.5f)
-                .setOverlay(OverlayTexture.NO_OVERLAY)
-                .setLight(LightTexture.FULL_BRIGHT)
-                .setNormal(pose, n.x, n.y, n.z);
+        vc.vertex(pose.pose(), p.x, p.y, p.z).color((argb >> 16) & 0xff, (argb >> 8) & 0xff, argb & 0xff, (argb >>> 24) & 0xff).uv(0.5f, 0.5f).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(LightTexture.FULL_BRIGHT).normal(pose.normal(), n.x, n.y, n.z).endVertex();
     }
 
     public static void quad(PoseStack.Pose pose, VertexConsumer vc, Vector3f a, Vector3f b, Vector3f c, Vector3f d,

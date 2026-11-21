@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "pattern": [
+    "cc",
+    "cc"
+  ],
+  "key": {
+    "c": {
+      "item": "ae2_gvt:gravity_crystal"
+    }
+  },
+  "result": {
+    "item": "ae2_gvt:gravity_block",
+    "count": 1
+  }
+}

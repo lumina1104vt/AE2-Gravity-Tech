@@ -1,5 +1,7 @@
 package com.lumina.ae2_gvt.hole;
 
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -15,12 +17,10 @@ import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
+import com.lumina.twinstar.util.RecipeHolder;
 import net.minecraft.world.level.block.Block;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.common.crafting.SizedIngredient;
-import net.neoforged.neoforge.event.level.ExplosionEvent;
+import com.lumina.ae2_gvt.recipes.SizedIngredient;
+import net.minecraftforge.event.level.ExplosionEvent;
 
 /**
  * What an explosion makes of the items lying together in it: the {@code ae2_gvt:explosion} recipes. The ones that
@@ -28,47 +28,12 @@ import net.neoforged.neoforge.event.level.ExplosionEvent;
  * (with an anti-singularity instead, a white hole), and a singularity + an anti-singularity + paradox crystal dust
  * make two 悖論量子糾纏態奇點. See {@link ExplosionRecipe} for what a recipe can say.
  */
-@EventBusSubscriber(modid = AE2GravityTech.MODID)
+@Mod.EventBusSubscriber(modid = AE2GravityTech.MODID)
 public final class HoleCollapse {
     private HoleCollapse() {
     }
 
-    @SubscribeEvent
-    static void onDetonate(ExplosionEvent.Detonate event) {
-        if (!(event.getLevel() instanceof ServerLevel level)) {
-            return;
-        }
-        List<ItemEntity> items = new ArrayList<>();
-        event.getAffectedEntities().forEach(e -> {
-            if (e instanceof ItemEntity item) {
-                items.add(item);
-            }
-        });
-        if (items.isEmpty()) {
-            return;
-        }
-        List<ExplosionRecipe> recipes = level.getRecipeManager().getAllRecipesFor(Recipes.EXPLOSION.get()).stream()
-                .map(RecipeHolder::value)
-                .sorted(Comparator.comparingInt(ExplosionRecipe::priority).reversed())
-                .toList();
-        boolean keepItems = false;
-        for (ExplosionRecipe recipe : recipes) {
-            if (!apply(level, recipe, items)) {
-                continue;
-            }
-            if (recipe.shield() == ExplosionRecipe.Shield.ALL) {
-                // nothing else is hurt: no items, no blocks (so no other hole either), and no other recipe is tried
-                event.getAffectedEntities().removeIf(e -> e instanceof ItemEntity);
-                event.getAffectedBlocks().clear();
-                return;
-            }
-            keepItems |= recipe.shield() == ExplosionRecipe.Shield.ITEMS;
-        }
-        if (keepItems) {
-            // the items lying there (and what was made) survive; blocks are hurt as usual
-            event.getAffectedEntities().removeIf(e -> e instanceof ItemEntity);
-        }
-    }
+
 
     /** Makes {@code recipe} of the items around each of its center items, as many times as it is asked to; true if it made something. */
     private static boolean apply(ServerLevel level, ExplosionRecipe recipe, List<ItemEntity> items) {
@@ -136,6 +101,43 @@ public final class HoleCollapse {
                     i.setItem(stack.copyWithCount(stack.getCount() - n));
                 }
             }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onDetonate(ExplosionEvent.Detonate event) {
+        if (!(event.getLevel() instanceof ServerLevel level)) {
+            return;
+        }
+        List<ItemEntity> items = new ArrayList<>();
+        event.getAffectedEntities().forEach(e -> {
+            if (e instanceof ItemEntity item) {
+                items.add(item);
+            }
+        });
+        if (items.isEmpty()) {
+            return;
+        }
+        List<ExplosionRecipe> recipes = RecipeHolder.allOf(level.getRecipeManager().getAllRecipesFor(Recipes.EXPLOSION.get())).stream()
+                .map(RecipeHolder::value)
+                .sorted(Comparator.comparingInt(ExplosionRecipe::priority).reversed())
+                .toList();
+        boolean keepItems = false;
+        for (ExplosionRecipe recipe : recipes) {
+            if (!apply(level, recipe, items)) {
+                continue;
+            }
+            if (recipe.shield() == ExplosionRecipe.Shield.ALL) {
+                // nothing else is hurt: no items, no blocks (so no other hole either), and no other recipe is tried
+                event.getAffectedEntities().removeIf(e -> e instanceof ItemEntity);
+                event.getAffectedBlocks().clear();
+                return;
+            }
+            keepItems |= recipe.shield() == ExplosionRecipe.Shield.ITEMS;
+        }
+        if (keepItems) {
+            // the items lying there (and what was made) survive; blocks are hurt as usual
+            event.getAffectedEntities().removeIf(e -> e instanceof ItemEntity);
         }
     }
 }

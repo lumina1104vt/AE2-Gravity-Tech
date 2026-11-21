@@ -86,15 +86,15 @@ public class QuantumControllerBlockEntity extends ControllerBlockEntity {
     }
 
     @Override
-    public void saveAdditional(CompoundTag data, HolderLookup.Provider registries) {
-        super.saveAdditional(data, registries);
+    public void saveAdditional(CompoundTag data) {
+        super.saveAdditional(data);
         data.putInt("QuantumRole", role);
         data.putString("QuantumFrequency", frequency);
     }
 
     @Override
-    public void loadTag(CompoundTag data, HolderLookup.Provider registries) {
-        super.loadTag(data, registries);
+    public void loadTag(CompoundTag data) {
+        super.loadTag(data);
         role = data.contains("QuantumRole") ? Math.floorMod(data.getInt("QuantumRole"), 3) : OFF;
         if (data.contains("QuantumFrequency", net.minecraft.nbt.Tag.TAG_STRING))
             frequency = data.getString("QuantumFrequency");

@@ -1,16 +1,14 @@
 package com.lumina.ae2_gvt.blockentities;
 
-import appeng.api.AECapabilities;
 import appeng.blockentity.AEBaseBlockEntity;
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.blockentities.cpu.DummyTwinStarCPUBlockEntity;
 import com.lumina.ae2_gvt.blocks.Blocks;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.eventbus.api.IEventBus;
+import com.lumina.ae2_gvt.reg.DeferredHolder;
+import com.lumina.ae2_gvt.reg.DeferredRegister;
 
 public final class BlockEntities {
     private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(
@@ -73,7 +71,7 @@ public final class BlockEntities {
 
     /** One type per generator (AE2 knows a block entity's item by its type), all of the same class. */
     private static DeferredHolder<BlockEntityType<?>, BlockEntityType<PowerGeneratorBlockEntity>> generator(
-            String name, net.neoforged.neoforge.registries.DeferredBlock<com.lumina.ae2_gvt.blocks.GeneratorBlock> block) {
+            String name, com.lumina.ae2_gvt.reg.DeferredBlock<com.lumina.ae2_gvt.blocks.GeneratorBlock> block) {
         return BLOCK_ENTITIES.register(name, () -> {
             var holder = new BlockEntityType<?>[1];
             @SuppressWarnings("unchecked")
@@ -92,52 +90,5 @@ public final class BlockEntities {
 
     public static void register(IEventBus bus) {
         BLOCK_ENTITIES.register(bus);
-        bus.addListener(BlockEntities::registerCapabilities);
-    }
-
-    /**
-     * AE2 finds a neighbour's grid node through this capability and only registers it for its own
-     * block entity types. Without it a cable can't see our node: it only links when our node is the one
-     * created last (placing the block), and drops after a reload.
-     */
-    private static void registerCapabilities(RegisterCapabilitiesEvent event) {
-        event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, TWINSTAR_CPU.get(), (be, ctx) -> be);
-        event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, WHITE_HOLE_ENERGY_CELL.get(), (be, ctx) -> be);
-        // ME cables: the collector puts gravitons in, the factory takes them out
-        event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, GRAVITON_COLLECTOR.get(), (be, ctx) -> be);
-        event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, GRAVITY_FACTORY.get(), (be, ctx) -> be);
-        // 機器接入方塊: on the ME network; what a machine pushes out into it, as with the cable part
-        event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, MACHINE_ACCESS_BLOCK.get(), (be, ctx) -> be);
-        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, MACHINE_ACCESS_BLOCK.get(),
-                (be, ctx) -> be.core().getReceivedItems());
-        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK, MACHINE_ACCESS_BLOCK.get(),
-                (be, ctx) -> be.core().getReceivedFluids());
-        // 引力加工工廠: pipes put into its inputs and take from its outputs; FE cables power it (any side)
-        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, GRAVITY_FACTORY.get(),
-                (be, ctx) -> be.getPipeHandler());
-        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK, GRAVITY_FACTORY.get(),
-                (be, ctx) -> be.getEnergy());
-        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK, GRAVITY_FACTORY.get(),
-                (be, ctx) -> be.getFluidHandler());
-        event.registerBlockEntity(AECapabilities.GENERIC_INTERNAL_INV, GRAVITY_FACTORY.get(), (be, ctx) -> be.getInputs());
-        // the fusion controller: on the ME network; its inputs take anything, as an ME interface's storage
-        event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, FUSION_CONTROLLER.get(), (be, ctx) -> be);
-        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, FUSION_CONTROLLER.get(),
-                (be, ctx) -> be.getPipeHandler());
-        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK, FUSION_CONTROLLER.get(),
-                (be, ctx) -> be.getFluidHandler());
-        event.registerBlockEntity(AECapabilities.ME_STORAGE, FUSION_CONTROLLER.get(), (be, ctx) -> be.getInputs());
-        event.registerBlockEntity(AECapabilities.GENERIC_INTERNAL_INV, FUSION_CONTROLLER.get(), (be, ctx) -> be.getInputs());
-        // FE cables on an energy port feed the controller of the chamber it is built into
-        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK, ENERGY_PORT.get(),
-                (be, ctx) -> FusionControllerBlockEntity.energyInput(be.getLevel(), be.getBlockPos()));
-        // generators: on the ME network; the crystal one takes dust from hoppers
-        for (var type : java.util.List.of(CRYSTAL_GENERATOR, GRAVITON_GENERATOR, ACCRETION_GENERATOR))
-            event.registerBlockEntity(AECapabilities.IN_WORLD_GRID_NODE_HOST, type.get(), (be, ctx) -> be);
-        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, CRYSTAL_GENERATOR.get(),
-                (be, ctx) -> be.getFuel().toItemHandler());
-        // hoppers and pipes put encoded patterns in
-        event.registerBlockEntity(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, TWINSTAR_CPU.get(),
-                (be, ctx) -> be.getInsertOnlyHandler());
     }
 }

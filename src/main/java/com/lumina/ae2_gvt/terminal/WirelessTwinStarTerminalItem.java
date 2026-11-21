@@ -2,13 +2,14 @@ package com.lumina.ae2_gvt.terminal;
 
 import java.util.function.DoubleSupplier;
 
+import appeng.api.implementations.menuobjects.ItemMenuHost;
+import appeng.core.localization.PlayerMessages;
 import appeng.items.tools.powered.WirelessTerminalItem;
-import appeng.menu.locator.ItemMenuHostLocator;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -28,24 +29,27 @@ public class WirelessTwinStarTerminalItem extends WirelessTerminalItem {
      * So it opens only when it is connected, and says why when it is not.
      */
     @Override
-    protected boolean openFromInventory(Player player, ItemMenuHostLocator locator, boolean returningFromSubmenu) {
+    protected boolean openFromInventory(Player player, int inventorySlot, boolean returningFromSubmenu) {
         if (!player.level().isClientSide()) {
-            ItemStack stack = locator.locateItem(player);
+            ItemStack stack = player.getInventory().getItem(inventorySlot);
             if (!stack.isEmpty()) {
                 // a creative player needs no power (as with AE2's own terminals); the battery of anyone else is looked at itself
                 if (!player.isCreative() && getAECurrentPower(stack) <= 0) {
                     player.displayClientMessage(Component.translatable("ae2_gvt.wireless_terminal.no_power"), true);
                     return false;
                 }
-                var host = getMenuHost(player, locator, null);
-                host.refreshLink();
-                if (!host.getLinkStatus().connected()) {
-                    player.displayClientMessage(host.getLinkStatus().statusDescription(), true);
+                var host = getMenuHost(player, inventorySlot, stack, null);
+                if (host.getActionableNode() == null) {
+                    player.displayClientMessage(PlayerMessages.DeviceNotLinked.text(), true);
+                    return false;
+                }
+                if (!host.rangeCheck()) {
+                    player.displayClientMessage(PlayerMessages.OutOfRange.text(), true);
                     return false;
                 }
             }
         }
-        return super.openFromInventory(player, locator, returningFromSubmenu);
+        return super.openFromInventory(player, inventorySlot, returningFromSubmenu);
     }
 
     @Override
@@ -54,7 +58,7 @@ public class WirelessTwinStarTerminalItem extends WirelessTerminalItem {
     }
 
     @Override
-    public WirelessTwinStarTerminalMenuHost<?> getMenuHost(Player player, ItemMenuHostLocator locator, @Nullable BlockHitResult hitResult) {
-        return new WirelessTwinStarTerminalMenuHost<>(this, player, locator, (p, subMenu) -> openFromInventory(p, locator, true));
+    public WirelessTwinStarTerminalMenuHost getMenuHost(Player player, int inventorySlot, ItemStack stack, @Nullable BlockPos pos) {
+        return new WirelessTwinStarTerminalMenuHost(player, inventorySlot, stack, (p, subMenu) -> openFromInventory(p, inventorySlot, true));
     }
 }

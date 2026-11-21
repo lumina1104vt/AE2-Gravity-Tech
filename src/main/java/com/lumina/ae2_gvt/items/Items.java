@@ -10,9 +10,9 @@ import com.lumina.ae2_gvt.items.parts.MachineAccessInterface;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredItem;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraftforge.eventbus.api.IEventBus;
+import com.lumina.ae2_gvt.reg.DeferredItem;
+import com.lumina.ae2_gvt.reg.DeferredRegister;
 
 public class Items {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(AE2GravityTech.MODID);

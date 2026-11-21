@@ -1,5 +1,8 @@
 package com.lumina.ae2_gvt.annihilation;
 
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -35,11 +38,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.synth.SimplexNoise;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.level.ExplosionEvent;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraftforge.event.level.ExplosionEvent;
+import net.minecraftforge.network.PacketDistributor;
 
 /**
  * What an 湮滅 TNT does instead of exploding: everything in a sphere of {@link #RADIUS} blocks is
@@ -53,7 +53,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * shockwave hurts out to twice the radius. A blast in progress is not saved: a restart leaves the crater
  * unfinished.
  */
-@EventBusSubscriber(modid = AE2GravityTech.MODID)
+@Mod.EventBusSubscriber(modid = AE2GravityTech.MODID)
 public final class AnnihilationBlast {
     public static final int RADIUS = 64;
     /** How deep the patches of sky stone reach into the crater wall. */
@@ -62,7 +62,7 @@ public final class AnnihilationBlast {
     private static final int BUDGET = 60_000;
     private static final float KILL = 1_000_000, SHOCKWAVE = 40;
     public static final ResourceKey<DamageType> DAMAGE =
-            ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "annihilation"));
+            ResourceKey.create(Registries.DAMAGE_TYPE, new ResourceLocation(AE2GravityTech.MODID, "annihilation"));
 
     private static final List<Blast> BLASTS = new ArrayList<>();
     /** Offsets per whole radius 0 … RADIUS + WALL, packed; built on the first blast. */
@@ -71,31 +71,16 @@ public final class AnnihilationBlast {
     private AnnihilationBlast() {
     }
 
-    @SubscribeEvent
-    static void onExplosion(ExplosionEvent.Start event) {
-        if (event.getLevel() instanceof ServerLevel level && event.getExplosion().getDirectSourceEntity() instanceof PrimedTnt tnt
-                && tnt.getBlockState().is(Blocks.ANNIHILATION_TNT.get())) {
-            event.setCanceled(true);
-            start(level, tnt.blockPosition());
-        }
-    }
+
 
     private static void start(ServerLevel level, BlockPos centre) {
         BLASTS.add(new Blast(level, centre));
-        level.playSound(null, centre, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 32, 0.5f);
-        PacketDistributor.sendToPlayersNear(level, null, centre.getX() + 0.5, centre.getY() + 0.5, centre.getZ() + 0.5,
+        level.playSound(null, centre, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 32, 0.5f);
+        com.lumina.ae2_gvt.payload.ModNet.near(level, centre.getX() + 0.5, centre.getY() + 0.5, centre.getZ() + 0.5,
                 RADIUS * 6, new HoleBurstPayload(centre, RADIUS * 2.5f));
     }
 
-    @SubscribeEvent
-    static void onTick(ServerTickEvent.Post event) {
-        if (BLASTS.isEmpty())
-            return;
-        int budget = BUDGET / BLASTS.size();
-        for (Iterator<Blast> it = BLASTS.iterator(); it.hasNext(); )
-            if (it.next().step(budget))
-                it.remove();
-    }
+
 
     private static int pack(int x, int y, int z) {
         return (x + 128) << 16 | (y + 128) << 8 | (z + 128);
@@ -197,5 +182,26 @@ public final class AnnihilationBlast {
                 }
             }
         }
+    }
+
+    @SubscribeEvent
+    public static void onExplosion(ExplosionEvent.Start event) {
+        if (event.getLevel() instanceof ServerLevel level && event.getExplosion().getDirectSourceEntity() instanceof PrimedTnt tnt
+                && tnt.getPersistentData().getBoolean(AnnihilationTntBlock.MARK)) {
+            event.setCanceled(true);
+            start(level, tnt.blockPosition());
+        }
+    }
+
+    @SubscribeEvent
+    public static void onTick(TickEvent.ServerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END)
+            return;
+        if (BLASTS.isEmpty())
+            return;
+        int budget = BUDGET / BLASTS.size();
+        for (Iterator<Blast> it = BLASTS.iterator(); it.hasNext(); )
+            if (it.next().step(budget))
+                it.remove();
     }
 }

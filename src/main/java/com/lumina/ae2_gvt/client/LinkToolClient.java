@@ -1,5 +1,7 @@
 package com.lumina.ae2_gvt.client;
 
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalDouble;
@@ -14,7 +16,7 @@ import com.lumina.ae2_gvt.items.Items;
 import com.lumina.ae2_gvt.blockentities.MachineAccessBlockEntity;
 import com.lumina.ae2_gvt.items.parts.MachineAccessCore;
 import com.lumina.ae2_gvt.items.tools.MachineLinkTool;
-import com.mojang.blaze3d.vertex.ByteBufferBuilder;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -30,10 +32,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 
 /**
  * While the 機器連結器 is held and an interface is picked: the interface glows, each machine it is bound
@@ -41,8 +41,8 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
  * depth test so the links show through walls, through our own buffers (not the shared ones, see
  * {@link SceneSnapshot}).
  */
-@EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
-public final class LinkToolClient {
+@Mod.EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
+public final class LinkToolClient extends ShardBase {
     private static final RenderType FILL = RenderType.create("ae2_gvt_link_fill", DefaultVertexFormat.POSITION_COLOR,
             VertexFormat.Mode.QUADS, 1024, false, true, RenderType.CompositeState.builder()
                     .setShaderState(new RenderStateShard.ShaderStateShard(GameRenderer::getPositionColorShader))
@@ -78,11 +78,11 @@ public final class LinkToolClient {
                     .setWriteMaskState(RenderStateShard.COLOR_WRITE)
                     .setCullState(RenderStateShard.NO_CULL)
                     .createCompositeState(false));
-    private static final MultiBufferSource.BufferSource FACE_FILL_BUFFERS = MultiBufferSource.immediate(new ByteBufferBuilder(1 << 15));
-    private static final MultiBufferSource.BufferSource FACE_LINE_BUFFERS = MultiBufferSource.immediate(new ByteBufferBuilder(1 << 15));
+    private static final MultiBufferSource.BufferSource FACE_FILL_BUFFERS = MultiBufferSource.immediate(new BufferBuilder(1 << 15));
+    private static final MultiBufferSource.BufferSource FACE_LINE_BUFFERS = MultiBufferSource.immediate(new BufferBuilder(1 << 15));
     /** one source for each type: a source with a single builder ends the first type's vertices when the second is asked for */
-    private static final MultiBufferSource.BufferSource FILL_BUFFERS = MultiBufferSource.immediate(new ByteBufferBuilder(1 << 16));
-    private static final MultiBufferSource.BufferSource LINE_BUFFERS = MultiBufferSource.immediate(new ByteBufferBuilder(1 << 16));
+    private static final MultiBufferSource.BufferSource FILL_BUFFERS = MultiBufferSource.immediate(new BufferBuilder(1 << 16));
+    private static final MultiBufferSource.BufferSource LINE_BUFFERS = MultiBufferSource.immediate(new BufferBuilder(1 << 16));
 
     private static final float[] GLOW = {0.62f, 0.82f, 1.0f};
 
@@ -113,11 +113,7 @@ public final class LinkToolClient {
         FLASHES.add(new Flash(machine.immutable(), face, host, hostSide, mc.level.getGameTime() + FLASH_TICKS));
     }
 
-    @SubscribeEvent
-    static void afterParticles(RenderLevelStageEvent event) {
-        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES)
-            LevelPass.run(event, () -> draw(event));
-    }
+
 
     private static void draw(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES)
@@ -139,7 +135,7 @@ public final class LinkToolClient {
         VertexConsumer lines = LINE_BUFFERS.getBuffer(LINES);
         VertexConsumer faceFill = FACE_FILL_BUFFERS.getBuffer(FACE_FILL);
         VertexConsumer faceLines = FACE_LINE_BUFFERS.getBuffer(FACE_LINES);
-        float pulse = 0.5f + 0.5f * (float) Math.sin((now + event.getPartialTick().getGameTimeDeltaPartialTick(false)) * 0.2);
+        float pulse = 0.5f + 0.5f * (float) Math.sin((now + event.getPartialTick()) * 0.2);
 
         if (part != null) {
             // the interface: a glowing box around the part, flush with the block face it sits on
@@ -207,7 +203,7 @@ public final class LinkToolClient {
         int[][] quads = {{0, 1, 2, 3}, {5, 4, 7, 6}, {4, 0, 3, 7}, {1, 5, 6, 2}, {3, 2, 6, 7}, {4, 5, 1, 0}};
         for (int[] q : quads)
             for (int i : q)
-                fill.addVertex(m, c[i][0], c[i][1], c[i][2]).setColor(GLOW[0], GLOW[1], GLOW[2], alpha);
+                fill.vertex(m, c[i][0], c[i][1], c[i][2]).color(GLOW[0], GLOW[1], GLOW[2], alpha).endVertex();
         int[][] edges = {{0, 1}, {1, 2}, {2, 3}, {3, 0}, {4, 5}, {5, 6}, {6, 7}, {7, 4}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
         for (int[] e : edges)
             line(lines, m, new Vec3(c[e[0]][0], c[e[0]][1], c[e[0]][2]), new Vec3(c[e[1]][0], c[e[1]][1], c[e[1]][2]), 0.9f);
@@ -230,7 +226,7 @@ public final class LinkToolClient {
             p[i] = c.add(u.x * k[i][0] * 0.5, u.y * k[i][0] * 0.5, u.z * k[i][0] * 0.5)
                     .add(v.x * k[i][1] * 0.5, v.y * k[i][1] * 0.5, v.z * k[i][1] * 0.5);
         for (Vec3 q : p)
-            fill.addVertex(m, (float) q.x, (float) q.y, (float) q.z).setColor(GLOW[0], GLOW[1], GLOW[2], alpha);
+            fill.vertex(m, (float) q.x, (float) q.y, (float) q.z).color(GLOW[0], GLOW[1], GLOW[2], alpha).endVertex();
         for (int i = 0; i < 4; i++)
             line(lines, m, p[i], p[(i + 1) % 4], lineAlpha);
     }
@@ -249,7 +245,13 @@ public final class LinkToolClient {
         if (len < 1e-4f)
             return;
         float nx = (float) d.x / len, ny = (float) d.y / len, nz = (float) d.z / len;
-        lines.addVertex(m, (float) a.x, (float) a.y, (float) a.z).setColor(GLOW[0], GLOW[1], GLOW[2], alpha).setNormal(nx, ny, nz);
-        lines.addVertex(m, (float) b.x, (float) b.y, (float) b.z).setColor(GLOW[0], GLOW[1], GLOW[2], alpha).setNormal(nx, ny, nz);
+        lines.vertex(m, (float) a.x, (float) a.y, (float) a.z).color(GLOW[0], GLOW[1], GLOW[2], alpha).normal(nx, ny, nz).endVertex();
+        lines.vertex(m, (float) b.x, (float) b.y, (float) b.z).color(GLOW[0], GLOW[1], GLOW[2], alpha).normal(nx, ny, nz).endVertex();
+    }
+
+    @SubscribeEvent
+    public static void afterParticles(RenderLevelStageEvent event) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES)
+            LevelPass.run(event, () -> draw(event));
     }
 }

@@ -47,7 +47,7 @@ public class TwinStarHubBlock extends AEBaseEntityBlock<TwinStarHubBlockEntity> 
     }
 
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
         if (!(level instanceof ServerLevel server)) {
             return InteractionResult.SUCCESS;
         }

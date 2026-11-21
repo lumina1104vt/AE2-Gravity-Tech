@@ -1,0 +1,26 @@
+{
+  "type": "ae2_gvt:gravity_processing",
+  "ingredients": [
+    {
+      "item": "ae2:memory_card",
+      "count": 1
+    },
+    {
+      "item": "ae2:wireless_receiver",
+      "count": 1
+    },
+    {
+      "item": "ae2_gvt:antigravity_circuit",
+      "count": 2
+    }
+  ],
+  "results": [
+    {
+      "id": "ae2_gvt:machine_link_tool",
+      "count": 1
+    }
+  ],
+  "time": 100,
+  "energy": 50000,
+  "antigravitons": 64
+}

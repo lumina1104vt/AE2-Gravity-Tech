@@ -15,7 +15,7 @@ public class QuantumSettingsButton extends IconButton {
 
     @Override
     protected Icon getIcon() {
-        return Icon.COG;
+        return Icon.WRENCH;
     }
 
     @Override

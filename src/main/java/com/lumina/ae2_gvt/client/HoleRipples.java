@@ -29,7 +29,7 @@ import net.minecraft.world.phys.Vec3;
  *       {@link #BURST_REACH} blocks, strong at first, fading as they go</li>
  * </ul>
  */
-public final class HoleRipples {
+public final class HoleRipples extends ShardBase {
     static final RenderType RIPPLE = RenderType.create("ae2_gvt_hole_ripple", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 8192,
             false, false, RenderType.CompositeState.builder()
                     .setShaderState(new RenderStateShard.ShaderStateShard(() -> ClientShaders.holeRipple))
@@ -58,7 +58,7 @@ public final class HoleRipples {
     public static void burst(net.minecraft.core.BlockPos pos, float reach) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level != null)
-            BURSTS.add(new Burst(Vec3.atCenterOf(pos), mc.level.getGameTime() + mc.getTimer().getGameTimeDeltaPartialTick(true), reach));
+            BURSTS.add(new Burst(Vec3.atCenterOf(pos), mc.level.getGameTime() + mc.getFrameTime(), reach));
     }
 
     /** The hole's small ripple, bent over the frame (only the part of the screen the shell covers is worked on). */
@@ -141,11 +141,6 @@ public final class HoleRipples {
                                float push, float glow) {
         double theta = Math.PI * i / lats, phi = 2 * Math.PI * j / lons;
         float x = (float) (Math.sin(theta) * Math.cos(phi)), y = (float) Math.cos(theta), z = (float) (Math.sin(theta) * Math.sin(phi));
-        vc.addVertex(pose, c.x + x * r, c.y + y * r, c.z + z * r)
-                .setColor(255, 255, 255, 255)
-                .setUv(push, glow)
-                .setOverlay(OverlayTexture.NO_OVERLAY)
-                .setLight(LightTexture.FULL_BRIGHT)
-                .setNormal(x, y, z);
+        vc.vertex(pose.pose(), c.x + x * r, c.y + y * r, c.z + z * r).color(255, 255, 255, 255).uv(push, glow).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(LightTexture.FULL_BRIGHT).normal(x, y, z).endVertex();
     }
 }

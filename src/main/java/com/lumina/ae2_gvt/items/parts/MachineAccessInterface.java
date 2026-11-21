@@ -54,14 +54,14 @@ public class MachineAccessInterface extends AEBasePart implements IMachineAccess
     }
 
     private static final ResourceLocation MODEL_BASE =
-            ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "part/machine_access_interface_base");
+            new ResourceLocation(AE2GravityTech.MODID, "part/machine_access_interface_base");
 
     @PartModels
-    public static final PartModel MODELS_OFF = new PartModel(MODEL_BASE, ResourceLocation.fromNamespaceAndPath("ae2", "part/interface_off"));
+    public static final PartModel MODELS_OFF = new PartModel(MODEL_BASE, new ResourceLocation("ae2", "part/interface_off"));
     @PartModels
-    public static final PartModel MODELS_ON = new PartModel(MODEL_BASE, ResourceLocation.fromNamespaceAndPath("ae2", "part/interface_on"));
+    public static final PartModel MODELS_ON = new PartModel(MODEL_BASE, new ResourceLocation("ae2", "part/interface_on"));
     @PartModels
-    public static final PartModel MODELS_HAS_CHANNEL = new PartModel(MODEL_BASE, ResourceLocation.fromNamespaceAndPath("ae2", "part/interface_has_channel"));
+    public static final PartModel MODELS_HAS_CHANNEL = new PartModel(MODEL_BASE, new ResourceLocation("ae2", "part/interface_has_channel"));
 
     @Override
     public IPartModel getStaticModels() {
@@ -87,7 +87,7 @@ public class MachineAccessInterface extends AEBasePart implements IMachineAccess
     // ── the screen ──
 
     @Override
-    public boolean onUseWithoutItem(Player player, Vec3 pos) {
+    public boolean onPartActivate(Player player, net.minecraft.world.InteractionHand hand, Vec3 pos) {
         if (!isClientSide()) {
             MenuOpener.open(Menus.MACHINE_ACCESS.get(), player, MenuLocators.forPart(this));
         }
@@ -96,8 +96,9 @@ public class MachineAccessInterface extends AEBasePart implements IMachineAccess
 
     /** The 機器連結器, sneaking: pick this interface as the one the linker sets up (again: let go of it). */
     @Override
-    public boolean onUseItemOn(ItemStack stack, Player player, net.minecraft.world.InteractionHand hand, Vec3 pos) {
-        if (!(stack.getItem() instanceof MachineLinkTool) || !player.isShiftKeyDown())
+    public boolean onPartShiftActivate(Player player, net.minecraft.world.InteractionHand hand, Vec3 pos) {
+        ItemStack stack = player.getItemInHand(hand);
+        if (!(stack.getItem() instanceof MachineLinkTool))
             return false;
         if (isClientSide())
             return true;
@@ -188,28 +189,28 @@ public class MachineAccessInterface extends AEBasePart implements IMachineAccess
     // ── to the client, saving ──
 
     @Override
-    public void writeToStream(net.minecraft.network.RegistryFriendlyByteBuf data) {
+    public void writeToStream(net.minecraft.network.FriendlyByteBuf data) {
         super.writeToStream(data);
         core.writeStream(data);
     }
 
     @Override
-    public boolean readFromStream(net.minecraft.network.RegistryFriendlyByteBuf data) {
+    public boolean readFromStream(net.minecraft.network.FriendlyByteBuf data) {
         super.readFromStream(data);
         core.readStream(data);
         return true;
     }
 
     @Override
-    public void readFromNBT(CompoundTag tag, HolderLookup.Provider registries) {
-        super.readFromNBT(tag, registries);
-        core.read(tag, registries);
+    public void readFromNBT(CompoundTag tag) {
+        super.readFromNBT(tag);
+        core.read(tag);
     }
 
     @Override
-    public void writeToNBT(CompoundTag tag, HolderLookup.Provider registries) {
-        super.writeToNBT(tag, registries);
-        core.write(tag, registries);
+    public void writeToNBT(CompoundTag tag) {
+        super.writeToNBT(tag);
+        core.write(tag);
     }
 
     @Override
@@ -221,5 +222,15 @@ public class MachineAccessInterface extends AEBasePart implements IMachineAccess
     public void clearContent() {
         super.clearContent();
         core.clear();
+    }
+
+    /** What a machine pushes out into the interface goes in as into an ME interface. */
+    @Override
+    public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(net.minecraftforge.common.capabilities.Capability<T> cap) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER)
+            return net.minecraftforge.common.util.LazyOptional.of(() -> core().getReceivedItems()).cast();
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER)
+            return net.minecraftforge.common.util.LazyOptional.of(() -> core().getReceivedFluids()).cast();
+        return super.getCapability(cap);
     }
 }

@@ -19,7 +19,7 @@ public class FusionMarkScreen extends AESubScreen<FusionControllerMenu, FusionCo
 
     public FusionMarkScreen(FusionControllerScreen parent, int slot, GenericStack mark) {
         super(parent, "/screens/fusion_mark.json");
-        widgets.add("back", new TabButton(Icon.BACK, Blocks.FUSION_CONTROLLER.get().getName(), btn -> returnToParent()));
+        widgets.add("back", new TabButton(Icon.ARROW_LEFT, Blocks.FUSION_CONTROLLER.get().getName(), btn -> returnToParent()));
         amount = widgets.addNumberEntryWidget("amount", NumberEntryType.of(mark.what()));
         amount.setTextFieldStyle(style.getWidget("amountInput"));
         amount.setMinValue(1);

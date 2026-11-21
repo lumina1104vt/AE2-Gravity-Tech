@@ -26,7 +26,7 @@ public class MachineAccessBlock extends appeng.block.AEBaseEntityBlock<MachineAc
     }
 
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MachineAccessBlockEntity be)
             MenuOpener.open(Menus.MACHINE_ACCESS.get(), player, MenuLocators.forBlockEntity(be));
         return InteractionResult.SUCCESS;

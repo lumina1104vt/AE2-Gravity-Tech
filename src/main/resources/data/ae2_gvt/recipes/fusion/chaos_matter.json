@@ -1,0 +1,26 @@
+{
+  "type": "ae2_gvt:fusion",
+  "ingredients": [
+    {
+      "item": "ae2:singularity",
+      "count": 256
+    },
+    {
+      "item": "ae2_gvt:paradox_alloy_plate",
+      "count": 256
+    },
+    {
+      "item": "ae2_gvt:chaos_matter",
+      "count": 16
+    }
+  ],
+  "results": [
+    {
+      "id": "ae2_gvt:chaos_matter",
+      "count": 256
+    }
+  ],
+  "temperature": 1000000,
+  "time": 40,
+  "power": 3.0
+}

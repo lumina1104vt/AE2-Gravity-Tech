@@ -12,7 +12,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
+import com.lumina.twinstar.util.RecipeHolder;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -64,9 +64,9 @@ public class GravityHoleBlockEntity extends BlockEntity {
             ItemStack stack = item.getItem();
             // what the hole makes is left lying on it, not eaten; what it converts is turned and put back on top of it
             if (conversions == null)
-                conversions = level.getRecipeManager().getAllRecipesFor(Recipes.HOLE_CONVERSION.get()).stream()
+                conversions = RecipeHolder.allOf(level.getRecipeManager().getAllRecipesFor(Recipes.HOLE_CONVERSION.get())).stream()
                         .map(RecipeHolder::value).filter(r -> r.hole().covers(isWhite())).toList();
-            if (conversions.stream().anyMatch(r -> ItemStack.isSameItemSameComponents(r.result(), stack)))
+            if (conversions.stream().anyMatch(r -> ItemStack.isSameItemSameTags(r.result(), stack)))
                 continue;
             HoleConversionRecipe conversion = conversions.stream().filter(r -> r.ingredient().test(stack)).findFirst().orElse(null);
             if (conversion != null) {
@@ -104,14 +104,14 @@ public class GravityHoleBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
         tag.putLong("nutrients", nutrients);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    public void load(CompoundTag tag) {
+        super.load(tag);
         nutrients = tag.getLong("nutrients");
     }
 }

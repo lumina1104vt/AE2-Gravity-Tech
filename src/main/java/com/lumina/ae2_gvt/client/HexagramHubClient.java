@@ -1,5 +1,9 @@
 package com.lumina.ae2_gvt.client;
 
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.client.event.RegisterShadersEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import java.io.IOException;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
@@ -12,15 +16,11 @@ import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-import net.neoforged.neoforge.client.event.RegisterShadersEvent;
+import net.minecraftforge.api.distmarker.Dist;
 
 /** Hooks up the hexagram hub's sphere renderer and its cosmos shader on the client. */
-@EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
-public final class HexagramHubClient {
+@Mod.EventBusSubscriber(modid = AE2GravityTech.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+public final class HexagramHubClient extends ShardBase {
     static ShaderInstance cosmos;
 
     /** Shader {@code ae2_gvt:hub_cosmos}; back faces culled, so an inward-wound sphere shows only its far wall. */
@@ -35,14 +35,18 @@ public final class HexagramHubClient {
     private HexagramHubClient() {
     }
 
+
+
+
+
     @SubscribeEvent
-    static void registerShaders(RegisterShadersEvent event) throws IOException {
+    public static void registerShaders(RegisterShadersEvent event) throws IOException {
         event.registerShader(new ShaderInstance(event.getResourceProvider(),
-                ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "hub_cosmos"), DefaultVertexFormat.NEW_ENTITY), s -> cosmos = s);
+                new ResourceLocation(AE2GravityTech.MODID, "hub_cosmos"), DefaultVertexFormat.NEW_ENTITY), s -> cosmos = s);
     }
 
     @SubscribeEvent
-    static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+    public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(HubStructureBlocks.CONTROLLER_ENTITY.get(), context -> new HexagramHubRenderer());
     }
 }

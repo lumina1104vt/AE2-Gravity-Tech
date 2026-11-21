@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "PPP",
+    "PCP",
+    "P P"
+  ],
+  "key": {
+    "P": {
+      "item": "ae2_gvt:paradox_alloy_plate"
+    },
+    "C": {
+      "item": "ae2_gvt:antigravity_alloy_ingot"
+    }
+  },
+  "result": {
+    "item": "ae2_gvt:antigravity_leggings",
+    "count": 1
+  }
+}

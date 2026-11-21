@@ -1,10 +1,10 @@
 package com.lumina.ae2_gvt.blockentities;
 
 import appeng.api.config.Actionable;
-import appeng.api.config.PowerUnit;
+import appeng.api.config.PowerUnits;
 import appeng.api.networking.security.IActionSource;
 import appeng.api.stacks.AEItemKey;
-import appeng.blockentity.grid.AENetworkedBlockEntity;
+import appeng.blockentity.grid.AENetworkBlockEntity;
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.config.Config;
 import com.lumina.ae2_gvt.blocks.Blocks;
@@ -35,7 +35,7 @@ import appeng.util.inv.filter.IAEItemFilter;
  * <li>吸積發電機 burns nothing: it must touch a white hole, and a white hole feeds four of them at most.</li>
  * </ul>
  */
-public class PowerGeneratorBlockEntity extends AENetworkedBlockEntity implements InternalInventoryHost {
+public class PowerGeneratorBlockEntity extends AENetworkBlockEntity implements InternalInventoryHost {
     public enum Kind {
         CRYSTAL(() -> Config.CRYSTAL_OUTPUT.get()),
         GRAVITON(() -> Config.GRAVITON_OUTPUT.get()),
@@ -116,12 +116,12 @@ public class PowerGeneratorBlockEntity extends AENetworkedBlockEntity implements
     }
 
     @Override
-    public void saveChangedInventory(AppEngInternalInventory inv) {
+    public void saveChanges() {
         setChanged();
     }
 
     @Override
-    public void onChangeInventory(AppEngInternalInventory inv, int slot) {
+    public void onChangeInventory(InternalInventory inv, int slot) {
     }
 
     @Override
@@ -176,7 +176,7 @@ public class PowerGeneratorBlockEntity extends AENetworkedBlockEntity implements
         }
         double fe = (be.kind() == Kind.CRYSTAL ? be.burnPower : be.kind().output()) * factor;
         be.lastOutput = Math.round(fe);
-        grid.getEnergyService().injectPower(PowerUnit.FE.convertTo(PowerUnit.AE, fe), Actionable.MODULATE);
+        grid.getEnergyService().injectPower(PowerUnits.FE.convertTo(PowerUnits.AE, fe), Actionable.MODULATE);
     }
 
     private void takeDust() {
@@ -192,7 +192,7 @@ public class PowerGeneratorBlockEntity extends AENetworkedBlockEntity implements
             return;
         var storage = grid.getStorageService().getInventory();
         for (String name : new String[]{"gravity_dust", "antigravity_dust", "paradox_dust"}) {
-            Item item = BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, name));
+            Item item = BuiltInRegistries.ITEM.get(new ResourceLocation(AE2GravityTech.MODID, name));
             if (storage.extract(AEItemKey.of(item), 1, Actionable.MODULATE, IActionSource.ofMachine(this)) > 0) {
                 burn = dustTicks(item);
                 burnPower = dustPower(item);
@@ -235,20 +235,30 @@ public class PowerGeneratorBlockEntity extends AENetworkedBlockEntity implements
     }
 
     @Override
-    public void saveAdditional(CompoundTag output, HolderLookup.Provider registries) {
-        super.saveAdditional(output, registries);
-        fuel.writeToNBT(output, "fuel", registries);
+    public void saveAdditional(CompoundTag output) {
+        super.saveAdditional(output);
+        fuel.writeToNBT(output, "fuel");
         output.putInt("burn", burn);
         output.putLong("burn_power", burnPower);
         output.putInt("take", take.ordinal());
     }
 
     @Override
-    public void loadTag(CompoundTag input, HolderLookup.Provider registries) {
-        super.loadTag(input, registries);
-        fuel.readFromNBT(input, "fuel", registries);
+    public void loadTag(CompoundTag input) {
+        super.loadTag(input);
+        fuel.readFromNBT(input, "fuel");
         burn = input.getInt("burn");
         burnPower = input.contains("burn_power") ? input.getLong("burn_power") : Kind.CRYSTAL.output();
         take = Take.values()[Math.max(0, Math.min(Take.values().length - 1, input.getInt("take")))];
+    }
+
+    // ── capabilities (1.20.1: the block entity answers for them) ──
+
+    @Override
+    public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(net.minecraftforge.common.capabilities.Capability<T> cap,
+                                                                            @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && getType() == BlockEntities.CRYSTAL_GENERATOR.get())
+            return net.minecraftforge.common.util.LazyOptional.of(() -> getFuel().toItemHandler()).cast();
+        return super.getCapability(cap, side);
     }
 }

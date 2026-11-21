@@ -44,12 +44,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.energy.IEnergyStorage;
-import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.ItemHandlerHelper;
+import net.minecraftforge.energy.IEnergyStorage;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemHandlerHelper;
 
 /**
  * The machine access interface's logic, shared by the cable part and the wireless block. One interface has
@@ -119,9 +118,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         private boolean recoverEnergy = true;
         private int recoverMask = 0x3F;
         /** what it keeps in the machine (ME interface mode), and how much (ghost stacks) */
-        private final ConfigInventory stock = ConfigInventory.configStacks(STOCK_SLOTS)
-                .supportedTypes(AEKeyType.items(), AEKeyType.fluids()).allowOverstacking(true)
-                .changeListener(MachineAccessCore.this::markForSave).build();
+        private final ConfigInventory stock = ConfigInventory.configStacks(what -> what.getType() == AEKeyType.items() || what.getType() == AEKeyType.fluids(), STOCK_SLOTS, MachineAccessCore.this::markForSave, true);
         private @Nullable InternalInventory stockWrapper;
         /** pulses still to send; the one going: ticks left of its on (or off) part */
         private int pulsesQueued, pulseTicks;
@@ -240,9 +237,9 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
             return stockWrapper;
         }
 
-        void write(CompoundTag tag, HolderLookup.Provider registries) {
+        void write(CompoundTag tag) {
             if (!machine.isEmpty())
-                tag.put("machine", machine.save(registries));
+                tag.put("machine", machine.save(new CompoundTag()));
             tag.putString("blockMode", blockMode.name());
             tag.putString("insertMode", insertMode.name());
             tag.putInt("group", group);
@@ -253,11 +250,11 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
             tag.putBoolean("recover", recover);
             tag.putBoolean("recoverEnergy", recoverEnergy);
             tag.putInt("recoverMask", recoverMask);
-            stock.writeToChildTag(tag, "stock", registries);
+            stock.writeToChildTag(tag, "stock");
         }
 
-        void read(CompoundTag tag, HolderLookup.Provider registries) {
-            machine = tag.contains("machine") ? ItemStack.parseOptional(registries, tag.getCompound("machine")) : ItemStack.EMPTY;
+        void read(CompoundTag tag) {
+            machine = tag.contains("machine") ? ItemStack.of(tag.getCompound("machine")) : ItemStack.EMPTY;
             try {
                 blockMode = BlockMode.valueOf(tag.getString("blockMode"));
             } catch (IllegalArgumentException e) {
@@ -280,7 +277,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
             recover = !tag.contains("recover") || tag.getBoolean("recover");
             recoverEnergy = !tag.contains("recoverEnergy") || tag.getBoolean("recoverEnergy");
             recoverMask = tag.contains("recoverMask") ? tag.getInt("recoverMask") & 0x3F : 0x3F;
-            stock.readFromChildTag(tag, "stock", registries);
+            stock.readFromChildTag(tag, "stock");
         }
     }
 
@@ -299,8 +296,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
     private final Settings own = new Settings();
     private final List<Entry> entries = new ArrayList<>();
     /** what the machines put out into it, until the hub takes it */
-    private final ConfigInventory received = ConfigInventory.storage(STOCK_SLOTS)
-            .supportedTypes(AEKeyType.items(), AEKeyType.fluids()).changeListener(this::markForSave).build();
+    private final ConfigInventory received = ConfigInventory.storage(what -> what.getType() == AEKeyType.items() || what.getType() == AEKeyType.fluids(), STOCK_SLOTS, this::markForSave);
     private final IItemHandler receivedItems = new GenericStackItemStorage(received);
     private final IFluidHandler receivedFluids = new GenericStackFluidStorage(received);
     /** ticks since the hub last took what was put out into it; then it goes to network storage */
@@ -685,7 +681,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
 
     @Override
     public TickingRequest getTickingRequest(IGridNode node) {
-        return new TickingRequest(1, 1, false);
+        return new TickingRequest(1, 1, false, false);
     }
 
     /** One machine this interface works on: its settings, where it is and its access (the hub's view of it). */
@@ -732,15 +728,15 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
                 continue;
             if (mode == Mode.INTERFACE && stockNow)
                 topUp(t.settings(), t.level(), network, source, t.pos(), t.face());
-            charge(t.level().getCapability(Capabilities.EnergyStorage.BLOCK, t.pos(), t.face()), network, source);
+            charge(com.lumina.twinstar.util.Caps.energy(t.level(), t.pos(), t.face()), network, source);
             if (mode == Mode.PROVIDER && t.access() != null
                     && node.getGrid().getService(com.lumina.twinstar.api.ITwinStarService.class)
                     instanceof com.lumina.twinstar.service.TwinStarService service) {
                 for (BlockPos sub : service.subMachinesOf(t.access())) {
-                    IEnergyStorage e = t.level().getCapability(Capabilities.EnergyStorage.BLOCK, sub, null);
+                    IEnergyStorage e = com.lumina.twinstar.util.Caps.energy(t.level(), sub, null);
                     if (e == null) {
                         for (Direction d : Direction.values()) {
-                            e = t.level().getCapability(Capabilities.EnergyStorage.BLOCK, sub, d);
+                            e = com.lumina.twinstar.util.Caps.energy(t.level(), sub, d);
                             if (e != null)
                                 break;
                         }
@@ -783,17 +779,17 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         for (Direction d : Direction.values()) {
             if (!settings.recoversFrom(d))
                 continue;
-            IItemHandler items = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, d);
+            IItemHandler items = com.lumina.twinstar.util.Caps.item(level, pos, d);
             if (items != null && seen.stream().noneMatch(o -> o == items)) {
                 seen.add(items);
                 recoverItems(items, keep, network, source);
             }
-            IFluidHandler fluids = level.getCapability(Capabilities.FluidHandler.BLOCK, pos, d);
+            IFluidHandler fluids = com.lumina.twinstar.util.Caps.fluid(level, pos, d);
             if (fluids != null && seen.stream().noneMatch(o -> o == fluids)) {
                 seen.add(fluids);
                 recoverFluids(fluids, keep, network, source);
             }
-            IEnergyStorage energy = level.getCapability(Capabilities.EnergyStorage.BLOCK, pos, d);
+            IEnergyStorage energy = com.lumina.twinstar.util.Caps.energy(level, pos, d);
             if (settings.recoverEnergy && energy != null && seen.stream().noneMatch(o -> o == energy)) {
                 seen.add(energy);
                 recoverEnergy(energy, settings, level.getBlockEntity(pos) instanceof com.lumina.ae2_gvt.blockentities.EnergyPortBlockEntity, network, source);
@@ -851,13 +847,13 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
             AEFluidKey key = in.isEmpty() ? null : AEFluidKey.of(in);
             if (key == null || keep.contains(key))
                 continue;
-            FluidStack offer = fluids.drain(in.copyWithAmount(in.getAmount()), IFluidHandler.FluidAction.SIMULATE);
+            FluidStack offer = fluids.drain(com.lumina.twinstar.util.Caps.withAmount(in, in.getAmount()), IFluidHandler.FluidAction.SIMULATE);
             if (offer.isEmpty())
                 continue;
             long fits = network.insert(key, offer.getAmount(), Actionable.SIMULATE, source);
             if (fits <= 0)
                 continue;
-            FluidStack taken = fluids.drain(in.copyWithAmount((int) Math.min(fits, offer.getAmount())), IFluidHandler.FluidAction.EXECUTE);
+            FluidStack taken = fluids.drain(com.lumina.twinstar.util.Caps.withAmount(in, (int) Math.min(fits, offer.getAmount())), IFluidHandler.FluidAction.EXECUTE);
             if (taken.isEmpty())
                 continue;
             long went = network.insert(key, taken.getAmount(), Actionable.MODULATE, source);
@@ -877,12 +873,12 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
                 want.merge(g.what(), g.amount(), Long::sum);
         }
         Direction face = settings.insertMode == InsertMode.ANY ? null : face0;
-        IItemHandler items = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, face);
+        IItemHandler items = com.lumina.twinstar.util.Caps.item(level, pos, face);
         if (items == null)
-            items = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, null);
-        IFluidHandler fluids = level.getCapability(Capabilities.FluidHandler.BLOCK, pos, face);
+            items = com.lumina.twinstar.util.Caps.item(level, pos, null);
+        IFluidHandler fluids = com.lumina.twinstar.util.Caps.fluid(level, pos, face);
         if (fluids == null)
-            fluids = level.getCapability(Capabilities.FluidHandler.BLOCK, pos, null);
+            fluids = com.lumina.twinstar.util.Caps.fluid(level, pos, null);
         for (Map.Entry<AEKey, Long> e : want.entrySet()) {
             if (e.getKey() instanceof AEItemKey item && items != null)
                 topUpItem(items, item, e.getValue(), network, source);
@@ -901,7 +897,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         long missing = amount - have;
         if (missing <= 0)
             return;
-        int chunk = (int) Math.min(missing, key.getItem().getDefaultMaxStackSize());
+        int chunk = (int) Math.min(missing, key.getItem().getMaxStackSize());
         long available = network.extract(key, chunk, Actionable.SIMULATE, source);
         if (available <= 0)
             return;
@@ -959,7 +955,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
 
     // ── to the client (the linker draws the links) ──
 
-    public void writeStream(net.minecraft.network.RegistryFriendlyByteBuf data) {
+    public void writeStream(net.minecraft.network.FriendlyByteBuf data) {
         data.writeByte(mode.ordinal());
         data.writeVarInt(entries.size());
         for (Entry e : entries) {
@@ -970,7 +966,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         }
     }
 
-    public void readStream(net.minecraft.network.RegistryFriendlyByteBuf data) {
+    public void readStream(net.minecraft.network.FriendlyByteBuf data) {
         mode = Mode.values()[Math.floorMod(data.readByte(), Mode.values().length)];
         int n = data.readVarInt();
         var dim = host.level() == null ? null : host.level().dimension();
@@ -1008,24 +1004,24 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
     // ── saving ──
 
     @Override
-    public void saveChangedInventory(AppEngInternalInventory inv) {
+    public void saveChanges() {
         host.save();
     }
 
     @Override
-    public void onChangeInventory(AppEngInternalInventory inv, int slot) {
+    public void onChangeInventory(InternalInventory inv, int slot) {
     }
 
-    public void read(CompoundTag tag, HolderLookup.Provider registries) {
+    public void read(CompoundTag tag) {
         try {
             mode = Mode.valueOf(tag.getString("mode"));
         } catch (IllegalArgumentException e) {
             mode = Mode.PROVIDER;
         }
-        received.readFromChildTag(tag, "received", registries);
+        received.readFromChildTag(tag, "received");
         entries.clear();
         if (tag.contains("own")) {
-            own.read(tag.getCompound("own"), registries);
+            own.read(tag.getCompound("own"));
             ListTag list = tag.getList("entries", 10);
             for (int i = 0; i < list.size(); i++) {
                 CompoundTag t = list.getCompound(i);
@@ -1033,15 +1029,15 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
                 if (l == null)
                     continue;
                 Entry e = new Entry(l);
-                e.settings.read(t.getCompound("settings"), registries);
+                e.settings.read(t.getCompound("settings"));
                 entries.add(e);
             }
             return;
         }
         // saved before every machine had settings of its own: one set of settings for the block, links without any
-        own.read(tag, registries);
+        own.read(tag);
         var legacySlots = new AppEngInternalInventory(this, 33, 1);
-        legacySlots.readFromNBT(tag, "machine", registries);
+        legacySlots.readFromNBT(tag, "machine");
         own.machine = legacySlots.getStackInSlot(0).isEmpty() ? ItemStack.EMPTY : legacySlots.getStackInSlot(0).copyWithCount(1);
         ListTag list = tag.getList("links", 10);
         for (int i = 0; i < list.size(); i++) {
@@ -1055,18 +1051,18 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         }
     }
 
-    public void write(CompoundTag tag, HolderLookup.Provider registries) {
+    public void write(CompoundTag tag) {
         tag.putString("mode", mode.name());
-        received.writeToChildTag(tag, "received", registries);
+        received.writeToChildTag(tag, "received");
         CompoundTag o = new CompoundTag();
-        own.write(o, registries);
+        own.write(o);
         tag.put("own", o);
         ListTag list = new ListTag();
         for (Entry e : entries) {
             CompoundTag t = new CompoundTag();
             t.put("link", e.link.toTag());
             CompoundTag s = new CompoundTag();
-            e.settings.write(s, registries);
+            e.settings.write(s);
             t.put("settings", s);
             list.add(t);
         }
@@ -1079,7 +1075,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
             GenericStack s = received.getStack(i);
             if (s != null && s.what() instanceof AEItemKey item)
                 for (long left = s.amount(); left > 0; ) {
-                    int n = (int) Math.min(left, item.getItem().getDefaultMaxStackSize());
+                    int n = (int) Math.min(left, item.getItem().getMaxStackSize());
                     drops.add(item.toStack(n));
                     left -= n;
                 }

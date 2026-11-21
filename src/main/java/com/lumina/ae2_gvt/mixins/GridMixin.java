@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * its controllers (the pathing starts from them: without this the channels never start). Asked for AE2's controllers, the quantum
  * ones are added to the answer.
  */
-@Mixin(Grid.class)
+@Mixin(value = Grid.class, remap = false)
 public abstract class GridMixin {
     @Shadow
     @Final

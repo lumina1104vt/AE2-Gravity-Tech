@@ -6,7 +6,6 @@ import com.lumina.ae2_gvt.blockentities.PowerGeneratorBlockEntity.Kind;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -43,12 +42,12 @@ public class GeneratorBlock extends AEBaseEntityBlock<PowerGeneratorBlockEntity>
 
     /** The flywheel and the cage let skylight through, as glass does. */
     @Override
-    protected boolean propagatesSkylightDown(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos) {
+    public boolean propagatesSkylightDown(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos) {
         return kind != Kind.CRYSTAL;
     }
 
     @Override
-    protected float getShadeBrightness(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos) {
+    public float getShadeBrightness(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos) {
         return kind != Kind.CRYSTAL ? 1.0f : super.getShadeBrightness(state, level, pos);
     }
 
@@ -58,21 +57,17 @@ public class GeneratorBlock extends AEBaseEntityBlock<PowerGeneratorBlockEntity>
 
     /** Dust can be put in by hand (a network with no power can't hand any out). */
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
-                                              InteractionHand hand, BlockHitResult hit) {
+    public net.minecraft.world.InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
+                                                     InteractionHand hand, BlockHitResult hit) {
+        ItemStack stack = player.getItemInHand(hand);
         if (kind == Kind.CRYSTAL && level.getBlockEntity(pos) instanceof PowerGeneratorBlockEntity be && be.acceptsFuel(stack)) {
             if (!level.isClientSide()) {
                 ItemStack rest = be.getFuel().insertItem(0, stack.copy(), false);
                 if (rest.getCount() != stack.getCount() && !player.isCreative())
                     player.setItemInHand(hand, rest);
             }
-            return ItemInteractionResult.sidedSuccess(level.isClientSide());
+            return net.minecraft.world.InteractionResult.sidedSuccess(level.isClientSide());
         }
-        return super.useItemOn(stack, state, level, pos, player, hand, hit);
-    }
-
-    @Override
-    protected net.minecraft.world.InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof PowerGeneratorBlockEntity be)
             appeng.menu.MenuOpener.open(com.lumina.ae2_gvt.menus.Menus.generator(kind).get(), player,
                     appeng.menu.locator.MenuLocators.forBlockEntity(be));

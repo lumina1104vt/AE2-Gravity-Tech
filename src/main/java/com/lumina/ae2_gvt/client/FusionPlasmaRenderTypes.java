@@ -11,7 +11,7 @@ import net.minecraft.client.renderer.RenderType;
  * the star surface (opaque), its corona and the containment shell (translucent, depth-tested but
  * not written) and the prominences / eruption jets (added light).
  */
-public final class FusionPlasmaRenderTypes {
+public final class FusionPlasmaRenderTypes extends ShardBase {
     public static final RenderType STAR = type("ae2_gvt_fusion_plasma", RenderStateShard.NO_TRANSPARENCY,
             RenderStateShard.COLOR_DEPTH_WRITE, RenderStateShard.CULL);
     public static final RenderType CORONA = type("ae2_gvt_fusion_corona", RenderStateShard.TRANSLUCENT_TRANSPARENCY,

@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "sss",
+    "sms",
+    "sss"
+  ],
+  "key": {
+    "s": {
+      "item": "ae2:sky_stone_block"
+    },
+    "m": {
+      "item": "ae2_gvt:gravity_alloy_ingot"
+    }
+  },
+  "result": {
+    "item": "ae2_gvt:hub_pillar",
+    "count": 8
+  }
+}

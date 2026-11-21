@@ -30,8 +30,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
-import net.neoforged.neoforge.common.crafting.SizedIngredient;
+import com.lumina.twinstar.util.RecipeHolder;
+import com.lumina.ae2_gvt.recipes.SizedIngredient;
 
 /**
  * The 引力加工工廠's and 核融合發生器's recipes in EMI, laid out as in JEI (GravityFactoryJei, FusionJei): the
@@ -45,7 +45,7 @@ public class GravityTechEmi implements EmiPlugin {
     private static final int SLOT = 18;
 
     private static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, path);
+        return new ResourceLocation(AE2GravityTech.MODID, path);
     }
 
     @Override
@@ -58,7 +58,7 @@ public class GravityTechEmi implements EmiPlugin {
         registry.addWorkstation(FACTORY, EmiStack.of(Blocks.GRAVITY_FACTORY.get()));
         registry.addWorkstation(FACTORY, EmiStack.of(Items.CHAOS_MATTER.get()));
         registry.addWorkstation(FUSION, EmiStack.of(Blocks.FUSION_CONTROLLER.get()));
-        for (RecipeHolder<GravityProcessingRecipe> r : registry.getRecipeManager().getAllRecipesFor(Recipes.GRAVITY_PROCESSING.get())) {
+        for (RecipeHolder<GravityProcessingRecipe> r : RecipeHolder.allOf(registry.getRecipeManager().getAllRecipesFor(Recipes.GRAVITY_PROCESSING.get()))) {
             MutableComponent cost = Component.empty();
             GravityProcessingRecipe v = r.value();
             if (v.gravitons() > 0)
@@ -74,7 +74,7 @@ public class GravityTechEmi implements EmiPlugin {
                 recipe.addCatalyst(EmiStack.of(Gravitons.ANTIGRAVITON.get()));
             registry.addRecipe(recipe);
         }
-        for (RecipeHolder<FusionRecipe> r : registry.getRecipeManager().getAllRecipesFor(Recipes.FUSION.get())) {
+        for (RecipeHolder<FusionRecipe> r : RecipeHolder.allOf(registry.getRecipeManager().getAllRecipesFor(Recipes.FUSION.get()))) {
             FusionRecipe v = r.value();
             List<EmiIngredient> in = new java.util.ArrayList<>(ingredients(v.ingredients()));
             for (GenericStack key : v.keys()) {
@@ -168,8 +168,8 @@ public class GravityTechEmi implements EmiPlugin {
             return null;
         }
         if (stack.getKey() instanceof net.minecraft.world.level.material.Fluid fluid) {
-            return new GenericStack(appeng.api.stacks.AEFluidKey.of(new net.neoforged.neoforge.fluids.FluidStack(
-                    fluid.builtInRegistryHolder(), 1, stack.getComponentChanges())), stack.getAmount());
+            return new GenericStack(appeng.api.stacks.AEFluidKey.of(new net.minecraftforge.fluids.FluidStack(fluid, 1, stack.getNbt())),
+                    stack.getAmount());
         }
         return GenericStack.fromItemStack(stack.getItemStack());
     }

@@ -1,0 +1,18 @@
+{
+  "type": "ae2_gvt:gravity_processing",
+  "ingredients": [
+    {
+      "item": "ae2_gvt:gravity_alloy_dust",
+      "count": 64
+    }
+  ],
+  "results": [
+    {
+      "id": "ae2_gvt:gravity_alloy_ingot",
+      "count": 64
+    }
+  ],
+  "time": 20,
+  "energy": 4000,
+  "gravitons": 8
+}

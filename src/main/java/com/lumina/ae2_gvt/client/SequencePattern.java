@@ -9,7 +9,7 @@ import com.lumina.ae2_gvt.terminal.TwinStarPatternTermMenu;
 
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.GenericStack;
-import appeng.core.network.serverbound.InventoryActionPacket;
+import appeng.core.sync.packets.InventoryActionPacket;
 import appeng.helpers.InventoryAction;
 import appeng.menu.slot.FakeSlot;
 import appeng.parts.encoding.EncodingMode;
@@ -17,7 +17,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraftforge.network.PacketDistributor;
 
 /**
  * A sequence pattern: the pattern of a recipe whose materials must go into their places (an ordered crafting table).
@@ -26,7 +26,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * there from the start. Made from a recipe by the button JEI and EMI show beside it.
  */
 public final class SequencePattern {
-    public static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/pattern_buttons.png");
+    public static final ResourceLocation TEXTURE = new ResourceLocation(AE2GravityTech.MODID, "textures/gui/pattern_buttons.png");
 
     private SequencePattern() {
     }
@@ -112,6 +112,6 @@ public final class SequencePattern {
     }
 
     private static void set(FakeSlot slot, GenericStack stack) {
-        PacketDistributor.sendToServer(new InventoryActionPacket(InventoryAction.SET_FILTER, slot.index, GenericStack.wrapInItemStack(stack)));
+        appeng.core.sync.network.NetworkHandler.instance().sendToServer(new InventoryActionPacket(InventoryAction.SET_FILTER, slot.index, GenericStack.wrapInItemStack(stack)));
     }
 }

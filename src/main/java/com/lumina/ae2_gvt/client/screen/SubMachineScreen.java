@@ -22,7 +22,7 @@ public class SubMachineScreen extends AESubScreen<TwinStarPatternTermMenu, TwinS
     public SubMachineScreen(TwinStarPatternTermScreen parent) {
         super(parent, "/screens/ae2_gvt_sub_machines.json");
         ItemStack icon = getMenu().getHost().getMainMenuIcon();
-        widgets.add("back", new TabButton(Icon.BACK, icon.getHoverName(), btn -> returnToParent()));
+        widgets.add("back", new TabButton(Icon.ARROW_LEFT, icon.getHoverName(), btn -> returnToParent()));
         var tip = net.minecraft.client.gui.components.Tooltip.create(Component.translatable("ae2_gvt.sequence_start.hint"));
         var less = widgets.addButton("startLess", Component.literal("-"), () -> moveStart(-1));
         var more = widgets.addButton("startMore", Component.literal("+"), () -> moveStart(1));
