@@ -22,6 +22,35 @@ public final class DevChecks {
     }
 
     public static void init() {
+        if (Boolean.getBoolean("ae2_gvt.devGregtech")) {
+            // what GregTech's item input bus gives at each side (the machine access interface asks the same way)
+            final int[] wait = {0};
+            MinecraftForge.EVENT_BUS.addListener((TickEvent.ServerTickEvent e) -> {
+                if (e.phase != TickEvent.Phase.END)
+                    return;
+                var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+                if (server == null || ++wait[0] != 60)
+                    return;
+                var level = server.overworld();
+                for (var entry : net.minecraftforge.registries.ForgeRegistries.BLOCKS.getEntries()) {
+                    String path = entry.getKey().location().getPath();
+                    if (!entry.getKey().location().getNamespace().equals("gtceu") || !(path.equals("lv_item_import_bus") || path.equals("lv_input_bus")))
+                        continue;
+                    BlockPos pos = new BlockPos(0, 100, 0);
+                    level.setBlock(pos, entry.getValue().defaultBlockState(), 3);
+                    AE2GravityTech.LOGGER.info("dev gregtech: placed {} -> {}", path, level.getBlockEntity(pos));
+                    var be = level.getBlockEntity(pos);
+                    for (var side : new net.minecraft.core.Direction[] {null, net.minecraft.core.Direction.DOWN, net.minecraft.core.Direction.UP, net.minecraft.core.Direction.NORTH,
+                            net.minecraft.core.Direction.SOUTH, net.minecraft.core.Direction.WEST, net.minecraft.core.Direction.EAST})
+                        AE2GravityTech.LOGGER.info("dev gregtech: item handler at {} = {} ({}); facing {}", side,
+                                com.lumina.twinstar.util.Caps.item(level, pos, side), be == null ? "-" : be.getClass().getSimpleName(), level.getBlockState(pos));
+                    server.halt(false);
+                    return;
+                }
+                AE2GravityTech.LOGGER.info("dev gregtech: no input bus block found");
+                server.halt(false);
+            });
+        }
         if (Boolean.getBoolean("ae2_gvt.devQuantum")) {
             // a quantum controller a few blocks from whoever joins, its settings screen opened for them
             final java.util.List<Object[]> waiting = new java.util.ArrayList<>();

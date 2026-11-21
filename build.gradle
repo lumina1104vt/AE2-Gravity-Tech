@@ -43,6 +43,7 @@ legacyForge {
             gameDirectory = file('run/server')
             systemProperty 'ae2_gvt.loadMixinTargets', 'true'
             systemProperty 'ae2_gvt.devNetworkTest', 'true'
+            systemProperty 'ae2_gvt.devGregtech', (project.hasProperty('dev_gregtech') && project.property('dev_gregtech') == 'true') ? 'true' : 'false'
             programArgument '--nogui'
             systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
         }
