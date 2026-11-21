@@ -150,6 +150,9 @@ dependencies {
     modRuntimeOnly "maven.modrinth:mezzconfig:wcPo3ErK"
     modRuntimeOnly "maven.modrinth:mezzconfiggui:rHGm7e23"
 
+    // GregTech CEu Modern (its libraries are inside it): to try the machine access interface on its multiblocks and hatches
+    modRuntimeOnly "maven.modrinth:gregtechceu-modern:${gregtech_version}"
+
     // Jade (looking at a block shows what it is); compileOnly for a plugin later
     modCompileOnly "maven.modrinth:jade:${jade_version}"
     modRuntimeOnly "maven.modrinth:jade:${jade_version}"
