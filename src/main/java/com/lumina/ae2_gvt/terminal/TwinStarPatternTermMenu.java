@@ -210,9 +210,9 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             }
         }
         if (chances.isEmpty()) {
-            pattern.remove(TwinstarContent.PATTERN_CHANCES.get());
+            TwinstarContent.PATTERN_CHANCES.remove(pattern);
         } else {
-            pattern.set(TwinstarContent.PATTERN_CHANCES.get(), new PatternChances(chances));
+            TwinstarContent.PATTERN_CHANCES.set(pattern, new PatternChances(chances));
         }
         List<PatternInputFaces.Entry> faces = new ArrayList<>();
         for (FakeSlot slot : getProcessingInputSlots()) {
@@ -226,9 +226,9 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             }
         }
         if (faces.isEmpty()) {
-            pattern.remove(TwinstarContent.PATTERN_INPUT_FACES.get());
+            TwinstarContent.PATTERN_INPUT_FACES.remove(pattern);
         } else {
-            pattern.set(TwinstarContent.PATTERN_INPUT_FACES.get(), new PatternInputFaces(faces));
+            TwinstarContent.PATTERN_INPUT_FACES.set(pattern, new PatternInputFaces(faces));
         }
         List<PatternInputTargets.Entry> targets = new ArrayList<>();
         for (FakeSlot slot : getProcessingInputSlots()) {
@@ -264,9 +264,9 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             }
         }
         if (outGui.isEmpty()) {
-            pattern.remove(TwinstarContent.PATTERN_OUTPUT_GUI_SLOTS.get());
+            TwinstarContent.PATTERN_OUTPUT_GUI_SLOTS.remove(pattern);
         } else {
-            pattern.set(TwinstarContent.PATTERN_OUTPUT_GUI_SLOTS.get(), new PatternOutputGuiSlots(outGui));
+            TwinstarContent.PATTERN_OUTPUT_GUI_SLOTS.set(pattern, new PatternOutputGuiSlots(outGui));
         }
         // per material slot, in the order AE2 lists them (the filled ones): the same material can go into many places
         List<Integer> guiSlots = new ArrayList<>();
@@ -277,19 +277,19 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             }
         }
         if (guiSlots.stream().allMatch(g -> g == 0)) {
-            pattern.remove(TwinstarContent.PATTERN_INPUT_GUI_SLOTS.get());
+            TwinstarContent.PATTERN_INPUT_GUI_SLOTS.remove(pattern);
         } else {
-            pattern.set(TwinstarContent.PATTERN_INPUT_GUI_SLOTS.get(), new PatternInputGuiSlots(guiSlots));
+            TwinstarContent.PATTERN_INPUT_GUI_SLOTS.set(pattern, new PatternInputGuiSlots(guiSlots));
         }
         if (roles.isEmpty()) {
-            pattern.remove(TwinstarContent.PATTERN_INPUT_ROLES.get());
+            TwinstarContent.PATTERN_INPUT_ROLES.remove(pattern);
         } else {
-            pattern.set(TwinstarContent.PATTERN_INPUT_ROLES.get(), new PatternInputRoles(roles));
+            TwinstarContent.PATTERN_INPUT_ROLES.set(pattern, new PatternInputRoles(roles));
         }
         if (targets.isEmpty()) {
-            pattern.remove(TwinstarContent.PATTERN_INPUT_TARGETS.get());
+            TwinstarContent.PATTERN_INPUT_TARGETS.remove(pattern);
         } else {
-            pattern.set(TwinstarContent.PATTERN_INPUT_TARGETS.get(), new PatternInputTargets(targets));
+            TwinstarContent.PATTERN_INPUT_TARGETS.set(pattern, new PatternInputTargets(targets));
         }
         List<appeng.api.stacks.AEKey> nbtIn = new ArrayList<>(), nbtOut = new ArrayList<>();
         for (FakeSlot slot : getProcessingInputSlots()) {
@@ -305,9 +305,9 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             }
         }
         if (nbtIn.isEmpty() && nbtOut.isEmpty()) {
-            pattern.remove(TwinstarContent.PATTERN_IGNORE_NBT.get());
+            TwinstarContent.PATTERN_IGNORE_NBT.remove(pattern);
         } else {
-            pattern.set(TwinstarContent.PATTERN_IGNORE_NBT.get(), new PatternIgnoreNbt(nbtIn, nbtOut));
+            TwinstarContent.PATTERN_IGNORE_NBT.set(pattern, new PatternIgnoreNbt(nbtIn, nbtOut));
         }
         encoded.set(pattern);
         lastEncoded = pattern.copy();
@@ -410,37 +410,37 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
                 if (PatternDetailsHelper.isEncodedPattern(now)) {
                     // a pattern put in: AE2 fills the grid from it, the probabilities come along
                     host.state().clearOutputChances();
-                    PatternChances c = now.get(TwinstarContent.PATTERN_CHANCES.get());
+                    PatternChances c = TwinstarContent.PATTERN_CHANCES.get(now);
                     if (c != null) {
                         c.entries().forEach(e -> host.state().setOutputChance(e.key(), e.chance()));
                     }
                     host.state().clearInputFaces();
-                    PatternInputFaces f = now.get(TwinstarContent.PATTERN_INPUT_FACES.get());
+                    PatternInputFaces f = TwinstarContent.PATTERN_INPUT_FACES.get(now);
                     if (f != null) {
                         f.entries().forEach(e -> host.state().setInputFaces(e.key(), e.faces()));
                     }
                     host.state().clearIgnoreNbt();
-                    PatternIgnoreNbt n = now.get(TwinstarContent.PATTERN_IGNORE_NBT.get());
+                    PatternIgnoreNbt n = TwinstarContent.PATTERN_IGNORE_NBT.get(now);
                     if (n != null) {
                         n.inputs().forEach(k -> host.state().setIgnoreNbt(k, false, true));
                         n.outputs().forEach(k -> host.state().setIgnoreNbt(k, true, true));
                     }
                     host.state().clearOutputGuiSlots();
-                    PatternOutputGuiSlots outGuiNow = now.get(TwinstarContent.PATTERN_OUTPUT_GUI_SLOTS.get());
+                    PatternOutputGuiSlots outGuiNow = TwinstarContent.PATTERN_OUTPUT_GUI_SLOTS.get(now);
                     if (outGuiNow != null) {
                         outGuiNow.entries().forEach(e -> host.state().setOutputGuiSlot(e.key(), e.slot()));
                     }
                     host.state().clearInputGuiSlots();
-                    PatternInputGuiSlots guiNow = now.get(TwinstarContent.PATTERN_INPUT_GUI_SLOTS.get());
+                    PatternInputGuiSlots guiNow = TwinstarContent.PATTERN_INPUT_GUI_SLOTS.get(now);
                     pendingGuiSlots = guiNow == null ? null : guiNow.slots();
                     applyPendingGuiSlots();
                     host.state().clearInputRoles();
-                    PatternInputRoles roleNow = now.get(TwinstarContent.PATTERN_INPUT_ROLES.get());
+                    PatternInputRoles roleNow = TwinstarContent.PATTERN_INPUT_ROLES.get(now);
                     if (roleNow != null) {
                         roleNow.entries().forEach(e -> host.state().setInputRole(e.key(), e.role()));
                     }
                     host.state().clearInputTargets();
-                    PatternInputTargets t = now.get(TwinstarContent.PATTERN_INPUT_TARGETS.get());
+                    PatternInputTargets t = TwinstarContent.PATTERN_INPUT_TARGETS.get(now);
                     if (t != null) {
                         t.entries().forEach(e -> host.state().setInputTarget(e.key(), e.target()));
                     }

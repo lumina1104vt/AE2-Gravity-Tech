@@ -85,6 +85,7 @@ legacyForge.ideSyncTask generateModMetadata
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    options.compilerArgs << '-Xmaxerrs' << '10000'
 }
 
 // Forge loads a mod's mixin config from the jar manifest (and the refmap maps the names to the runtime's)

@@ -80,14 +80,14 @@ public final class TwinStarTerminalClient {
                 event.getToolTip().add(Component.translatable("ae2_gvt.pattern.tool", tool.value().getName(new ItemStack(tool)))
                         .withStyle(ChatFormatting.GRAY));
             }
-            PatternChances chances = event.getItemStack().get(TwinstarContent.PATTERN_CHANCES.get());
+            PatternChances chances = TwinstarContent.PATTERN_CHANCES.get(event.getItemStack());
             if (chances != null) {
                 for (PatternChances.Entry e : chances.entries()) {
                     event.getToolTip().add(Component.translatable("ae2_gvt.pattern.output_chance", AEKeyRendering.getDisplayName(e.key()),
                             String.format(java.util.Locale.ROOT, "%.4g%%", e.chance() * 100)).withStyle(ChatFormatting.GRAY));
                 }
             }
-            var targets = event.getItemStack().get(TwinstarContent.PATTERN_INPUT_TARGETS.get());
+            var targets = TwinstarContent.PATTERN_INPUT_TARGETS.get(event.getItemStack());
             if (targets != null) {
                 for (var e : targets.entries()) {
                     event.getToolTip().add(Component.translatable("ae2_gvt.pattern.input_target", AEKeyRendering.getDisplayName(e.key()),
@@ -95,14 +95,14 @@ public final class TwinStarTerminalClient {
                             .withStyle(ChatFormatting.GRAY));
                 }
             }
-            var ignoreNbt = event.getItemStack().get(TwinstarContent.PATTERN_IGNORE_NBT.get());
+            var ignoreNbt = TwinstarContent.PATTERN_IGNORE_NBT.get(event.getItemStack());
             if (ignoreNbt != null) {
                 java.util.List<appeng.api.stacks.AEKey> all = new java.util.ArrayList<>(ignoreNbt.inputs());
                 ignoreNbt.outputs().stream().filter(k -> !all.contains(k)).forEach(all::add);
                 Component names = net.minecraft.network.chat.ComponentUtils.formatList(all, Component.literal("、"), AEKeyRendering::getDisplayName);
                 event.getToolTip().add(Component.translatable("ae2_gvt.pattern.ignore_nbt.list", names).withStyle(ChatFormatting.GRAY));
             }
-            PatternInputFaces faces = event.getItemStack().get(TwinstarContent.PATTERN_INPUT_FACES.get());
+            PatternInputFaces faces = TwinstarContent.PATTERN_INPUT_FACES.get(event.getItemStack());
             if (faces != null) {
                 for (PatternInputFaces.Entry e : faces.entries()) {
                     Component sides = net.minecraft.network.chat.ComponentUtils.formatList(PatternInputFaces.directions(e.faces()),
@@ -111,19 +111,19 @@ public final class TwinStarTerminalClient {
                             .withStyle(ChatFormatting.GRAY));
                 }
             }
-            var outGuiSlots = event.getItemStack().get(TwinstarContent.PATTERN_OUTPUT_GUI_SLOTS.get());
+            var outGuiSlots = TwinstarContent.PATTERN_OUTPUT_GUI_SLOTS.get(event.getItemStack());
             if (outGuiSlots != null) {
                 for (var e : outGuiSlots.entries())
                     event.getToolTip().add(Component.translatable("ae2_gvt.pattern.output_gui_slot", AEKeyRendering.getDisplayName(e.key()), e.slot())
                             .withStyle(ChatFormatting.GRAY));
             }
-            var guiSlots = event.getItemStack().get(TwinstarContent.PATTERN_INPUT_GUI_SLOTS.get());
+            var guiSlots = TwinstarContent.PATTERN_INPUT_GUI_SLOTS.get(event.getItemStack());
             if (guiSlots != null && guiSlots.slots().stream().anyMatch(g -> g > 0)) {
                 // one number per material slot, in order (0 = the first slot that takes it)
                 event.getToolTip().add(Component.translatable("ae2_gvt.pattern.input_gui_slots",
                         guiSlots.slots().stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(" "))).withStyle(ChatFormatting.GRAY));
             }
-            var roles = event.getItemStack().get(TwinstarContent.PATTERN_INPUT_ROLES.get());
+            var roles = TwinstarContent.PATTERN_INPUT_ROLES.get(event.getItemStack());
             if (roles != null) {
                 for (var e : roles.entries()) {
                     if (e.role() == com.lumina.twinstar.algorithm.ae2.PatternInputRoles.CATALYST)
