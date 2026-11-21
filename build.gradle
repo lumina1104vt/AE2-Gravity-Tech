@@ -94,11 +94,9 @@ legacyForge {
     }
 }
 
-// the two lib mods have mixins of their own (the multiblock lib's chunk hook, the twin-star recipe hook); the dev runs load them too
+// the two lib mods have mixins of their own (the multiblock lib's chunk hook, the twin-star recipe hook); the dev runs load them too (only the configs: an `add` of their source sets here would redirect the main mod's own refmap)
 mixin {
-    add project(':core').sourceSets.main, "twinstar.refmap.json"
     config "twinstar.mixins.json"
-    add project(':lumina-multiblock').sourceSets.main, "lumina_multiblock.refmap.json"
     config "lumina_multiblock.mixins.json"
 }
 
