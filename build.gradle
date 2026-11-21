@@ -47,6 +47,19 @@ legacyForge {
             systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
         }
 
+        // for looking at the rendering without the IDE: a server with two holes in front of the spawn, and an offline client that joins it
+        holeServer {
+            server()
+            gameDirectory = file('run/holeserver')
+            systemProperty 'ae2_gvt.devHoles', 'true'
+            programArgument '--nogui'
+        }
+        holeClient {
+            client()
+            gameDirectory = file('run/holeclient')
+            programArguments.addAll '--username', 'DevTest', '--quickPlayMultiplayer', 'localhost:25599'
+        }
+
         // runs every registered gametest, then exits (crashes when there are none)
         gameTestServer {
             type = "gameTestServer"

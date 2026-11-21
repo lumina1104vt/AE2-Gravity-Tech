@@ -55,6 +55,13 @@ public class QuantumControllerScreen extends AEBaseScreen<QuantumControllerMenu>
         });
     }
 
+    /** Dev check only: one typed character, as if the player typed it in the frequency field. */
+    public void devType(char c) {
+        setFocused(field);
+        field.setFocused(true);
+        field.charTyped(c, 0);
+    }
+
     @Override
     public void init() {
         super.init();
@@ -319,7 +326,8 @@ public class QuantumControllerScreen extends AEBaseScreen<QuantumControllerMenu>
 
         @Override
         protected Icon getIcon() {
-            return menu.role == QuantumControllerBlockEntity.OFF ? Icon.CLEAR : null;
+            // AE2 15's button asks for an icon whatever it is (no null): the role's own picture is drawn over the plain button below
+            return menu.role == QuantumControllerBlockEntity.OFF ? Icon.CLEAR : Icon.TOOLBAR_BUTTON_BACKGROUND;
         }
 
         @Override

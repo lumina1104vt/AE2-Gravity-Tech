@@ -53,7 +53,7 @@ public class GeneratorScreen extends AEBaseScreen<GeneratorMenu> {
 
         @Override
         protected Icon getIcon() {
-            return null;    // the background only; the items are drawn on it
+            return Icon.TOOLBAR_BUTTON_BACKGROUND;    // the background only (AE2 15's button needs an icon); the items are drawn on it
         }
 
         @Override

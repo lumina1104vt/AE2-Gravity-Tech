@@ -560,7 +560,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
 
         @Override
         protected Icon getIcon() {
-            return null;    // the background only; the icon is ours
+            return Icon.TOOLBAR_BUTTON_BACKGROUND;    // the background only (AE2 15's button needs an icon); the icon is ours
         }
 
         @Override
@@ -587,7 +587,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
 
         @Override
         protected Icon getIcon() {
-            return null;    // the background only; the FE icon is drawn on it
+            return Icon.TOOLBAR_BUTTON_BACKGROUND;    // the background only (AE2 15's button needs an icon); the FE icon is drawn on it
         }
 
         @Override
@@ -623,7 +623,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
 
         @Override
         protected Icon getIcon() {
-            return null;    // the background only; the net is drawn on it
+            return Icon.TOOLBAR_BUTTON_BACKGROUND;    // the background only (AE2 15's button needs an icon); the net is drawn on it
         }
 
         @Override
@@ -657,7 +657,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
 
         @Override
         protected Icon getIcon() {
-            return null;    // the background only; the item is drawn on it
+            return Icon.TOOLBAR_BUTTON_BACKGROUND;    // the background only (AE2 15's button needs an icon); the item is drawn on it
         }
 
         @Override
@@ -756,7 +756,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
 
         @Override
         protected Icon getIcon() {
-            return null;    // the background only; the item is drawn on it
+            return Icon.TOOLBAR_BUTTON_BACKGROUND;    // the background only (AE2 15's button needs an icon); the item is drawn on it
         }
 
         @Override
@@ -797,7 +797,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
 
         @Override
         protected Icon getIcon() {
-            return null;    // the background only; the number is drawn on it
+            return Icon.TOOLBAR_BUTTON_BACKGROUND;    // the background only (AE2 15's button needs an icon); the number is drawn on it
         }
 
         @Override
@@ -837,7 +837,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
 
         @Override
         protected Icon getIcon() {
-            return null;    // the background only; the number is drawn on it
+            return Icon.TOOLBAR_BUTTON_BACKGROUND;    // the background only (AE2 15's button needs an icon); the number is drawn on it
         }
 
         @Override
@@ -888,7 +888,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
 
         @Override
         protected Icon getIcon() {
-            return null;    // the background only; the number is drawn on it
+            return Icon.TOOLBAR_BUTTON_BACKGROUND;    // the background only (AE2 15's button needs an icon); the number is drawn on it
         }
 
         /** AE2 presses toolbar buttons itself on a right click too: which button it was comes from the screen. */
@@ -929,7 +929,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
 
         @Override
         protected Icon getIcon() {
-            return null;    // the background only; the icon is ours
+            return Icon.TOOLBAR_BUTTON_BACKGROUND;    // the background only (AE2 15's button needs an icon); the icon is ours
         }
 
         @Override

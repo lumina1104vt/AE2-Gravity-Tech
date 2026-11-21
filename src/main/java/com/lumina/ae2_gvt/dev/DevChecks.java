@@ -22,6 +22,47 @@ public final class DevChecks {
     }
 
     public static void init() {
+        if (Boolean.getBoolean("ae2_gvt.devQuantum")) {
+            // a quantum controller a few blocks from whoever joins, its settings screen opened for them
+            final java.util.List<Object[]> waiting = new java.util.ArrayList<>();
+            MinecraftForge.EVENT_BUS.addListener((net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedInEvent e) -> {
+                if (e.getEntity() instanceof net.minecraft.server.level.ServerPlayer player) {
+                    BlockPos pos = player.blockPosition().offset(0, 0, 3);
+                    player.serverLevel().setBlock(pos, com.lumina.ae2_gvt.quantum.QuantumController.BLOCK.get().defaultBlockState(), 3);
+                    waiting.add(new Object[] {player, pos, 60});
+                }
+            });
+            MinecraftForge.EVENT_BUS.addListener((TickEvent.ServerTickEvent e) -> {
+                if (e.phase != TickEvent.Phase.END)
+                    return;
+                for (var it = waiting.iterator(); it.hasNext(); ) {
+                    Object[] w = it.next();
+                    if ((int) w[2] - 1 > 0) {
+                        w[2] = (int) w[2] - 1;
+                        continue;
+                    }
+                    it.remove();
+                    var player = (net.minecraft.server.level.ServerPlayer) w[0];
+                    if (player.serverLevel().getBlockEntity((BlockPos) w[1]) instanceof com.lumina.ae2_gvt.quantum.QuantumControllerBlockEntity be) {
+                        appeng.menu.MenuOpener.open(com.lumina.ae2_gvt.menus.Menus.QUANTUM_CONTROLLER.get(), player,
+                                appeng.menu.locator.MenuLocators.forBlockEntity(be));
+                        AE2GravityTech.LOGGER.info("dev quantum: menu opened");
+                    } else {
+                        AE2GravityTech.LOGGER.error("dev quantum: no quantum controller at {}", w[1]);
+                    }
+                }
+            });
+        }
+        if (Boolean.getBoolean("ae2_gvt.devHoles")) {
+            // a black and a white hole in front of the spawn, for a test client to look at (the server keeps running)
+            MinecraftForge.EVENT_BUS.addListener((ServerStartedEvent e) -> {
+                ServerLevel level = e.getServer().overworld();
+                BlockPos spawn = level.getSharedSpawnPos();
+                level.setBlock(spawn.offset(-2, 3, 12), com.lumina.ae2_gvt.hole.GravityHole.BLACK_HOLE.get().defaultBlockState(), 3);
+                level.setBlock(spawn.offset(-10, 3, 20), com.lumina.ae2_gvt.hole.GravityHole.WHITE_HOLE.get().defaultBlockState(), 3);
+                AE2GravityTech.LOGGER.info("dev holes placed round {}", spawn);
+            });
+        }
         if (!Boolean.getBoolean("ae2_gvt.devNetworkTest"))
             return;
         MinecraftForge.EVENT_BUS.addListener((ServerStartedEvent e) -> {
