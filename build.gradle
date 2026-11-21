@@ -147,8 +147,10 @@ dependencies {
     // JEI (recipe lookup; the pattern terminal's [+] transfer will hook into it)
     modCompileOnly "maven.modrinth:emi:${emi_version}"
     modCompileOnly "maven.modrinth:jei:${jei_version}"
-    // 1.20.1 dev run: needs more libraries (mezz_config / curios / architectury / cloth_config); left out for now
-    // modRuntimeOnly "maven.modrinth:jei:${jei_version}"
+    modRuntimeOnly "maven.modrinth:jei:${jei_version}"
+    // JEI 15.75 needs these two (Modrinth: mezzconfig 0.7.1, mezzconfiggui for 1.20.1 0.7.2)
+    modRuntimeOnly "maven.modrinth:mezzconfig:wcPo3ErK"
+    modRuntimeOnly "maven.modrinth:mezzconfiggui:rHGm7e23"
 
     // Jade (looking at a block shows what it is); compileOnly for a plugin later
     modCompileOnly "maven.modrinth:jade:${jade_version}"
