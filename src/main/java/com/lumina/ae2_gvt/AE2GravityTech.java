@@ -117,6 +117,20 @@ public class AE2GravityTech {
         CREATIVE_MODE_TABS.register(modEventBus);
         Menus.register(modEventBus);
         com.lumina.ae2_gvt.recipes.Recipes.register(modEventBus);
+        // dev check (-Dae2_gvt.loadMixinTargets=true): load the AE2 classes our mixins patch now, so a mixin that does not fit AE2 shows at start-up
+        if (Boolean.getBoolean("ae2_gvt.loadMixinTargets"))
+            modEventBus.addListener((net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent e) -> e.enqueueWork(() -> {
+                for (String name : new String[] {"appeng.me.service.CraftingService", "appeng.me.Grid", "appeng.me.pathfinding.ControllerValidator",
+                        "appeng.menu.me.crafting.CraftingCPUMenu", "appeng.menu.me.crafting.CraftAmountMenu",
+                        "appeng.menu.me.crafting.CraftingStatusEntry", "appeng.menu.me.networktool.NetworkStatusMenu"}) {
+                    try {
+                        Class.forName(name);
+                        LOGGER.info("mixin target loaded: {}", name);
+                    } catch (Throwable t) {
+                        LOGGER.error("mixin target failed: {}", name, t);
+                    }
+                }
+            }));
         // AE2 upgrade cards our machines take (registered once the items exist)
         modEventBus.addListener((net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent e) -> e.enqueueWork(
                 com.lumina.ae2_gvt.storage.BlackHoleCell::registerHandler));
@@ -157,6 +171,7 @@ public class AE2GravityTech {
         com.lumina.ae2_gvt.hole.GravityHole.register(modEventBus);
         com.lumina.ae2_gvt.hole.BlackHoleCrater.register(modEventBus);   // natural black holes
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(com.lumina.ae2_gvt.structure.FusionCommands::register);
+        com.lumina.ae2_gvt.dev.DevChecks.init();
         com.lumina.ae2_gvt.rift.SpaceRift.register(modEventBus);   // the tear of an annihilation TNT, 破碎星空
         com.lumina.ae2_gvt.quantum.QuantumController.register(modEventBus);
         com.lumina.ae2_gvt.graviton.Gravitons.register(modEventBus);

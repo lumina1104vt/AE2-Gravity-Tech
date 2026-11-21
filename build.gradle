@@ -41,6 +41,8 @@ legacyForge {
             server()
             // beside the client's folder, so a server and a client can run at the same time
             gameDirectory = file('run/server')
+            systemProperty 'ae2_gvt.loadMixinTargets', 'true'
+            systemProperty 'ae2_gvt.devNetworkTest', 'true'
             programArgument '--nogui'
             systemProperty 'forge.enabledGameTestNamespaces', project.mod_id
         }

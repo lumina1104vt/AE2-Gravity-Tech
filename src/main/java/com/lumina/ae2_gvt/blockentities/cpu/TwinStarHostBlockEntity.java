@@ -235,7 +235,7 @@ public abstract class TwinStarHostBlockEntity extends AENetworkBlockEntity
         // (per move, taking out the first of 1,600 patterns cost 2.5 million saves; breaking the
         // block froze the server for 24 s)
         if (!compacting)
-            saveChanges();
+            super.saveChanges();
     }
 
     /**
