@@ -1,7 +1,7 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "down": "ae2:block/generics/bottom",
+    "down": "ae2_gvt:block/machine_frame",
     "east": "ae2_gvt:block/crystal_generator_side",
     "west": "ae2_gvt:block/crystal_generator_side",
     "north": "ae2_gvt:block/crystal_generator_front",

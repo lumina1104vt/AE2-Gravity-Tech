@@ -195,7 +195,7 @@ public class GravityTechEmi implements EmiPlugin {
         private final WorldScene.Layout layout;
 
         World(WorldInteraction w) {
-            super(WORLD, w.id(), WorldScene.WIDTH, WorldScene.HEIGHT);
+            super(WORLD, new ResourceLocation(w.id().getNamespace(), "/" + w.id().getPath()), WorldScene.WIDTH, WorldScene.HEIGHT);
             this.w = w;
             this.layout = WorldScene.of(w);
             w.inputs().forEach(s -> inputs.add(EmiStack.of(s, s.getCount())));
