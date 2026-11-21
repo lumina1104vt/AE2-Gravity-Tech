@@ -146,7 +146,7 @@ dependencies {
     modCompileOnly "maven.modrinth:emi:${emi_version}"
     modCompileOnly "maven.modrinth:jei:${jei_version}"
     // JEI and GregTech cannot run together: GregTech patches the JEI of mid 2024 (its fluid tooltip), 15.75 has changed that method.
-    // dev_gregtech=true in gradle.properties (or -Pdev_gregtech=true) runs with GregTech and without JEI; false (default) the other way round.
+    // dev_gregtech=true in gradle.properties (or -Pdev_gregtech=true) runs with GregTech and EMI, without JEI; false (default) the other way round.
     if (!project.hasProperty("dev_gregtech") || project.property("dev_gregtech") != "true") {
         modRuntimeOnly "maven.modrinth:jei:${jei_version}"
         // JEI 15.75 needs these two (Modrinth: mezzconfig 0.7.1, mezzconfiggui for 1.20.1 0.7.2)
@@ -155,8 +155,11 @@ dependencies {
     }
 
     // GregTech CEu Modern (its libraries are inside it): to try the machine access interface on its multiblocks and hatches
-    if (project.hasProperty("dev_gregtech") && project.property("dev_gregtech") == "true")
+    // with GregTech, EMI is the recipe viewer (GregTech supports it, and our EMI integration gets run too)
+    if (project.hasProperty("dev_gregtech") && project.property("dev_gregtech") == "true") {
         modRuntimeOnly "maven.modrinth:gregtechceu-modern:${gregtech_version}"
+        modRuntimeOnly "maven.modrinth:emi:${emi_version}"
+    }
 
     // Jade (looking at a block shows what it is); compileOnly for a plugin later
     modCompileOnly "maven.modrinth:jade:${jade_version}"
