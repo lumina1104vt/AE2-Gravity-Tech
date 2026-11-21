@@ -29,7 +29,7 @@ import net.minecraft.world.level.Level;
  * {"type": "ae2_gvt:fusion",
  *  "ingredients": [{"item": "ae2:fluix_crystal", "count": 256}],
  *  "results": [{"id": "ae2_gvt:gravity_dust", "count": 1024}],
- *  "keys": [{"#t": "ae2:f", "id": "minecraft:water", "#": 1000}],
+ *  "keys": [{"#c": "ae2:f", "id": "minecraft:water", "#": 1000}],
  *  "temperature": 15000, "time": 40, "power": 1.5}
  * </pre>
  */

@@ -32,12 +32,12 @@
   ],
   "keys": [
     {
-      "#t": "ae2_gvt:graviton",
+      "#c": "ae2_gvt:graviton",
       "id": "graviton",
       "#": 4096
     },
     {
-      "#t": "ae2_gvt:graviton",
+      "#c": "ae2_gvt:graviton",
       "id": "antigraviton",
       "#": 4096
     }

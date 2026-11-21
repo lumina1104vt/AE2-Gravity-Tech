@@ -22,10 +22,6 @@ import com.lumina.ae2_gvt.AE2GravityTech;
  */
 public final class Gravitons {
 
-    static {
-        appeng.api.stacks.AEKeyTypes.register(GravitonKeyType.INSTANCE);
-    }
-
     /** Display-only items: how the two keys look in terminals (not in the creative tab). */
     public static final DeferredItem<Item> GRAVITON = AE2GravityTech.ITEMS.registerSimpleItem("graviton");
     public static final DeferredItem<Item> ANTIGRAVITON = AE2GravityTech.ITEMS.registerSimpleItem("antigraviton");
@@ -81,6 +77,11 @@ public final class Gravitons {
     }
 
     public static void register(IEventBus modEventBus) {
+        // AE2 keeps its key types in a registry of its own, open only while the registries are filled
+        modEventBus.addListener((net.minecraftforge.registries.RegisterEvent event) -> {
+            if (event.getRegistryKey().equals(appeng.api.stacks.AEKeyTypesInternal.getRegistry().getRegistryKey()))
+                appeng.api.stacks.AEKeyTypes.register(GravitonKeyType.INSTANCE);
+        });
     }
 
     /** A key as a recipe page shows it: gravitons as their own item, which AE2's wrapped stack does not draw. */

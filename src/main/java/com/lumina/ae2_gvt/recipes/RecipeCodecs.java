@@ -51,7 +51,7 @@ public final class RecipeCodecs {
             ExtraCodecs.POSITIVE_INT.fieldOf("count").forGetter(ItemStack::getCount)
     ).apply(i, ItemStack::new));
 
-    /** AE2 key with an amount, as AE2 writes it: {@code {"#t": "ae2:f", "id": "minecraft:water", "#": 1000}}. */
+    /** AE2 key with an amount, as AE2 writes it: {@code {"#c": "ae2:f", "id": "minecraft:water", "#": 1000}}. */
     public static final Codec<GenericStack> GENERIC_STACK = CompoundTag.CODEC.flatXmap(
             tag -> {
                 GenericStack stack = GenericStack.readTag(tag);

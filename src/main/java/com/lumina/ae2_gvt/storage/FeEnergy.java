@@ -32,10 +32,6 @@ import com.lumina.ae2_gvt.reg.DeferredRegister;
 public final class FeEnergy {
     private static final String APPLIED_FLUX = "appflux";
 
-    static {
-        appeng.api.stacks.AEKeyTypes.register(FeKeyType.INSTANCE);
-    }
-
     /** Display-only: how our key looks in terminals (not in the creative tab). */
     public static final DeferredItem<Item> ICON = AE2GravityTech.ITEMS.registerSimpleItem("fe_energy");
 
@@ -48,6 +44,11 @@ public final class FeEnergy {
     }
 
     public static void register(IEventBus modEventBus) {
+        // AE2 keeps its key types in a registry of its own, open only while the registries are filled
+        modEventBus.addListener((net.minecraftforge.registries.RegisterEvent event) -> {
+            if (event.getRegistryKey().equals(appeng.api.stacks.AEKeyTypesInternal.getRegistry().getRegistryKey()))
+                appeng.api.stacks.AEKeyTypes.register(FeKeyType.INSTANCE);
+        });
     }
 
     /** During common setup. */
