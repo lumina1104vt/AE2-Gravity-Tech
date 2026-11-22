@@ -469,6 +469,15 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         return set;
     }
 
+    /** The optional machine of listed machine {@code i}, which the screen draws small in its cell; empty for none. */
+    public ItemStack optionalMachineAt(int i) {
+        if (i < 0 || i >= machineCount())
+            return ItemStack.EMPTY;
+        if (isWireless() && settings(i).getRole() != PortRole.MACHINE)
+            return ItemStack.EMPTY;     // a hatch has no optional machine
+        return settings(i).getMachineStack();
+    }
+
     private boolean inWirelessRange(BlockPos target) {
         BlockPos here = host.pos();
         if (here == null)

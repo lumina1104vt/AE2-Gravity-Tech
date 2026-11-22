@@ -416,7 +416,7 @@
   "message.ae2_gvt.machine_access.same_none": "列表里没有其他相同的机器",
   "message.ae2_gvt.machine_access.same_applied": "已把可选机器应用到另外 %s 台相同的机器",
   "gui.ae2_gvt.machine_access.apply_same": "应用到所有相同的机器",
-  "gui.ae2_gvt.machine_access.apply_same_desc": "把这里设置的可选机器（空的也一样）给另外 %s 台和这台相同的机器",
+  "gui.ae2_gvt.machine_access.apply_same_desc": "把这里设置的可选机器（空的也一样）给另外 %s 台和这台相同的机器。它们在列表里的格子右下角会显示同样的小图标",
   "gui.ae2_gvt.machine_access.apply_same_hint": "数字是列表里相同机器的数量，包含这台",
   "gui.ae2_gvt.machine_access.unloaded": "（区块未加载）",
   "block.ae2_gvt.machine_access_block": "机器接入接口",
