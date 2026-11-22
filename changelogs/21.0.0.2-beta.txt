@@ -8,6 +8,8 @@
 - Antigravity armor: the whole set flies (an anti-graviton from a linked network every 5 ticks) and takes no fall damage, and all 31 of its modules work now (the armor can be linked to a wireless access point for auto stock, recharge and pick craft; phase, flying with it on, goes through blocks: magnet, portable workbench (B), dash (V), evasion, flight drift, night vision, water breathing, regeneration, fire resistance, lava immunity, max health, strength, attack speed, damage reduction, thorns, undying, shield, cleanse, dig affinity, luck, move speed, swim speed, jump height, step assist, reach, saturation, auto feed, auto stock, recharge, pick craft, phase).
 - FE Storage Cells (1k to 256k): somewhere in an ME network to keep FE. Not made with Applied Flux, which has cells of its own.
 - Machine Access Interface: in ME interface mode it takes back the FE a machine gives out into the network (a button beside the recover button turns it off).
+- Machine Linker: Ctrl + right-click a machine links every block of the same kind within 16 blocks of it at once (up to 64 machines; both are in the config). It only adds; a plain right-click is still one machine.
+- Machine Access Interface: a button beside the optional-machine slot (provider mode) gives every machine of the same kind in the list the optional machine you set on this one.
 - Jade shows the FE a generator makes, and the Fusion Generator's temperature and FE; its Energy Ports show an energy bar.
 - The world interaction pages in JEI and EMI are pictures now.
 - The guide book's recipe tags show the Gravity Processing Factory and Fusion Generator recipes, and black and white holes show in its scenes.
@@ -37,6 +39,8 @@
 - 反重力裝甲：穿齊整套可以飛行（每 5 tick 從連結的網路取 1 個反引力子）、不會摔傷，31 個模組全部都有效果了（盔甲可以連到無線存取點，給自動補貨、充電、中鍵下單用；穿牆在飛行時可以穿過方塊：磁力吸取、隨身工作台（B）、衝刺突進（V）、閃避、飛行防飄移、夜視、水下呼吸、生命回復、抗火、熔岩免疫、生命上限、力量、攻擊速度、固定減傷、反傷、瀕死免死、護盾吸收、清除負面、挖掘不減速、幸運、移動速度、游泳加速、跳躍高度、免跳上階、延伸互動距離、飽和、自動進食、自動補貨、充電、中鍵下單、穿牆）。
 - FE 儲存元件（1k 到 256k）：ME 網路裡存 FE 的地方。有裝 Applied Flux 時不會有合成，用它自己的元件。
 - 機器接入接口：ME 介面模式下，會把機器輸出的 FE 也收回網路（回收按鈕旁多一顆按鈕可以關掉）。
+- 機器連結器：Ctrl + 右鍵機器，一次連接它周圍 16 格內所有相同的機器（最多 64 台，兩個數字都能在設定檔調整）。只會增加；一般右鍵還是只連一台。
+- 機器接入接口：供應器模式下，可選機器格旁多一顆按鈕，把這台設定的可選機器一次套用到清單裡所有相同的機器。
 - Jade 會顯示發電機發的 FE，以及核融合發生器的溫度和 FE；能量接口也會顯示能量條。
 - JEI 和 EMI 的世界交互頁改用圖像。
 - 導覽書的配方標籤可以顯示引力加工工廠和核融合發生器的配方，黑洞和白洞也能顯示在場景裡。

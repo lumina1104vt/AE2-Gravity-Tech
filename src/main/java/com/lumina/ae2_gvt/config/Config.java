@@ -31,7 +31,7 @@ public class Config {
     public static final ForgeConfigSpec.IntValue PICK_CRAFT_AMOUNT;
     public static final ForgeConfigSpec.BooleanValue ARMOR_LINK_RANGE;
     public static final ForgeConfigSpec.LongValue FUSION_OUTPUT_BUFFER;
-    public static final ForgeConfigSpec.IntValue GUI_POLL_TICKS, TOOL_DELAY_TICKS;
+    public static final ForgeConfigSpec.IntValue GUI_POLL_TICKS, TOOL_DELAY_TICKS, LINK_ALL_RADIUS, LINK_ALL_MAX;
 
     static {
         BUILDER.comment("Generators").push("generators");
@@ -56,6 +56,10 @@ public class Config {
                 .defineInRange("guiPollTicks", 1, 1, 1200);
         TOOL_DELAY_TICKS = BUILDER.comment("How long (ticks) such a machine is left alone between its last material and the tool right-click")
                 .defineInRange("toolDelayTicks", 1, 0, 200);
+        LINK_ALL_RADIUS = BUILDER.comment("Machine Linker, Ctrl + right click: links every block of the same kind within this many blocks of the one clicked")
+                .defineInRange("linkAllRadius", 16, 1, 64);
+        LINK_ALL_MAX = BUILDER.comment("Machine Linker, Ctrl + right click: the most machines one click links")
+                .defineInRange("linkAllMax", 64, 1, 512);
         BUILDER.pop();
 
         BUILDER.comment("Fusion generator").push("fusion");

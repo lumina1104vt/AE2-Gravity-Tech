@@ -106,7 +106,20 @@ configurations {
     runtimeClasspath.extendsFrom localRuntime
 }
 
+repositories {
+    mavenCentral()  // JUnit
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+}
+
 dependencies {
+    // plain-Java tests (no Minecraft classes on their path), e.g. the same-machine picking of the machine access interface
+    testImplementation platform('org.junit:junit-bom:5.10.3')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
     // our lib mods: compiled against here; bundled into the ae2_gvt jar by jarJar below
     compileOnly project(':core')
     localRuntime project(':core')

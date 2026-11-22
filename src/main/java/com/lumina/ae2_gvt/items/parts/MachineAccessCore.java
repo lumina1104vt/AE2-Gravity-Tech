@@ -387,6 +387,84 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
                 target.pos().getX(), target.pos().getY(), target.pos().getZ(), entries.size());
     }
 
+    /**
+     * Ctrl + right click: links the machine at {@code clicked} and every other block of the same kind within {@code radius} blocks of it
+     * (nearest first, at most {@code max} in one go, the clicked face for each), skipping the ones already linked and the ones out of
+     * wireless range or unloaded. It only adds, never lets go of one. Returns what to tell the player.
+     */
+    public Component linkAllSame(MachineLinkTool.Link clicked, int radius, int max) {
+        var level = host.level();
+        if (level == null || !clicked.dimension().equals(level.dimension()))
+            return Component.translatable("message.ae2_gvt.link_tool.other_dimension");
+        if (!inWirelessRange(clicked.pos()))
+            return Component.translatable("message.ae2_gvt.link_tool.too_far", WIRELESS_RANGE);
+        var kind = level.getBlockState(clicked.pos());
+        if (kind.isAir())
+            return Component.translatable("message.ae2_gvt.link_tool.nothing_there");
+        int room = mode == Mode.INTERFACE ? MAX_INTERFACE_MACHINES - entries.size() : Integer.MAX_VALUE;
+        if (room <= 0)
+            return Component.translatable("message.ae2_gvt.link_tool.limit", MAX_INTERFACE_MACHINES);
+        java.util.Set<Long> linked = new java.util.HashSet<>();
+        for (Entry e : entries)
+            linked.add(e.link.pos().asLong());
+        BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
+        var scan = SameMachines.scan(clicked.pos().getX(), clicked.pos().getY(), clicked.pos().getZ(), radius, Math.min(max, room),
+                (x, y, z) -> {
+                    at.set(x, y, z);
+                    return inWirelessRange(at) && level.isLoaded(at) && level.getBlockState(at).is(kind.getBlock());
+                },
+                (x, y, z) -> linked.contains(BlockPos.asLong(x, y, z)));
+        if (scan.cells().isEmpty())
+            return Component.translatable("message.ae2_gvt.link_tool.all_already", kind.getBlock().getName(), radius);
+        for (int[] c : scan.cells())
+            entries.add(new Entry(new MachineLinkTool.Link(level.dimension(), new BlockPos(c[0], c[1], c[2]), clicked.face())));
+        markForSave();
+        host.update();
+        Component done = Component.translatable("message.ae2_gvt.link_tool.added_all", scan.cells().size(), kind.getBlock().getName(),
+                radius, entries.size());
+        if (!scan.cut())
+            return done;
+        // some were left out: the limit of one click, or the room an ME interface has
+        int left = scan.total() - scan.cells().size();
+        return done.copy().append(" ").append(Component.translatable("message.ae2_gvt.link_tool.all_cut", left));
+    }
+
+    /** The block each listed machine is (null when it is not loaded or there is no machine listed), for telling the same ones. */
+    private List<net.minecraft.world.level.block.Block> machineKinds() {
+        List<net.minecraft.world.level.block.Block> out = new ArrayList<>();
+        var level = host.level();
+        for (Entry e : entries)
+            out.add(level != null && level.isLoaded(e.link.pos()) ? level.getBlockState(e.link.pos()).getBlock() : null);
+        return out;
+    }
+
+    /** The listed places of the machines that are the same machine (the same block) as listed machine {@code i}, itself included. */
+    public List<Integer> sameMachines(int i) {
+        if (entries.isEmpty())
+            return List.of();
+        List<Boolean> isMachine = new ArrayList<>();
+        for (Entry e : entries)
+            isMachine.add(e.settings.role == PortRole.MACHINE);
+        return SameMachines.indicesLike(machineKinds(), isMachine, Math.max(0, Math.min(i, entries.size() - 1)));
+    }
+
+    /**
+     * Gives every machine of the same kind as listed machine {@code i} the optional machine that one has (empty too: it is
+     * copied as it is). Returns how many other machines were set; 0 when there are none of the same kind.
+     */
+    public int applyMachineToSame(int i) {
+        ItemStack machine = settings(i).getMachineStack();
+        int set = 0;
+        int self = Math.max(0, Math.min(i, entries.size() - 1));
+        for (int k : sameMachines(i)) {
+            if (k == self)
+                continue;
+            entries.get(k).settings.setMachineStack(machine);
+            set++;
+        }
+        return set;
+    }
+
     private boolean inWirelessRange(BlockPos target) {
         BlockPos here = host.pos();
         if (here == null)

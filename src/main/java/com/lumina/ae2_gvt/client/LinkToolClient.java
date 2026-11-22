@@ -43,6 +43,12 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
  */
 @Mod.EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
 public final class LinkToolClient extends ShardBase {
+    /** Right clicking a machine with the linker while Ctrl is down: tell the server, it cannot see keys (the click follows this). */
+    public static void reportCtrl() {
+        if (net.minecraft.client.gui.screens.Screen.hasControlDown())
+            com.lumina.ae2_gvt.payload.ModNet.toServer(com.lumina.ae2_gvt.payload.LinkAllPayload.INSTANCE);
+    }
+
     private static final RenderType FILL = RenderType.create("ae2_gvt_link_fill", DefaultVertexFormat.POSITION_COLOR,
             VertexFormat.Mode.QUADS, 1024, false, true, RenderType.CompositeState.builder()
                     .setShaderState(new RenderStateShard.ShaderStateShard(GameRenderer::getPositionColorShader))

@@ -39,6 +39,8 @@ public final class ModNet {
                 OpenArmorModulesPayload::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         CHANNEL.registerMessage(id++, ArmorActionPayload.class, ArmorActionPayload::write, ArmorActionPayload::read,
                 ArmorActionPayload::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(id++, LinkAllPayload.class, LinkAllPayload::write, LinkAllPayload::read,
+                LinkAllPayload::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
         CHANNEL.registerMessage(id++, HoleBurstPayload.class, HoleBurstPayload::write, HoleBurstPayload::read,
                 HoleBurstPayload::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
     }
