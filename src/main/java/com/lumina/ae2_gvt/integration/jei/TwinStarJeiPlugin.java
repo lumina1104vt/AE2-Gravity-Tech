@@ -124,6 +124,7 @@ public class TwinStarJeiPlugin implements IModPlugin {
                     .map(PatternTransfer::toGenericStack).ifPresent(outputs::add);
         }
         IRecipeCategory<?> category = layout.getRecipeCategory();
+        inputs = SequencePattern.withoutGaps(inputs, category.getRecipeType().getUid());
         return SequencePattern.open(new SequencePattern.Request(inputs, outputs, PatternTransfer.machineOf(category),
                 PatternTransfer.idOf(category, layout.getRecipe())));
     }
