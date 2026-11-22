@@ -176,7 +176,9 @@ public class TwinStarJeiPlugin implements IModPlugin {
         private static net.minecraft.client.renderer.Rect2i spot(IRecipeLayoutDrawable<?> layout) {
             var transfer = layout.getRecipeTransferButtonArea();
             var bookmark = layout.getRecipeBookmarkButtonArea();
-            return new net.minecraft.client.renderer.Rect2i(transfer.getX(), Math.min(transfer.getY(), bookmark.getY()) - 13, 12, 12);
+            var at = layout.getRect();     // the button areas are relative to the recipe's own position
+            return new net.minecraft.client.renderer.Rect2i(at.getX() + transfer.getX(),
+                    at.getY() + Math.min(transfer.getY(), bookmark.getY()) - 13, 12, 12);
         }
 
         private static void render(net.minecraftforge.client.event.ScreenEvent.Render.Post event) {
