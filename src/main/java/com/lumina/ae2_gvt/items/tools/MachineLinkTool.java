@@ -5,6 +5,7 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import com.lumina.ae2_gvt.blockentities.MachineAccessBlockEntity;
+import com.lumina.ae2_gvt.config.Config;
 import com.lumina.ae2_gvt.items.parts.MachineAccessCore;
 import com.lumina.ae2_gvt.items.parts.MachineAccessInterface;
 
@@ -34,9 +35,16 @@ import net.minecraft.world.level.Level;
  * block's own, so a machine with a screen is linked, not opened. Sneak + right-click in the air forgets the
  * picked interface. While it is held the picked interface glows and its machines are drawn
  * ({@code client.LinkToolClient}).
+ * <p>
+ * Ctrl + right-click on a machine links every block of the same kind within a radius of it at once (it only adds; a plain
+ * right click is still one machine, and again lets go of it). The radius and the most one click links are in the config
+ * ({@code linkAllRadius}, {@code linkAllMax}).
  */
 public class MachineLinkTool extends Item {
     public static final String KEY = "picked_interface";
+    /** a click of this many ticks or less after the client said Ctrl was down is a Ctrl click */
+    private static final int CTRL_TICKS = 5;
+    private static final java.util.Map<java.util.UUID, Long> CTRL = new java.util.concurrent.ConcurrentHashMap<>();
 
     /** A place and a face: the interface part's block and side, or a machine's block and the face to use. */
     public record Link(ResourceKey<Level> dimension, BlockPos pos, Direction face) {
@@ -77,6 +85,17 @@ public class MachineLinkTool extends Item {
             CustomData.update(DataComponents.CUSTOM_DATA, stack, t -> t.remove(KEY));
         else
             CustomData.update(DataComponents.CUSTOM_DATA, stack, t -> t.put(KEY, link.toTag()));
+    }
+
+    /** The client says Ctrl is down for the click it sends next (see {@link com.lumina.ae2_gvt.payload.LinkAllPayload}). */
+    public static void ctrlDown(net.minecraft.server.level.ServerPlayer player) {
+        CTRL.put(player.getUUID(), player.serverLevel().getGameTime());
+    }
+
+    /** Whether this click came with Ctrl down; each Ctrl report is used once. */
+    private static boolean takeCtrl(Player player, Level level) {
+        Long at = CTRL.remove(player.getUUID());
+        return at != null && level.getGameTime() - at <= CTRL_TICKS;
     }
 
     /** Picks {@code me} as the interface to set up (again: lets go of it), and says so. */
@@ -130,15 +149,22 @@ public class MachineLinkTool extends Item {
                 pick(stack, player, new Link(level.dimension(), ctx.getClickedPos(), Direction.UP));
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
-        if (!level.isClientSide) {
+        if (level.isClientSide) {
+            if (getSelected(stack) != null)
+                com.lumina.ae2_gvt.client.LinkToolClient.reportCtrl();     // says to the server if Ctrl is down
+        } else {
+            boolean ctrl = takeCtrl(player, level);
             Link picked = getSelected(stack);
             MachineAccessCore part = interfaceOf(level, picked);
+            Link target = new Link(level.dimension(), ctx.getClickedPos(), ctx.getClickedFace());
             if (part == null) {
                 if (picked != null)
                     setSelected(stack, null);
                 player.displayClientMessage(Component.translatable("message.ae2_gvt.link_tool.no_interface"), true);
+            } else if (ctrl) {
+                player.displayClientMessage(part.linkAllSame(target, Config.LINK_ALL_RADIUS.get(), Config.LINK_ALL_MAX.get()), true);
             } else {
-                player.displayClientMessage(part.toggleLink(new Link(level.dimension(), ctx.getClickedPos(), ctx.getClickedFace())), true);
+                player.displayClientMessage(part.toggleLink(target), true);
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
@@ -166,5 +192,6 @@ public class MachineLinkTool extends Item {
             lines.add(Component.translatable("tooltip.ae2_gvt.link_tool.picked",
                     picked.pos().getX(), picked.pos().getY(), picked.pos().getZ()));
         lines.add(Component.translatable("tooltip.ae2_gvt.link_tool.usage"));
+        lines.add(Component.translatable("tooltip.ae2_gvt.link_tool.ctrl").withStyle(net.minecraft.ChatFormatting.AQUA));
     }
 }

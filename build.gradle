@@ -92,6 +92,11 @@ dependencies {
     jarJar(project(':core'))
     jarJar(project(':lumina-multiblock'))
 
+    // plain-Java tests (no Minecraft classes on their path), e.g. the same-machine picking of the machine access interface
+    testImplementation platform('org.junit:junit-bom:5.10.3')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
     // AE2: we build against it (the terminal extends AE2's classes) and run it in the dev client
     compileOnly "maven.modrinth:ae2:${ae2_version}"
     compileOnly "maven.modrinth:guideme:${guideme_version}"
@@ -131,6 +136,14 @@ dependencies {
     localRuntime "curse.maven:building-gadgets-298187:${building_gadgets_file}"
     // dev client only: stops the game swallowing keystrokes from Chinese / other IMEs
     localRuntime "maven.modrinth:imblocker-original:${imblocker_version}"
+}
+
+repositories {
+    mavenCentral()  // JUnit
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
 }
 
 publishing {

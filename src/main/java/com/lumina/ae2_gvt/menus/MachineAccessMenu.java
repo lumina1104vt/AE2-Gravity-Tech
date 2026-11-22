@@ -46,6 +46,7 @@ public class MachineAccessMenu extends AEBaseMenu {
     private static final String TOGGLE_RECOVER = "toggleRecover", TOGGLE_RECOVER_ENERGY = "toggleRecoverEnergy";
     private static final String RECOVER_FACE = "toggleRecoverFace";
     private static final String CYCLE_ROLE = "cycleRole", STEP_SLOT = "stepSlot";
+    private static final String APPLY_SAME = "applyMachineToSame";
     /** Pairing numbers: 0 (none) to this. */
     private static final int MAX_GROUP = 16;
 
@@ -99,6 +100,9 @@ public class MachineAccessMenu extends AEBaseMenu {
     public int slot;
     @GuiSync(39)
     public int slotNow;
+    /** how many listed machines are the same machine (the same block) as the selected one, itself included; 0 when it is a hatch or none is bound */
+    @GuiSync(40)
+    public int sameCount;
     /** the network's count of what the selected machine's stock slots hold, one per slot */
     @GuiSync(30) public long net0;
     @GuiSync(31) public long net1;
@@ -180,6 +184,7 @@ public class MachineAccessMenu extends AEBaseMenu {
         registerClientAction(RECOVER_FACE, Integer.class, this::toggleRecoverFace);
         registerClientAction(CYCLE_ROLE, Boolean.class, this::cycleRole);
         registerClientAction(STEP_SLOT, Integer.class, this::stepSlot);
+        registerClientAction(APPLY_SAME, this::applyMachineToSame);
     }
 
     public MachineAccessCore getPart() {
@@ -273,6 +278,20 @@ public class MachineAccessMenu extends AEBaseMenu {
         }
         var s = part.settings(selected);
         s.setSlot(s.getSlot() + delta);
+    }
+
+    /** The selected machine's optional machine goes to every machine of the same kind in the list (a button next to the slot). */
+    public void applyMachineToSame() {
+        if (isClientSide()) {
+            sendClientAction(APPLY_SAME);
+            return;
+        }
+        if (part.getMode() != MachineAccessCore.Mode.PROVIDER || part.sameMachines(selected).size() < 2) {
+            getPlayer().displayClientMessage(net.minecraft.network.chat.Component.translatable("message.ae2_gvt.machine_access.same_none"), true);
+            return;
+        }
+        int set = part.applyMachineToSame(selected);
+        getPlayer().displayClientMessage(net.minecraft.network.chat.Component.translatable("message.ae2_gvt.machine_access.same_applied", set), true);
     }
 
     public void setAccessMode(Integer ordinal) {
@@ -427,6 +446,7 @@ public class MachineAccessMenu extends AEBaseMenu {
             role = s.getRole().ordinal();
             slot = s.getSlot();
             slotNow = part.effectiveSlot(selected);
+            sameCount = part.sameMachines(selected).size();
             subRange = s.getSubRange();
             redstonePulse = s.isRedstonePulse();
             recover = s.isRecover();

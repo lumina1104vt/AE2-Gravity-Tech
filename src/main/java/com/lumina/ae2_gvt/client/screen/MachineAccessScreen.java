@@ -59,6 +59,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
     private final GroupButton groupButton = new GroupButton();
     private final RoleButton roleButton = new RoleButton();
     private final SlotButton slotButton = new SlotButton();
+    private final ApplySameButton applySame = new ApplySameButton();
     private final SubRangeButton range = new SubRangeButton();
     private final PulseButton pulse = new PulseButton();
     /** what each slot's lower cell shows: false the amount it is set to keep, true the network's count of it */
@@ -77,6 +78,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
         addToLeftToolbar(blocking);
         addToLeftToolbar(insert);
         addToLeftToolbar(roleButton);
+        addToLeftToolbar(applySame);
         addToLeftToolbar(slotButton);
         addToLeftToolbar(groupButton);
         addToLeftToolbar(range);
@@ -114,6 +116,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
             b.setVisibility(provider && !menu.isHatch());     // the machine's settings are the provider's; a hatch has none of them
         roleButton.setVisibility(provider && wireless);       // a bound block is a machine or a hatch of the machine before it
         slotButton.setVisibility(provider && wireless && menu.isNumbered());
+        applySame.setVisibility(provider && wireless && !menu.isHatch() && menu.sameCount >= 2);     // only when another one of the same kind is listed
         recoverButton.setVisibility(!provider);
         recoverEnergyButton.setVisibility(!provider && menu.recover);     // the FE a machine gives out, taken back as well
         facesButton.setVisibility(!provider && menu.recover);     // the ME interface's: take the output back, from which faces
@@ -826,6 +829,47 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
                     Component.translatable(menu.slot > 0 ? "gui.ae2_gvt.machine_access.slot_set" : "gui.ae2_gvt.machine_access.slot_auto",
                             menu.slotNow).withStyle(ChatFormatting.GRAY),
                     Component.translatable("gui.ae2_gvt.machine_access.slot_click").withStyle(ChatFormatting.DARK_GRAY));
+        }
+    }
+
+    /**
+     * Gives every machine of the same kind in the list (the same block) the optional machine of the selected one: two boxes,
+     * one over the other, with how many machines are the same in the front one.
+     */
+    private final class ApplySameButton extends IconButton {
+        ApplySameButton() {
+            super(btn -> menu.applyMachineToSame());
+        }
+
+        @Override
+        protected Icon getIcon() {
+            return null;    // the background only; the boxes are drawn on it
+        }
+
+        @Override
+        public void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+            super.renderWidget(g, mouseX, mouseY, partialTick);
+            if (!visible)
+                return;
+            int x = getX(), y = getY() + (isHovered() ? 1 : 0);
+            g.pose().pushPose();
+            g.pose().translate(0, 0, 100);
+            g.fill(x + 2, y + 2, x + 12, y + 12, 0xFFB0B0C8);          // the one behind: a frame
+            g.fill(x + 3, y + 3, x + 11, y + 11, 0xFF6E768C);
+            g.fill(x + 5, y + 5, x + 15, y + 15, 0xFFF4F9FF);          // the one in front, with the count
+            g.fill(x + 6, y + 6, x + 14, y + 14, 0xFF282C3C);
+            String n = Integer.toString(Math.min(menu.sameCount, 99));
+            g.pose().translate(x + 10 - font.width(n) / 4f, y + 7.5f, 0);
+            g.pose().scale(0.5f, 0.5f, 1f);
+            g.drawString(font, n, 0, 0, 0xFFFFFFFF, false);
+            g.pose().popPose();
+        }
+
+        @Override
+        public List<Component> getTooltipMessage() {
+            return List.of(Component.translatable("gui.ae2_gvt.machine_access.apply_same"),
+                    Component.translatable("gui.ae2_gvt.machine_access.apply_same_desc", menu.sameCount - 1).withStyle(ChatFormatting.GRAY),
+                    Component.translatable("gui.ae2_gvt.machine_access.apply_same_hint").withStyle(ChatFormatting.DARK_GRAY));
         }
     }
 

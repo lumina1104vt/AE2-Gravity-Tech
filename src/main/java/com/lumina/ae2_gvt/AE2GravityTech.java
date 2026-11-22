@@ -191,6 +191,8 @@ public class AE2GravityTech {
         event.registrar("1").playToServer(OpenArmorModulesPayload.TYPE, OpenArmorModulesPayload.STREAM_CODEC, OpenArmorModulesPayload::handle)
                 .playToServer(com.lumina.ae2_gvt.payload.ArmorActionPayload.TYPE, com.lumina.ae2_gvt.payload.ArmorActionPayload.STREAM_CODEC,
                         com.lumina.ae2_gvt.payload.ArmorActionPayload::handle)
+                .playToServer(com.lumina.ae2_gvt.payload.LinkAllPayload.TYPE, com.lumina.ae2_gvt.payload.LinkAllPayload.STREAM_CODEC,
+                        com.lumina.ae2_gvt.payload.LinkAllPayload::handle)
                 .playToClient(com.lumina.ae2_gvt.payload.HoleBurstPayload.TYPE, com.lumina.ae2_gvt.payload.HoleBurstPayload.STREAM_CODEC,
                         com.lumina.ae2_gvt.payload.HoleBurstPayload::handle);
     }
