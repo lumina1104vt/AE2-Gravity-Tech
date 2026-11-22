@@ -321,9 +321,14 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
                 if (number > 0)
                     lines.add(Component.translatable("gui.ae2_gvt.machine_access.slot_is", number).withStyle(ChatFormatting.GRAY));
             }
-            var slot = providerMode() && index == menu.selected ? menu.machineSlot() : null;
-            if (slot != null && !slot.getItem().isEmpty())
-                lines.add(Component.translatable("gui.ae2_gvt.machine_access.also", slot.getItem().getHoverName()).withStyle(ChatFormatting.GRAY));
+            ItemStack also = providerMode() ? menu.pageMachine(index) : ItemStack.EMPTY;
+            if (!also.isEmpty() && lx >= CELL_X + i * CELL + 8 && ly >= CELL_Y + 8) {      // over the small icon in the corner
+                g.renderTooltip(font, List.of(Component.translatable("gui.ae2_gvt.machine_access.also", also.getHoverName())),
+                        java.util.Optional.empty(), mouseX, mouseY);
+                return;
+            }
+            if (!also.isEmpty())
+                lines.add(Component.translatable("gui.ae2_gvt.machine_access.also", also.getHoverName()).withStyle(ChatFormatting.GRAY));
             lines.add(Component.translatable("gui.ae2_gvt.machine_access.cell_hint").withStyle(ChatFormatting.DARK_GRAY));
             g.renderTooltip(font, lines, java.util.Optional.empty(), mouseX, mouseY);
             return;
@@ -466,6 +471,17 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
                         g.pose().popPose();
                     }
                 }
+            }
+            ItemStack also = providerMode() ? menu.pageMachine(index) : ItemStack.EMPTY;
+            if (!also.isEmpty()) {              // the optional machine it also stands for: small, in the corner (a hatch has none, so no clash with its role icon)
+                int cx = CELL_X + i * CELL + 8, cy = CELL_Y + 8;
+                g.pose().pushPose();
+                g.pose().translate(0, 0, 150);
+                g.fill(cx - 1, cy - 1, cx + 8, cy + 8, 0xE0282C3C);
+                g.pose().translate(cx, cy, 10);
+                g.pose().scale(0.5f, 0.5f, 1f);
+                g.renderItem(also, 0, 0);
+                g.pose().popPose();
             }
             if (index == menu.selected) {       // the selected one: a frame round its cell
                 int x = CELL_X + i * CELL - 1, y = CELL_Y - 1;

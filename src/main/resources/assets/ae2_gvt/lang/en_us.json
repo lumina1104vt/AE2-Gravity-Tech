@@ -416,7 +416,7 @@
   "message.ae2_gvt.machine_access.same_none": "No other machine of the same kind is listed",
   "message.ae2_gvt.machine_access.same_applied": "The optional machine was set on %s other machines of the same kind",
   "gui.ae2_gvt.machine_access.apply_same": "Apply to all machines of the same kind",
-  "gui.ae2_gvt.machine_access.apply_same_desc": "Gives the %s other machines of the same kind as this one the optional machine set here (an empty slot too)",
+  "gui.ae2_gvt.machine_access.apply_same_desc": "Gives the %s other machines of the same kind as this one the optional machine set here (an empty slot too). Their cells in the list show it as a small icon in the corner",
   "gui.ae2_gvt.machine_access.apply_same_hint": "The number is how many of the same kind are listed, this one included",
   "gui.ae2_gvt.machine_access.unloaded": "(chunk not loaded)",
   "block.ae2_gvt.machine_access_block": "Machine Access Interface",

@@ -103,6 +103,11 @@ public class MachineAccessMenu extends AEBaseMenu {
     /** how many listed machines are the same machine (the same block) as the selected one, itself included; 0 when it is a hatch or none is bound */
     @GuiSync(40)
     public int sameCount;
+    /** the optional machine of each machine on the page shown (item ids, ";" between them, empty for none), for the small icons in the cells */
+    @GuiSync(41)
+    public String pageMachines = "";
+    private String pageMachinesSeen = null;
+    private final java.util.List<ItemStack> pageStacks = new ArrayList<>();
     /** the network's count of what the selected machine's stock slots hold, one per slot */
     @GuiSync(30) public long net0;
     @GuiSync(31) public long net1;
@@ -185,6 +190,21 @@ public class MachineAccessMenu extends AEBaseMenu {
         registerClientAction(CYCLE_ROLE, Boolean.class, this::cycleRole);
         registerClientAction(STEP_SLOT, Integer.class, this::stepSlot);
         registerClientAction(APPLY_SAME, this::applyMachineToSame);
+    }
+
+    /** The optional machine of listed machine {@code index} if it is on the page shown (as last synced), else empty. */
+    public ItemStack pageMachine(int index) {
+        if (!pageMachines.equals(pageMachinesSeen)) {
+            pageMachinesSeen = pageMachines;
+            pageStacks.clear();
+            for (String id : pageMachines.split(";", -1)) {
+                var key = id.isEmpty() ? null : net.minecraft.resources.ResourceLocation.tryParse(id);
+                var item = key == null ? null : net.minecraft.core.registries.BuiltInRegistries.ITEM.get(key);
+                pageStacks.add(item == null || item == net.minecraft.world.item.Items.AIR ? ItemStack.EMPTY : new ItemStack(item));
+            }
+        }
+        int at = index - machinePage * PER_PAGE;
+        return at >= 0 && at < pageStacks.size() ? pageStacks.get(at) : ItemStack.EMPTY;
     }
 
     public MachineAccessCore getPart() {
@@ -447,6 +467,15 @@ public class MachineAccessMenu extends AEBaseMenu {
             slot = s.getSlot();
             slotNow = part.effectiveSlot(selected);
             sameCount = part.sameMachines(selected).size();
+            StringBuilder page = new StringBuilder();
+            for (int i = 0; i < PER_PAGE; i++) {
+                if (i > 0)
+                    page.append(';');
+                ItemStack also = part.optionalMachineAt(machinePage * PER_PAGE + i);
+                if (!also.isEmpty())
+                    page.append(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(also.getItem()));
+            }
+            pageMachines = page.toString();
             subRange = s.getSubRange();
             redstonePulse = s.isRedstonePulse();
             recover = s.isRecover();
