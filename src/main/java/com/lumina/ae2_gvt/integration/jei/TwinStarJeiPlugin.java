@@ -67,12 +67,23 @@ public class TwinStarJeiPlugin implements IModPlugin {
         registration.addUniversalRecipeTransferHandler(new PatternTransfer(registration.getTransferHelper()));
     }
 
-    /**
-     * A button beside every recipe that makes a sequence pattern of it ({@link SequencePattern}): every material in the
-     * place the recipe has it, one item each, with the GUI slot of that place. Shown while the pattern terminal is open.
-     */
     @Override
     public void registerAdvanced(IAdvancedRegistration registration) {
+        try {
+            Class.forName("mezz.jei.api.recipe.advanced.IRecipeButtonControllerFactory");
+        } catch (ClassNotFoundException e) {
+            return;     // an older JEI 15 has no recipe buttons: no sequence button, the [+] still works
+        }
+        SequenceButton.register(registration);
+    }
+
+    /**
+     * A button beside every recipe that makes a sequence pattern of it ({@link SequencePattern}): every material in the
+     * place the recipe has it, with its amount and the GUI slot of that place. Shown while the pattern terminal is open.
+     * Its own class so that the JEI types only newer JEI 15 has are never touched (never loaded) on an older one.
+     */
+    private static final class SequenceButton {
+    static void register(IAdvancedRegistration registration) {
         IDrawable icon = registration.getJeiHelpers().getGuiHelper().createDrawable(SequencePattern.TEXTURE, 0, 12, 12, 12);
         registration.addRecipeButtonFactory(new IRecipeButtonControllerFactory() {
             @Override
@@ -126,6 +137,7 @@ public class TwinStarJeiPlugin implements IModPlugin {
         IRecipeCategory<?> category = layout.getRecipeCategory();
         return SequencePattern.open(new SequencePattern.Request(inputs, outputs, PatternTransfer.machineOf(category),
                 PatternTransfer.idOf(category, layout.getRecipe())));
+    }
     }
 
     @Override
