@@ -9,9 +9,13 @@ import com.lumina.ae2_gvt.items.parts.MachineAccessCore;
 import com.lumina.ae2_gvt.items.tools.MachineLinkTool;
 import com.lumina.ae2_gvt.menus.MachineAccessMenu;
 import com.lumina.twinstar.api.IMachineAccess;
+import com.lumina.twinstar.client.hover.KeyHit;
+import com.lumina.twinstar.client.hover.KeyHover;
+import org.jetbrains.annotations.Nullable;
 import com.lumina.twinstar.service.TwinStarService;
 
 import appeng.api.client.AEKeyRendering;
+import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AmountFormat;
 import appeng.api.stacks.GenericStack;
 import appeng.client.gui.AEBaseScreen;
@@ -38,7 +42,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * left toolbar's), in ME interface mode its stock slots with the network's count under each (shift + right click
  * on the gear switches how the counts are written). Positions from assets/ae2/screens/machine_access_interface.json.
  */
-public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
+public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> implements KeyHover {
     private static final ResourceLocation TEXTURE =
             new ResourceLocation(AE2GravityTech.MODID, "textures/gui/machine_access_interface.png");
     private static final int TEXT = 0x404040, MUTED = 0x808080, BUSY = 0x2E7D32, ERROR = 0xC03030, ACCENT = 0xFF2F86C8;
@@ -141,6 +145,61 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
 
     private static boolean inside(double x, double y, int left, int top, int w, int h) {
         return x >= left && x < left + w && y >= top && y < top + h;
+    }
+
+    /**
+     * What the mouse is on, for JEI and EMI (their A key bookmarks it): a listed machine's block (and the hatch
+     * icon small in its corner), a stock cell of the ME interface mode, the output being made, and the mode and
+     * role buttons' items. The FE icon and the gears are no materials.
+     */
+    @Override
+    public @Nullable KeyHit keyAt(double mouseX, double mouseY) {
+        KeyHit button = modeButton.keyAt(mouseX, mouseY);
+        if (button == null)
+            button = roleButton.keyAt(mouseX, mouseY);
+        if (button != null)
+            return button;
+        double lx = mouseX - leftPos, ly = mouseY - topPos;
+        if (minecraft == null || minecraft.level == null || facesOpen && facePanelCellAt(lx, ly) != null)
+            return null;
+        var part = menu.getPart();
+        for (int i = 0; i < MachineAccessMenu.PER_PAGE; i++) {
+            int index = menu.machinePage * MachineAccessMenu.PER_PAGE + i;
+            if (index >= menu.machineCount)
+                break;
+            int cx = CELL_X + i * CELL;
+            if (!inside(lx, ly, cx, CELL_Y, 16, 16))
+                continue;
+            if (providerMode() && part.isWireless() && inside(lx, ly, cx + 8, CELL_Y + 8, 8, 8)) {
+                IMachineAccess.PortRole role = part.settings(index).getRole();
+                if (role != IMachineAccess.PortRole.MACHINE)
+                    return hit(roleIcon(role), leftPos + cx + 8, topPos + CELL_Y + 8, 8, 8);
+            }
+            BlockPos pos = machinePos(index, part.host().pos(), part.host().side());
+            return pos == null ? null : hit(iconAt(minecraft.level, pos), leftPos + cx, topPos + CELL_Y, 16, 16);
+        }
+        if (!providerMode()) {
+            var slots = menu.stockSlots();
+            for (int i = 0; i < slots.size(); i++) {
+                GenericStack stack = GenericStack.fromItemStack(slots.get(i).getItem());
+                if (stack == null || !inside(lx, ly, 8 + i * 18, NET_Y, 16, 16))
+                    continue;
+                long amount = aeCounts[i] ? menu.networkCount(i) : Math.min(menu.networkCount(i), stack.amount());
+                return amount <= 0 ? null : new KeyHit(stack.what(), leftPos + 8 + i * 18, topPos + NET_Y, 16, 16);
+            }
+        } else {
+            TwinStarService.MachineState state = menu.state;
+            boolean busy = state == TwinStarService.MachineState.FEEDING || state == TwinStarService.MachineState.WORKING;
+            if (busy && menu.output != null && inside(lx, ly, 8, 92, 160, 16))
+                return new KeyHit(menu.output.what(), leftPos + 8, topPos + 92, 160, 16);
+        }
+        return null;
+    }
+
+    /** An item's key and the square it is drawn in (null for no item). */
+    private static @Nullable KeyHit hit(ItemStack stack, int x, int y, int w, int h) {
+        AEItemKey key = stack.isEmpty() ? null : AEItemKey.of(stack);
+        return key == null ? null : new KeyHit(key, x, y, w, h);
     }
 
     @Override
@@ -658,6 +717,13 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
             super(btn -> menu.setAccessMode((providerMode() ? MachineAccessCore.Mode.INTERFACE : MachineAccessCore.Mode.PROVIDER).ordinal()));
         }
 
+        @Nullable KeyHit keyAt(double mx, double my) {
+            if (!visible || mx < getX() || mx >= getX() + 16 || my < getY() || my >= getY() + 16)
+                return null;
+            return hit((providerMode() ? appeng.core.definitions.AEParts.PATTERN_PROVIDER : appeng.core.definitions.AEParts.INTERFACE).stack(),
+                    getX(), getY(), 16, 16);
+        }
+
         @Override
         protected Icon getIcon() {
             return Icon.TOOLBAR_BUTTON_BACKGROUND;    // the background only (AE2 15's button needs an icon); the item is drawn on it
@@ -755,6 +821,12 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> {
         RoleButton() {
             super(btn -> {
             });
+        }
+
+        @Nullable KeyHit keyAt(double mx, double my) {
+            if (!visible || mx < getX() || mx >= getX() + 16 || my < getY() || my >= getY() + 16)
+                return null;
+            return hit(roleIcon(menu.getRole()), getX(), getY(), 16, 16);
         }
 
         @Override

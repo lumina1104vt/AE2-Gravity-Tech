@@ -8,6 +8,10 @@ import com.lumina.ae2_gvt.menus.ArmorModuleMenu;
 import com.lumina.ae2_gvt.items.armor.ArmorModules;
 import com.lumina.ae2_gvt.items.armor.data.InstalledModule;
 
+import com.lumina.twinstar.client.hover.KeyHit;
+import com.lumina.twinstar.client.hover.KeyHover;
+
+import appeng.api.stacks.AEItemKey;
 import appeng.client.gui.AEBaseScreen;
 import appeng.client.gui.style.Blitter;
 import appeng.client.gui.style.ScreenStyle;
@@ -19,6 +23,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ArmorItem;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The armor module screen, on AE2's framework and made of AE2's own GUI art
@@ -29,7 +34,7 @@ import net.minecraft.world.item.ArmorItem;
  * crafting-CPU-style list (card, name, AE2's switch recoloured black / white, cog, clear), the
  * install slot in its gravity well, the inventory below. No text besides the title and the names.
  */
-public class ArmorModuleScreen extends AEBaseScreen<ArmorModuleMenu> {
+public class ArmorModuleScreen extends AEBaseScreen<ArmorModuleMenu> implements KeyHover {
     private static final int TAB_X = 5, TAB_Y = 22, TAB_STEP = 22, TAB = 20;
     private static final int ROW_X = 32, ROW_Y = 41, ROW_STEP = 23, ROW_W = 144, ROW_H = 22, ROWS = 4;
     private static final int SWITCH_X = ROW_X + 86, COG_X = ROW_X + 108, CLEAR_X = ROW_X + 125;
@@ -126,6 +131,29 @@ public class ArmorModuleScreen extends AEBaseScreen<ArmorModuleMenu> {
         String name = new ItemStack(m.module()).getHoverName().getString();
         String suffix = Component.translatable("gui.ae2_gvt.armor_modules.suffix").getString();
         return name.endsWith(suffix) ? name.substring(0, name.length() - suffix.length()).trim() : name;
+    }
+
+    /**
+     * What the mouse is on for JEI and EMI (their A key bookmarks it): a worn piece's tab, or a module's card
+     * (its icon and name; not the switch, cog and clear buttons).
+     */
+    @Override
+    public @Nullable KeyHit keyAt(double mouseX, double mouseY) {
+        List<ArmorItem.Type> worn = menu.worn();
+        for (int i = 0; i < worn.size(); i++) {
+            int x = leftPos + TAB_X, y = topPos + TAB_Y + i * TAB_STEP;
+            if (mouseX >= x && mouseX < x + TAB && mouseY >= y && mouseY < y + TAB) {
+                AEItemKey key = AEItemKey.of(minecraft.player.getItemBySlot(worn.get(i).getSlot()));
+                return key == null ? null : new KeyHit(key, x, y, TAB, TAB);
+            }
+        }
+        int row = row(mouseY);
+        if (row >= 0 && part(mouseX, mouseY, row) == 0) {
+            List<InstalledModule> list = new ArrayList<>(menu.installed());
+            AEItemKey key = AEItemKey.of(new ItemStack(list.get(scrollbar.getCurrentScroll() + row).module()));
+            return key == null ? null : new KeyHit(key, leftPos + ROW_X, topPos + ROW_Y + row * ROW_STEP, ROW_W, ROW_H);
+        }
+        return null;
     }
 
     /** The visible row under the mouse, or -1. */
