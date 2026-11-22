@@ -2,7 +2,11 @@ package com.lumina.ae2_gvt.client.screen;
 
 import java.util.List;
 
+import appeng.api.stacks.AEItemKey;
 import appeng.client.gui.AEBaseScreen;
+import com.lumina.twinstar.client.hover.KeyHit;
+import com.lumina.twinstar.client.hover.KeyHover;
+import org.jetbrains.annotations.Nullable;
 import appeng.client.gui.Icon;
 import appeng.client.gui.style.ScreenStyle;
 import appeng.client.gui.widgets.IconButton;
@@ -16,11 +20,21 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
 /** A generator's screen: its name, what it makes, and what it burns (texts from assets/ae2/screens/generator_*.json). */
-public class GeneratorScreen extends AEBaseScreen<GeneratorMenu> {
+public class GeneratorScreen extends AEBaseScreen<GeneratorMenu> implements KeyHover {
+    private @Nullable TakeButton takeButton;
+
     public GeneratorScreen(GeneratorMenu menu, Inventory playerInventory, Component title, ScreenStyle style) {
         super(menu, playerInventory, title, style);
-        if (menu.kind() == Kind.GRAVITON)
-            addToLeftToolbar(new TakeButton());
+        if (menu.kind() == Kind.GRAVITON) {
+            takeButton = new TakeButton();
+            addToLeftToolbar(takeButton);
+        }
+    }
+
+    /** The graviton / anti-graviton drawn on the take button, for JEI and EMI (their A key bookmarks it). */
+    @Override
+    public @Nullable KeyHit keyAt(double mouseX, double mouseY) {
+        return takeButton == null ? null : takeButton.keyAt(mouseX, mouseY);
     }
 
     @Override
@@ -72,6 +86,20 @@ public class GeneratorScreen extends AEBaseScreen<GeneratorMenu> {
                 g.renderItem(menu.take == 1 ? graviton : anti, getX(), y);
             }
             g.pose().popPose();
+        }
+
+        /** The item drawn where the mouse is (both small: the one in each corner), or null. */
+        @Nullable KeyHit keyAt(double mx, double my) {
+            if (!visible || mx < getX() || mx >= getX() + 16 || my < getY() || my >= getY() + 16)
+                return null;
+            AEItemKey graviton = AEItemKey.of(Gravitons.GRAVITON.get()), anti = AEItemKey.of(Gravitons.ANTIGRAVITON.get());
+            if (menu.take != 0)
+                return new KeyHit(menu.take == 1 ? graviton : anti, getX(), getY(), 16, 16);
+            if (mx < getX() + 8 && my < getY() + 8)
+                return new KeyHit(graviton, getX(), getY(), 8, 8);
+            if (mx >= getX() + 8 && my >= getY() + 8)
+                return new KeyHit(anti, getX() + 8, getY() + 8, 8, 8);
+            return null;
         }
 
         /** An item at half the size in a corner of the button. */

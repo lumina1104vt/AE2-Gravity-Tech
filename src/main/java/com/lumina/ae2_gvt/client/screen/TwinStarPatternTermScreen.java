@@ -8,7 +8,11 @@ import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.terminal.TwinStarPatternTermMenu;
 import com.lumina.ae2_gvt.terminal.TwinStarTerminal;
 
+import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.GenericStack;
+import com.lumina.twinstar.client.hover.KeyHit;
+import com.lumina.twinstar.client.hover.KeyHover;
+import org.jetbrains.annotations.Nullable;
 import appeng.client.Point;
 import appeng.client.gui.ICompositeWidget;
 import appeng.client.gui.me.items.PatternEncodingTermScreen;
@@ -36,17 +40,26 @@ import net.minecraft.world.item.ItemStack;
  * an input slot its faces ({@link SetInputAmountScreen}); the one of the machine slot, like the field
  * under it, opens the sub-machines ({@link SubMachineScreen}).
  */
-public class TwinStarPatternTermScreen extends PatternEncodingTermScreen<TwinStarPatternTermMenu> {
+public class TwinStarPatternTermScreen extends PatternEncodingTermScreen<TwinStarPatternTermMenu> implements KeyHover {
     private static final Blitter PANEL = Blitter
             .texture(ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "textures/gui/twin_star_pattern_panel.png"))
             .src(0, 0, 124, 66);
+
+    private final SubMachineButton subMachineButton;
 
     public TwinStarPatternTermScreen(TwinStarPatternTermMenu menu, Inventory playerInventory, Component title, ScreenStyle style) {
         super(menu, playerInventory, title, style);
         // added after AE2's own panels, so it is drawn on top of AE2's processing panel
         this.widgets.add("twinStarPanel", new PanelBackground());
-        this.widgets.add("subMachines", new SubMachineButton());
+        this.subMachineButton = new SubMachineButton();
+        this.widgets.add("subMachines", subMachineButton);
         hideModeTabs();
+    }
+
+    /** The first sub-machine drawn on its button, for JEI and EMI (their A key bookmarks it). */
+    @Override
+    public @Nullable KeyHit keyAt(double mouseX, double mouseY) {
+        return subMachineButton.keyAt(mouseX, mouseY);
     }
 
     /** For a dialog that swaps itself for its other layout. */
@@ -170,6 +183,14 @@ public class TwinStarPatternTermScreen extends PatternEncodingTermScreen<TwinSta
                 }
             }
             return out;
+        }
+
+        @Nullable KeyHit keyAt(double mx, double my) {
+            List<ItemStack> subs = subs();
+            if (!visible || subs.isEmpty() || mx < getX() + 1 || mx >= getX() + 17 || my < getY() + 1 || my >= getY() + 17)
+                return null;
+            AEItemKey key = AEItemKey.of(subs.get(0));
+            return key == null ? null : new KeyHit(key, getX() + 1, getY() + 1, 16, 16);
         }
 
         @Override
