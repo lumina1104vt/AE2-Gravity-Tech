@@ -86,14 +86,19 @@ public final class SequencePattern {
         menu.setMode(EncodingMode.PROCESSING);
         menu.clear();
         int next = 0;
+        // each kind of material has its own numbering (an assembly line's item buses and fluid hatches are numbered apart);
+        // the empty places of a recipe (a crafting grid's gaps) belong to the items
+        java.util.Map<appeng.api.stacks.AEKeyType, Integer> places = new java.util.HashMap<>();
         for (int i = 0; i < r.inputs().size(); i++) {
             GenericStack stack = r.inputs().get(i);
             if (stack == null) {
+                places.merge(appeng.api.stacks.AEKeyType.items(), 1, Integer::sum);
                 continue;
             }
+            int place = places.merge(stack.what().getType(), 1, Integer::sum) - 1;
             // each place holds what the recipe has there: four data orbs are four in their place (a crafting table's cells are one each anyway)
             set(ins[next], stack);
-            menu.setInputGuiSlot(next, start + i);
+            menu.setInputGuiSlot(next, start + place);
             next++;
         }
         for (int i = 0; i < r.outputs().size(); i++) {
