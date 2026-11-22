@@ -41,7 +41,8 @@ public abstract class NetworkStatusMenuMixin extends AEBaseMenu implements Quant
             registerClientAction(ae2_gvt$OPEN_SETTINGS, this::ae2_gvt$openSettings);
     }
 
-    @Inject(method = "broadcastChanges", at = @At("HEAD"))
+    // vanilla's method: named here, SRG (m_38946_) in a production AE2 (this mixin does not remap AE2's class)
+    @Inject(method = {"broadcastChanges", "m_38946_"}, at = @At("HEAD"))
     private void ae2_gvt$channels(CallbackInfo ci) {
         if (isServerSide() && getTarget() instanceof QuantumControllerBlockEntity be) {
             var grid = be.getMainNode().getGrid();
