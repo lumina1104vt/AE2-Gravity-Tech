@@ -109,6 +109,7 @@ public final class DevChecks {
                 level.setBlock(pos, row[i].defaultBlockState(), 3);
             }
             AE2GravityTech.LOGGER.info("dev network test: blocks placed");
+            secondaryOutputCheck();
         });
         MinecraftForge.EVENT_BUS.addListener((TickEvent.ServerTickEvent e) -> {
             if (e.phase != TickEvent.Phase.END || ++ticks < 100)
@@ -120,5 +121,38 @@ public final class DevChecks {
                 net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer().halt(false);
             }
         });
+    }
+
+    /** A pattern making stone and, second, dirt: dirt must be craftable too (AE2 alone lists the first output only), and gone again once the provider is. */
+    private static void secondaryOutputCheck() {
+        try {
+            var stone = appeng.api.stacks.AEItemKey.of(net.minecraft.world.item.Items.STONE);
+            var dirt = appeng.api.stacks.AEItemKey.of(net.minecraft.world.item.Items.DIRT);
+            appeng.api.crafting.IPatternDetails pattern = new appeng.api.crafting.IPatternDetails() {
+                @Override public appeng.api.stacks.AEItemKey getDefinition() { return stone; }
+                @Override public IInput[] getInputs() { return new IInput[0]; }
+                @Override public appeng.api.stacks.GenericStack[] getOutputs() {
+                    return new appeng.api.stacks.GenericStack[] {new appeng.api.stacks.GenericStack(stone, 1), new appeng.api.stacks.GenericStack(dirt, 2)};
+                }
+            };
+            appeng.api.networking.crafting.ICraftingProvider provider = new appeng.api.networking.crafting.ICraftingProvider() {
+                @Override public java.util.List<appeng.api.crafting.IPatternDetails> getAvailablePatterns() { return java.util.List.of(pattern); }
+                @Override public int getPatternPriority() { return 0; }
+                @Override public boolean pushPattern(appeng.api.crafting.IPatternDetails d, appeng.api.stacks.KeyCounter[] in) { return false; }
+                @Override public boolean isBusy() { return false; }
+            };
+            appeng.api.networking.IGridNode node = (appeng.api.networking.IGridNode) java.lang.reflect.Proxy.newProxyInstance(
+                    DevChecks.class.getClassLoader(), new Class<?>[] {appeng.api.networking.IGridNode.class},
+                    (proxy, m, args) -> m.getName().equals("getService") ? provider : m.getName().equals("hashCode") ? 1 : m.getName().equals("equals") ? proxy == args[0] : null);
+            var providers = new appeng.me.service.helpers.NetworkCraftingProviders();
+            providers.addProvider(node);
+            boolean listed = providers.getCraftableKeys().contains(stone) && providers.getCraftableKeys().contains(dirt)
+                    && providers.getCraftingFor(dirt).contains(pattern) && providers.getCraftingFor(stone).size() == 1;
+            providers.removeProvider(node);
+            boolean gone = providers.getCraftableKeys().isEmpty() && providers.getCraftingFor(dirt).isEmpty();
+            AE2GravityTech.LOGGER.info("dev craftable test: second output listed={} and unlisted again={}", listed, gone);
+        } catch (Throwable t) {
+            AE2GravityTech.LOGGER.error("dev craftable test failed", t);
+        }
     }
 }

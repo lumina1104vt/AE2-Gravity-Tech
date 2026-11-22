@@ -122,7 +122,8 @@ public class AE2GravityTech {
             modEventBus.addListener((net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent e) -> e.enqueueWork(() -> {
                 for (String name : new String[] {"appeng.me.service.CraftingService", "appeng.me.Grid", "appeng.me.pathfinding.ControllerValidator",
                         "appeng.menu.me.crafting.CraftingCPUMenu", "appeng.menu.me.crafting.CraftAmountMenu",
-                        "appeng.menu.me.crafting.CraftingStatusEntry", "appeng.menu.me.networktool.NetworkStatusMenu"}) {
+                        "appeng.menu.me.crafting.CraftingStatusEntry", "appeng.menu.me.networktool.NetworkStatusMenu",
+                        "appeng.me.service.helpers.NetworkCraftingProviders$ProviderState"}) {
                     try {
                         Class.forName(name);
                         LOGGER.info("mixin target loaded: {}", name);
