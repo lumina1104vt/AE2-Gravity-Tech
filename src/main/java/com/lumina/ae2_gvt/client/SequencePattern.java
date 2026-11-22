@@ -21,7 +21,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * A sequence pattern: the pattern of a recipe whose materials must go into their places (an ordered crafting table).
- * It is no pattern of its own: the usual synthesis pattern, written with every material slot holding one item and
+ * It is no pattern of its own: the usual synthesis pattern, written with every material slot holding its amount and
  * its own GUI slot number, the place of that slot in the recipe, so what the terminal's dialogs say about the slots is
  * there from the start. Made from a recipe by the button JEI and EMI show beside it.
  */
@@ -91,9 +91,8 @@ public final class SequencePattern {
             if (stack == null) {
                 continue;
             }
-            // one item in each place; a fluid keeps its amount
-            GenericStack one = stack.what() instanceof AEItemKey ? new GenericStack(stack.what(), 1) : stack;
-            set(ins[next], one);
+            // each place holds what the recipe has there: four data orbs are four in their place (a crafting table's cells are one each anyway)
+            set(ins[next], stack);
             menu.setInputGuiSlot(next, start + i);
             next++;
         }
