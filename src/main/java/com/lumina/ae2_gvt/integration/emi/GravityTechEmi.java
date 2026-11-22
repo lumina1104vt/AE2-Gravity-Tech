@@ -175,7 +175,6 @@ public class GravityTechEmi implements EmiPlugin {
                 break;
             }
         }
-        inputs = SequencePattern.withoutGaps(inputs, recipe.getCategory().getId());
         SequencePattern.open(new SequencePattern.Request(inputs, outputs, machine, recipe.getId()));
     }
 
