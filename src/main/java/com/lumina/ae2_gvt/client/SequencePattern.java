@@ -37,6 +37,18 @@ public final class SequencePattern {
         return player != null && player.containerMenu instanceof TwinStarPatternTermMenu menu ? menu : null;
     }
 
+    /**
+     * A recipe of a GregTech machine (its recipe category is in the gtceu namespace): its input buses are numbered one after the
+     * other, so a slot of the recipe screen with nothing in it (or nothing AE2 can hold) takes no number. A crafting grid keeps its
+     * gaps: there the place of a slot is its number.
+     */
+    public static List<@Nullable GenericStack> withoutGaps(List<@Nullable GenericStack> inputs, @Nullable ResourceLocation category) {
+        if (category == null || !category.getNamespace().equals("gtceu")) {
+            return inputs;
+        }
+        return inputs.stream().filter(java.util.Objects::nonNull).toList();
+    }
+
     public static Component tooltip() {
         return Component.translatable(terminal() != null ? "ae2_gvt.jei.sequence_pattern" : "ae2_gvt.jei.sequence_pattern.no_terminal");
     }
