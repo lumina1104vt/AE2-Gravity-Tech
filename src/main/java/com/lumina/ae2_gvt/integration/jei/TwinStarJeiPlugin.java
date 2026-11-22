@@ -72,7 +72,8 @@ public class TwinStarJeiPlugin implements IModPlugin {
         try {
             Class.forName("mezz.jei.api.recipe.advanced.IRecipeButtonControllerFactory");
         } catch (ClassNotFoundException e) {
-            return;     // an older JEI 15 has no recipe buttons: no sequence button, the [+] still works
+            LegacyButton.install();     // an older JEI 15 has no recipe buttons: draw ours over its recipe screen
+            return;
         }
         SequenceButton.register(registration);
     }
@@ -117,6 +118,96 @@ public class TwinStarJeiPlugin implements IModPlugin {
             }
         });
     }
+    }
+
+    /**
+     * The same button for a JEI 15 without recipe buttons (15.20 and older): drawn over JEI's recipe screen, beside the
+     * [+] and bookmark buttons of each recipe, found by reflection in JEI's own classes. If those are not what we expect
+     * it gives up (once, in the log) and the [+] works as before.
+     */
+    private static final class LegacyButton {
+        private static final String SCREEN = "mezz.jei.gui.recipes.RecipesGui";
+        private static boolean installed;
+        private static boolean broken;
+        private static java.lang.reflect.Field layoutsField;
+        private static java.lang.reflect.Field listField;
+        private static Method recipeLayout;
+
+        static void install() {
+            if (installed) {
+                return;
+            }
+            installed = true;
+            var bus = net.minecraftforge.common.MinecraftForge.EVENT_BUS;
+            bus.addListener(net.minecraftforge.eventbus.api.EventPriority.NORMAL, false,
+                    net.minecraftforge.client.event.ScreenEvent.Render.Post.class, LegacyButton::render);
+            bus.addListener(net.minecraftforge.eventbus.api.EventPriority.NORMAL, false,
+                    net.minecraftforge.client.event.ScreenEvent.MouseButtonPressed.Pre.class, LegacyButton::click);
+        }
+
+        /** The recipes JEI shows now with the spot of our button; empty if this is not JEI's recipe screen. */
+        private static List<IRecipeLayoutDrawable<?>> layouts(net.minecraft.client.gui.screens.Screen screen) {
+            if (broken || SequencePattern.terminal() == null || !screen.getClass().getName().equals(SCREEN)) {
+                return List.of();
+            }
+            try {
+                if (layoutsField == null) {
+                    layoutsField = screen.getClass().getDeclaredField("layouts");
+                    layoutsField.setAccessible(true);
+                    listField = layoutsField.getType().getDeclaredField("recipeLayoutsWithButtons");
+                    listField.setAccessible(true);
+                }
+                List<?> withButtons = (List<?>) listField.get(layoutsField.get(screen));
+                List<IRecipeLayoutDrawable<?>> out = new ArrayList<>();
+                for (Object entry : withButtons) {
+                    if (recipeLayout == null) {
+                        recipeLayout = entry.getClass().getMethod("recipeLayout");
+                    }
+                    out.add((IRecipeLayoutDrawable<?>) recipeLayout.invoke(entry));
+                }
+                return out;
+            } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
+                broken = true;
+                AE2GravityTech.LOGGER.warn("The sequence button cannot be put on this JEI's recipe screen", e);
+                return List.of();
+            }
+        }
+
+        private static net.minecraft.client.renderer.Rect2i spot(IRecipeLayoutDrawable<?> layout) {
+            var transfer = layout.getRecipeTransferButtonArea();
+            var bookmark = layout.getRecipeBookmarkButtonArea();
+            return new net.minecraft.client.renderer.Rect2i(transfer.getX(), Math.min(transfer.getY(), bookmark.getY()) - 13, 12, 12);
+        }
+
+        private static void render(net.minecraftforge.client.event.ScreenEvent.Render.Post event) {
+            for (IRecipeLayoutDrawable<?> layout : layouts(event.getScreen())) {
+                var r = spot(layout);
+                boolean hover = r.contains(event.getMouseX(), event.getMouseY());
+                var g = event.getGuiGraphics();
+                g.fill(r.getX(), r.getY(), r.getX() + 12, r.getY() + 12, 0xFF000000);
+                g.fill(r.getX() + 1, r.getY() + 1, r.getX() + 11, r.getY() + 11, hover ? 0xFF8B8B8B : 0xFF5C5C5C);
+                g.blit(SequencePattern.TEXTURE, r.getX(), r.getY(), 0, 12, 12, 12);
+                if (hover) {
+                    g.renderTooltip(net.minecraft.client.Minecraft.getInstance().font, SequencePattern.tooltip(), event.getMouseX(), event.getMouseY());
+                }
+            }
+        }
+
+        private static void click(net.minecraftforge.client.event.ScreenEvent.MouseButtonPressed.Pre event) {
+            if (event.getButton() != 0) {
+                return;
+            }
+            for (IRecipeLayoutDrawable<?> layout : layouts(event.getScreen())) {
+                if (spot(layout).contains((int) event.getMouseX(), (int) event.getMouseY())) {
+                    net.minecraft.client.Minecraft.getInstance().getSoundManager().play(
+                            net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                    fillSequence(layout);
+                    event.setCanceled(true);
+                    return;
+                }
+            }
+        }
+    }
 
     /** The recipe as it is laid out, slot by slot, into the open terminal. */
     private static boolean fillSequence(IRecipeLayoutDrawable<?> layout) {
@@ -137,7 +228,6 @@ public class TwinStarJeiPlugin implements IModPlugin {
         IRecipeCategory<?> category = layout.getRecipeCategory();
         return SequencePattern.open(new SequencePattern.Request(inputs, outputs, PatternTransfer.machineOf(category),
                 PatternTransfer.idOf(category, layout.getRecipe())));
-    }
     }
 
     @Override
