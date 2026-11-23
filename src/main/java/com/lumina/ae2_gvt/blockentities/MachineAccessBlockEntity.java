@@ -31,7 +31,8 @@ import net.minecraft.world.level.block.state.BlockState;
  * is bound to it from afar with the 機器連結器 (up to 64 blocks, same dimension). Everything else is
  * {@link MachineAccessCore}, shared with the cable part.
  */
-public class MachineAccessBlockEntity extends AENetworkedBlockEntity implements IMachineAccess, MachineAccessHost, MachineAccessCore.Host {
+public class MachineAccessBlockEntity extends AENetworkedBlockEntity implements IMachineAccess, MachineAccessHost, MachineAccessCore.Host,
+        appeng.api.upgrades.IUpgradeableObject {
     private final MachineAccessCore core = new MachineAccessCore(this);
 
     public MachineAccessBlockEntity(BlockPos pos, BlockState state) {
@@ -70,6 +71,17 @@ public class MachineAccessBlockEntity extends AENetworkedBlockEntity implements 
     @Override
     public IActionHost actionHost() {
         return this;
+    }
+
+    @Override
+    public net.minecraft.world.level.ItemLike machineItem() {
+        return Blocks.MACHINE_ACCESS_BLOCK.get();
+    }
+
+    /** the crafting card slot: AE2's upgrade system, the same panel as on AE2's own blocks */
+    @Override
+    public appeng.api.upgrades.IUpgradeInventory getUpgrades() {
+        return core.getUpgrades();
     }
 
     @Override

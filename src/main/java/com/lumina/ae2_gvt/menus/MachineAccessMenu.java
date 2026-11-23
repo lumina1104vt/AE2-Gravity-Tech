@@ -127,6 +127,12 @@ public class MachineAccessMenu extends AEBaseMenu {
     public int removeSameCount;
     @GuiSync(51)
     public int removeAllCount;
+    /**
+     * What the crafting card is doing for each stock slot of the selected machine, two bits per slot (slot 0 lowest):
+     * 0 nothing, 1 the network was asked to craft it, 2 it could not and tries again later ({@link MachineAccessCore#craftState})
+     */
+    @GuiSync(52)
+    public int craftStates;
     private final TreeSet<Integer> marked = new TreeSet<>();
     private int lastMachineCount = -1;
     private List<Integer> armedSet = List.of();
@@ -202,6 +208,7 @@ public class MachineAccessMenu extends AEBaseMenu {
             stockSlots.add(slot);
             addSlot(slot, STOCK);
         }
+        setupUpgrades(part.getUpgrades());          // the crafting card slot, in AE2's upgrade panel
         createPlayerInventorySlots(playerInventory);
         updateSlots();
         registerClientAction(TOGGLE_BLOCKING, this::toggleBlocking);
@@ -274,6 +281,11 @@ public class MachineAccessMenu extends AEBaseMenu {
             case 7 -> net7;
             default -> net8;
         };
+    }
+
+    /** What the crafting card is doing for stock slot {@code i} of the selected machine (as last synced): 0 nothing, 1 crafting, 2 cannot (retrying). */
+    public int craftState(int i) {
+        return i < 0 || i >= MachineAccessCore.STOCK_SLOTS ? 0 : (craftStates >> (2 * i)) & 3;
     }
 
     /** Only the listed machines' slots are on, and the stock slots only in ME interface mode. */
@@ -632,6 +644,12 @@ public class MachineAccessMenu extends AEBaseMenu {
                 GenericStack g = inv.getStack(i);
                 counts[i] = g == null ? 0 : part.networkAmount(g.what());
             }
+            int states = 0;
+            for (int i = 0; i < counts.length; i++) {
+                GenericStack g = inv.getStack(i);
+                states |= part.craftState(g == null ? null : g.what()) << (2 * i);
+            }
+            craftStates = states;
             net0 = counts[0]; net1 = counts[1]; net2 = counts[2]; net3 = counts[3]; net4 = counts[4];
             net5 = counts[5]; net6 = counts[6]; net7 = counts[7]; net8 = counts[8];
             TwinStarService.MachineView view = TwinStarService.MachineView.of(TwinStarService.MachineState.NO_HUB);
