@@ -209,6 +209,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
 
         public void setRecoverEnergy(boolean on) {
             recoverEnergy = on;
+            markForSave();
         }
 
         public boolean isRecover() {
@@ -226,6 +227,11 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
 
         public void toggleRecoverFace(Direction d) {
             recoverMask ^= 1 << d.ordinal();
+            markForSave();
+        }
+
+        public void setRecoverFace(Direction d, boolean on) {
+            recoverMask = on ? recoverMask | 1 << d.ordinal() : recoverMask & ~(1 << d.ordinal());
             markForSave();
         }
 
@@ -296,6 +302,8 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
     }
 
     private Mode mode = Mode.PROVIDER;
+    /** whether a setting changed for one machine goes to every machine of the same kind in the list too (false: only that one) */
+    private boolean editSame;
     private final Settings own = new Settings();
     private final List<Entry> entries = new ArrayList<>();
     /** what the machines put out into it, until the hub takes it */
@@ -467,6 +475,75 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
             set++;
         }
         return set;
+    }
+
+    public boolean isEditSame() {
+        return editSame;
+    }
+
+    public void setEditSame(boolean on) {
+        editSame = on;
+        markForSave();
+    }
+
+    /**
+     * The settings a change made on listed machine {@code i} goes to: that one, and in "same machines together" mode every other
+     * machine of the same kind in this interface (never a hatch, never another kind). The selected one is first.
+     */
+    public List<Settings> editTargets(int i) {
+        Settings self = settings(i);
+        List<Settings> out = new ArrayList<>();
+        out.add(self);
+        if (!editSame || entries.isEmpty() || self.role != PortRole.MACHINE)
+            return out;
+        int at = Math.max(0, Math.min(i, entries.size() - 1));
+        for (int k : sameMachines(at))
+            if (k != at)
+                out.add(entries.get(k).settings);
+        return out;
+    }
+
+    /**
+     * What a removal in {@code scope} would take out, as listed places (sorted): the marked ones (the selected one when none is marked),
+     * the machines of the same kind as {@code selected}, or all; each machine with the hatches that follow it.
+     */
+    public List<Integer> removalSet(MachineRemoval.Scope scope, int selected, java.util.Collection<Integer> marks) {
+        if (entries.isEmpty())
+            return List.of();
+        List<Boolean> isMachine = new ArrayList<>();
+        for (Entry e : entries)
+            isMachine.add(e.settings.role == PortRole.MACHINE);
+        int self = Math.max(0, Math.min(selected, entries.size() - 1));
+        List<Integer> picked = switch (scope) {
+            case ALL -> {
+                List<Integer> all = new ArrayList<>();
+                for (int k = 0; k < entries.size(); k++)
+                    all.add(k);
+                yield all;
+            }
+            case SAME -> sameMachines(self);
+            case MARKED -> {
+                var valid = MachineRemoval.validMarks(marks, entries.size());
+                yield valid.isEmpty() ? List.of(self) : new ArrayList<>(valid);
+            }
+        };
+        return MachineRemoval.withHatches(isMachine, picked);
+    }
+
+    /** Lets go of the machines at {@code places} (entry and settings together, the others keep their order); how many went. */
+    public int removeEntries(java.util.Collection<Integer> places) {
+        List<Entry> gone = new ArrayList<>();
+        for (int p : new java.util.TreeSet<>(places))
+            if (p >= 0 && p < entries.size())
+                gone.add(entries.get(p));
+        int n = MachineRemoval.removeAt(entries, places);
+        for (Entry e : gone)
+            setSignal(e.settings, e.link, false);       // a pulse going when it was let go must not leave the machine powered
+        if (n > 0) {
+            markForSave();
+            host.update();
+        }
+        return n;
     }
 
     /** The optional machine of listed machine {@code i}, which the screen draws small in its cell; empty for none. */
@@ -1109,6 +1186,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         } catch (IllegalArgumentException e) {
             mode = Mode.PROVIDER;
         }
+        editSame = tag.getBoolean("editSame");
         received.readFromChildTag(tag, "received", registries);
         entries.clear();
         if (tag.contains("own")) {
@@ -1144,6 +1222,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
 
     public void write(CompoundTag tag, HolderLookup.Provider registries) {
         tag.putString("mode", mode.name());
+        tag.putBoolean("editSame", editSame);
         received.writeToChildTag(tag, "received", registries);
         CompoundTag o = new CompoundTag();
         own.write(o, registries);

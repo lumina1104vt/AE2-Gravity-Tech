@@ -2,6 +2,7 @@ package com.lumina.ae2_gvt.menus;
 
 import com.lumina.ae2_gvt.items.parts.MachineAccessCore;
 import com.lumina.ae2_gvt.items.parts.MachineAccessHost;
+import com.lumina.ae2_gvt.items.parts.MachineRemoval;
 import com.lumina.twinstar.api.IMachineAccess;
 import com.lumina.twinstar.api.ITwinStarService;
 import com.lumina.twinstar.service.TwinStarService;
@@ -21,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeSet;
 
 /**
  * The machine access interface's screen. The upper part lists the machines it stands for, a page of
@@ -47,6 +49,9 @@ public class MachineAccessMenu extends AEBaseMenu {
     private static final String RECOVER_FACE = "toggleRecoverFace";
     private static final String CYCLE_ROLE = "cycleRole", STEP_SLOT = "stepSlot";
     private static final String APPLY_SAME = "applyMachineToSame";
+    private static final String TOGGLE_MARK = "toggleMachineMark", REMOVE = "removeMachines", TOGGLE_EDIT_SAME = "toggleEditSame";
+    /** how long (ticks) a removal waits for its second press */
+    private static final int CONFIRM_TICKS = 100;
     /** Pairing numbers: 0 (none) to this. */
     private static final int MAX_GROUP = 16;
 
@@ -106,6 +111,28 @@ public class MachineAccessMenu extends AEBaseMenu {
     /** the optional machine of each machine on the page shown (item ids, ";" between them, empty for none), for the small icons in the cells */
     @GuiSync(41)
     public String pageMachines = "";
+    /** "same machines together" mode: a setting changed on one machine goes to every machine of the same kind */
+    @GuiSync(42)
+    public boolean editSame;
+    /** the marked places (";" between them), for the frames in the cells; the marks themselves are the server's */
+    @GuiSync(43)
+    public String marks = "";
+    /** the removal waiting for its second press: 0 none, else {@link MachineRemoval.Scope} ordinal + 1 */
+    @GuiSync(48)
+    public int removeArmed;
+    /** how many listed blocks each removal scope would take out (hatches included), for the buttons' tooltips */
+    @GuiSync(49)
+    public int removeMarkedCount;
+    @GuiSync(50)
+    public int removeSameCount;
+    @GuiSync(51)
+    public int removeAllCount;
+    private final TreeSet<Integer> marked = new TreeSet<>();
+    private int lastMachineCount = -1;
+    private List<Integer> armedSet = List.of();
+    private long armedAt;
+    private String marksText = "";
+    private final java.util.Set<Integer> marksSeen = new java.util.HashSet<>();
     private String pageMachinesSeen = null;
     private final java.util.List<ItemStack> pageStacks = new ArrayList<>();
     /** the network's count of what the selected machine's stock slots hold, one per slot */
@@ -140,7 +167,8 @@ public class MachineAccessMenu extends AEBaseMenu {
             @Override
             public void setItemDirect(int slot, ItemStack stack) {
                 if (selected < part.machineCount())
-                    part.settings(selected).setMachineStack(stack);
+                    for (var t : part.editTargets(selected))
+                        t.setMachineStack(stack);
             }
         };
         machineSlot = new FakeSlot(alt, 0);
@@ -160,7 +188,8 @@ public class MachineAccessMenu extends AEBaseMenu {
 
             @Override
             public void setItemDirect(int slot, ItemStack stack) {
-                part.settings(selected).getStockWrapper().setItemDirect(slot, stack);
+                for (var t : part.editTargets(selected))
+                    t.getStockWrapper().setItemDirect(slot, stack);
             }
 
             @Override
@@ -190,6 +219,9 @@ public class MachineAccessMenu extends AEBaseMenu {
         registerClientAction(CYCLE_ROLE, Boolean.class, this::cycleRole);
         registerClientAction(STEP_SLOT, Integer.class, this::stepSlot);
         registerClientAction(APPLY_SAME, this::applyMachineToSame);
+        registerClientAction(TOGGLE_MARK, Integer.class, this::toggleMark);
+        registerClientAction(REMOVE, Integer.class, this::removeMachines);
+        registerClientAction(TOGGLE_EDIT_SAME, this::toggleEditSame);
     }
 
     /** The optional machine of listed machine {@code index} if it is on the page shown (as last synced), else empty. */
@@ -327,8 +359,9 @@ public class MachineAccessMenu extends AEBaseMenu {
             sendClientAction(TOGGLE_RECOVER);
             return;
         }
-        var s = part.settings(selected);
-        s.setRecover(!s.isRecover());
+        boolean on = !part.settings(selected).isRecover();
+        for (var t : part.editTargets(selected))
+            t.setRecover(on);
     }
 
     public void toggleRecoverEnergy() {
@@ -336,8 +369,9 @@ public class MachineAccessMenu extends AEBaseMenu {
             sendClientAction(TOGGLE_RECOVER_ENERGY);
             return;
         }
-        var s = part.settings(selected);
-        s.setRecoverEnergy(!s.isRecoverEnergy());
+        boolean on = !part.settings(selected).isRecoverEnergy();
+        for (var t : part.editTargets(selected))
+            t.setRecoverEnergy(on);
     }
 
     public void toggleRecoverFace(Integer face) {
@@ -345,7 +379,10 @@ public class MachineAccessMenu extends AEBaseMenu {
             sendClientAction(RECOVER_FACE, face);
             return;
         }
-        part.settings(selected).toggleRecoverFace(net.minecraft.core.Direction.values()[Math.floorMod(face, 6)]);
+        var d = net.minecraft.core.Direction.values()[Math.floorMod(face, 6)];
+        boolean on = !part.settings(selected).recoversFrom(d);
+        for (var t : part.editTargets(selected))
+            t.setRecoverFace(d, on);
     }
 
     public boolean recoversFrom(net.minecraft.core.Direction d) {
@@ -387,6 +424,86 @@ public class MachineAccessMenu extends AEBaseMenu {
             setCarried(stack);
     }
 
+    /** Switches between changing one machine and changing every machine of the same kind together. */
+    public void toggleEditSame() {
+        if (isClientSide()) {
+            sendClientAction(TOGGLE_EDIT_SAME);
+            return;
+        }
+        part.setEditSame(!part.isEditSame());
+    }
+
+    /** Marks (or unmarks) listed machine {@code index} for a removal of the marked ones. */
+    public void toggleMark(Integer index) {
+        if (isClientSide()) {
+            sendClientAction(TOGGLE_MARK, index);
+            return;
+        }
+        if (!part.isWireless() || index < 0 || index >= part.machineCount())
+            return;
+        if (!marked.remove(index))
+            marked.add(index);
+        disarm();
+    }
+
+    private void disarm() {
+        removeArmed = 0;
+        armedSet = List.of();
+    }
+
+    /**
+     * Takes machines out of the list: {@code scopeOrdinal} is a {@link MachineRemoval.Scope}. The first press only says what would go
+     * (and arms it); the same press again within five seconds, with the same machines still to go, does it. The server decides it all.
+     */
+    public void removeMachines(Integer scopeOrdinal) {
+        if (isClientSide()) {
+            sendClientAction(REMOVE, scopeOrdinal);
+            return;
+        }
+        var scopes = MachineRemoval.Scope.values();
+        if (scopeOrdinal < 0 || scopeOrdinal >= scopes.length)
+            return;
+        var scope = scopes[scopeOrdinal];
+        var player = getPlayer();
+        List<Integer> set = part.removalSet(scope, selected, marked);
+        if (set.isEmpty()) {
+            disarm();
+            player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.ae2_gvt.machine_access.remove_none"), true);
+            return;
+        }
+        long now = part.host().level() == null ? 0 : part.host().level().getGameTime();
+        boolean confirmed = removeArmed == scopeOrdinal + 1 && armedSet.equals(set) && now - armedAt <= CONFIRM_TICKS;
+        if (!confirmed) {
+            removeArmed = scopeOrdinal + 1;
+            armedSet = set;
+            armedAt = now;
+            player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.ae2_gvt.machine_access.remove_confirm",
+                    set.size()), true);
+            return;
+        }
+        int oldCount = part.machineCount();
+        int n = part.removeEntries(set);
+        disarm();
+        marked.clear();
+        selected = MachineRemoval.selectionAfter(selected, set, oldCount);
+        selected = Math.max(0, Math.min(selected, part.machineCount() - 1));
+        machinePage = MachineRemoval.pageOf(selected, PER_PAGE);
+        lastMachineCount = -1;
+        player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.ae2_gvt.machine_access.removed", n), true);
+    }
+
+    /** Whether listed place {@code index} is marked, as last synced. */
+    public boolean isMarked(int index) {
+        if (!marks.equals(marksText)) {
+            marksText = marks;
+            marksSeen.clear();
+            for (String m : marks.split(";"))
+                if (!m.isEmpty())
+                    marksSeen.add(Integer.parseInt(m));
+        }
+        return marksSeen.contains(index);
+    }
+
     public void selectMachine(Integer index) {
         if (isClientSide()) {
             sendClientAction(SELECT, index);
@@ -411,8 +528,9 @@ public class MachineAccessMenu extends AEBaseMenu {
             return;
         }
         IMachineAccess.BlockMode[] all = IMachineAccess.BlockMode.values();
-        var s = part.settings(selected);
-        s.setBlockMode(all[(s.getBlockMode().ordinal() + 1) % all.length]);
+        var next = all[(part.settings(selected).getBlockMode().ordinal() + 1) % all.length];
+        for (var t : part.editTargets(selected))
+            t.setBlockMode(next);
     }
 
     public void cycleInsertMode() {
@@ -421,8 +539,9 @@ public class MachineAccessMenu extends AEBaseMenu {
             return;
         }
         IMachineAccess.InsertMode[] all = IMachineAccess.InsertMode.values();
-        var s = part.settings(selected);
-        s.setInsertMode(all[(s.getInsertMode().ordinal() + 1) % all.length]);
+        var next = all[(part.settings(selected).getInsertMode().ordinal() + 1) % all.length];
+        for (var t : part.editTargets(selected))
+            t.setInsertMode(next);
     }
 
     public void cycleGroup() {
@@ -430,8 +549,9 @@ public class MachineAccessMenu extends AEBaseMenu {
             sendClientAction(CYCLE_GROUP);
             return;
         }
-        var s = part.settings(selected);
-        s.setGroup((s.getGroup() + 1) % (MAX_GROUP + 1));
+        int next = (part.settings(selected).getGroup() + 1) % (MAX_GROUP + 1);
+        for (var t : part.editTargets(selected))
+            t.setGroup(next);
     }
 
     public void toggleRedstonePulse() {
@@ -439,8 +559,9 @@ public class MachineAccessMenu extends AEBaseMenu {
             sendClientAction(TOGGLE_PULSE);
             return;
         }
-        var s = part.settings(selected);
-        s.setRedstonePulse(!s.isRedstonePulse());
+        boolean on = !part.settings(selected).isRedstonePulse();
+        for (var t : part.editTargets(selected))
+            t.setRedstonePulse(on);
     }
 
     /** One more (or, {@code back}, one less), round from 8 to 1. */
@@ -450,15 +571,33 @@ public class MachineAccessMenu extends AEBaseMenu {
             return;
         }
         int max = MachineAccessCore.MAX_SUB_RANGE;
-        var s = part.settings(selected);
-        s.setSubRange(Math.floorMod(s.getSubRange() - 1 + (back ? -1 : 1), max) + 1);
+        int next = Math.floorMod(part.settings(selected).getSubRange() - 1 + (back ? -1 : 1), max) + 1;
+        for (var t : part.editTargets(selected))
+            t.setSubRange(next);
     }
 
     @Override
     public void broadcastChanges() {
         if (isServerSide()) {
             machineCount = part.machineCount();
+            if (machineCount != lastMachineCount) {       // the list changed under the screen (the linker): places moved, the marks are stale
+                if (lastMachineCount >= 0) {
+                    marked.clear();
+                    disarm();
+                }
+                lastMachineCount = machineCount;
+            }
+            if (removeArmed != 0 && part.host().level() != null && part.host().level().getGameTime() - armedAt > CONFIRM_TICKS)
+                disarm();
+            StringBuilder markText = new StringBuilder();
+            for (int m : marked)
+                markText.append(markText.length() == 0 ? "" : ";").append(m);
+            marks = markText.toString();
+            editSame = part.isEditSame();
             selected = Math.max(0, Math.min(selected, machineCount - 1));
+            removeMarkedCount = part.removalSet(MachineRemoval.Scope.MARKED, selected, marked).size();
+            removeSameCount = part.removalSet(MachineRemoval.Scope.SAME, selected, marked).size();
+            removeAllCount = part.removalSet(MachineRemoval.Scope.ALL, selected, marked).size();
             machinePage = Math.max(0, Math.min(machinePage, machinePages() - 1));
             mode = part.getMode().ordinal();
             var s = part.settings(selected);
