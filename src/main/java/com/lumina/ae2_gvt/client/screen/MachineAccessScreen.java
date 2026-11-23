@@ -94,6 +94,8 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
         addToLeftToolbar(groupButton);
         addToLeftToolbar(range);
         addToLeftToolbar(pulse);
+        // what this network's machines used up lately
+        addToLeftToolbar(com.lumina.twinstar.client.UsageScreen.button(0, 0, () -> com.lumina.twinstar.client.UsageScreen.open(() -> this)));
         // AE2's upgrade panel on the right: the crafting card (ME interface mode asks the network to craft what a machine's stock is short of)
         widgets.add("upgrades", new UpgradesPanel(menu.getSlots(SlotSemantics.UPGRADE),
                 () -> appeng.api.upgrades.Upgrades.getTooltipLinesForMachine(menu.getPart().host().machineItem())));

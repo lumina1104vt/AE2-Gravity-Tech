@@ -98,6 +98,11 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         /** the side a part sits on (it works on the block there); null for a block, which only works wirelessly */
         @Nullable Direction side();
 
+        /** the name the player gave the host, or null */
+        default @Nullable net.minecraft.network.chat.Component customName() {
+            return null;
+        }
+
         IManagedGridNode node();
 
         appeng.api.networking.security.IActionHost actionHost();
@@ -634,6 +639,9 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         @Override public boolean isAccessActive() { return MachineAccessCore.this.isAccessActive(); }
         @Override public BlockPos getMachinePos() { return entry.link.pos(); }
         @Override public Direction getMachineFace() { return entry.link.face(); }
+        @Override public @Nullable net.minecraft.core.GlobalPos interfacePlace() { return MachineAccessCore.this.interfacePlace(); }
+        @Override public int interfaceSide() { return MachineAccessCore.this.interfaceSide(); }
+        @Override public @Nullable net.minecraft.network.chat.Component interfaceName() { return MachineAccessCore.this.interfaceName(); }
 
         @Override
         public void takeReceived(BiConsumer<AEKey, Long> taken) {
@@ -844,6 +852,32 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
     @Override
     public boolean isAccessActive() {
         return host.node().isActive();
+    }
+
+    // ── for the list of what machines use up ──
+
+    @Override
+    public @Nullable net.minecraft.core.GlobalPos interfacePlace() {
+        return host.level() == null || host.pos() == null ? null : net.minecraft.core.GlobalPos.of(host.level().dimension(), host.pos());
+    }
+
+    @Override
+    public int interfaceSide() {
+        return host.side() == null ? -1 : host.side().ordinal();
+    }
+
+    @Override
+    public @Nullable net.minecraft.network.chat.Component interfaceName() {
+        return host.customName();
+    }
+
+    /** Every machine this interface works on: the bound ones, or the block the part sits on. */
+    @Override
+    public List<net.minecraft.core.GlobalPos> machinePlaces() {
+        List<net.minecraft.core.GlobalPos> out = new ArrayList<>();
+        for (Target t : targets())
+            out.add(net.minecraft.core.GlobalPos.of(t.level().dimension(), t.pos()));
+        return out;
     }
 
     /** The network's count of {@code key} (for the screen's "in the network" row). Server side. */
@@ -1223,6 +1257,9 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
                 want.merge(g.what(), g.amount(), Long::sum);
         }
         Direction face = settings.insertMode == InsertMode.ANY ? null : face0;
+        // what goes into the machine counts as used up there (the list of what machines use)
+        BiConsumer<AEKey, Long> used = (k, n) -> com.lumina.twinstar.usage.UsageStore.record(level, pos, interfacePlace(), interfaceSide(), k, n,
+                com.lumina.twinstar.usage.UsageStore.STOCK);
         IItemHandler items = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, face);
         if (items == null)
             items = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, null);
@@ -1231,13 +1268,14 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
             fluids = level.getCapability(Capabilities.FluidHandler.BLOCK, pos, null);
         for (Map.Entry<AEKey, Long> e : want.entrySet()) {
             if (e.getKey() instanceof AEItemKey item && items != null)
-                topUpItem(items, item, e.getValue(), network, source);
+                topUpItem(items, item, e.getValue(), network, source, used);
             else if (e.getKey() instanceof AEFluidKey fluid && fluids != null)
-                topUpFluid(fluids, fluid, e.getValue(), network, source);
+                topUpFluid(fluids, fluid, e.getValue(), network, source, used);
         }
     }
 
-    private static void topUpItem(IItemHandler items, AEItemKey key, long amount, MEStorage network, IActionSource source) {
+    private static void topUpItem(IItemHandler items, AEItemKey key, long amount, MEStorage network, IActionSource source,
+                                  BiConsumer<AEKey, Long> used) {
         long have = 0;
         for (int s = 0; s < items.getSlots(); s++) {
             ItemStack in = items.getStackInSlot(s);
@@ -1261,9 +1299,11 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         ItemStack back = ItemHandlerHelper.insertItemStacked(items, key.toStack((int) taken), false);
         if (!back.isEmpty())
             network.insert(key, back.getCount(), Actionable.MODULATE, source);
+        used.accept(key, taken - back.getCount());
     }
 
-    private static void topUpFluid(IFluidHandler fluids, AEFluidKey key, long amount, MEStorage network, IActionSource source) {
+    private static void topUpFluid(IFluidHandler fluids, AEFluidKey key, long amount, MEStorage network, IActionSource source,
+                                   BiConsumer<AEKey, Long> used) {
         long have = 0;
         for (int t = 0; t < fluids.getTanks(); t++) {
             FluidStack in = fluids.getFluidInTank(t);
@@ -1285,6 +1325,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         int filled = fluids.fill(key.toStack((int) taken), IFluidHandler.FluidAction.EXECUTE);
         if (filled < taken)
             network.insert(key, taken - filled, Actionable.MODULATE, source);
+        used.accept(key, (long) filled);
     }
 
     /** As much FE as {@code machine} takes, from the network's. */

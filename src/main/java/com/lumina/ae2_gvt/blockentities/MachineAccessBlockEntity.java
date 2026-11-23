@@ -64,6 +64,11 @@ public class MachineAccessBlockEntity extends AENetworkedBlockEntity implements 
     }
 
     @Override
+    public @Nullable net.minecraft.network.chat.Component customName() {
+        return hasCustomName() ? getCustomName() : null;
+    }
+
+    @Override
     public IManagedGridNode node() {
         return getMainNode();
     }
@@ -116,6 +121,10 @@ public class MachineAccessBlockEntity extends AENetworkedBlockEntity implements 
     @Override public void takeReceived(BiConsumer<AEKey, Long> taken) { core.takeReceived(taken); }
     @Override public boolean isAccessActive() { return core.isAccessActive(); }
     @Override public List<IMachineAccess> accessPoints() { return core.accessPoints(); }
+    @Override public @Nullable net.minecraft.core.GlobalPos interfacePlace() { return core.interfacePlace(); }
+    @Override public int interfaceSide() { return core.interfaceSide(); }
+    @Override public @Nullable net.minecraft.network.chat.Component interfaceName() { return core.interfaceName(); }
+    @Override public List<net.minecraft.core.GlobalPos> machinePlaces() { return core.machinePlaces(); }
 
     // ── saving, the client ──
 

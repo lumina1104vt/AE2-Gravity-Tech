@@ -49,6 +49,8 @@ public class DummyCpuScreen extends AEBaseScreen<DummyCpuMenu> {
         this.parallel = numberField("parallel", menu::setParallel);
         // the engine's theory layer for this hub's network; comes back to this screen
         addToLeftToolbar(TheoryScreen.button(0, 0, () -> TheoryScreen.open(null, () -> this)));
+        // what this network's machines used up lately; comes back to this screen
+        addToLeftToolbar(com.lumina.twinstar.client.UsageScreen.button(0, 0, () -> com.lumina.twinstar.client.UsageScreen.open(() -> this)));
     }
 
     /** Any size: plain digits, or units (K…Q) and scientific notation (3E, 2e18, 5K); empty = unlimited. */
