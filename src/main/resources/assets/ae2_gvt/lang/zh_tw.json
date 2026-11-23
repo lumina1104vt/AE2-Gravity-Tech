@@ -548,5 +548,13 @@
   "gui.ae2_gvt.machine_access.slot_auto": "自動：依它在這台機器的同類艙口裡的順序，現在是 %s",
   "gui.ae2_gvt.machine_access.slot_set": "手動設為 %s（數字下面有一條線）",
   "gui.ae2_gvt.machine_access.slot_click": "左鍵加一，右鍵減一，Shift 一次十，減到 0 回到自動",
-  "gui.ae2_gvt.machine_access.slot_is": "欄位 %s"
+  "gui.ae2_gvt.machine_access.slot_is": "欄位 %s",
+  "item.ae2_gvt.dispatch_marker": "發配記號",
+  "item.ae2_gvt.dispatch_marker.tooltip": "不是真的物品。樣板把它當成產物時，材料全部送進機器就算合成完畢。它不會進入網路。",
+  "ae2_gvt.pattern.done": "發配即完成",
+  "ae2_gvt.pattern.done.tip": "材料全部送進機器，這一輪就算完成（這個產物就算做好了），工作不會等產物送回來；給產物自己離開機器的機器用。後面的步驟不能指望拿到它。",
+  "ae2_gvt.pattern.done.marker": "記號一律在材料送進機器後就算做好。",
+  "ae2_gvt.pattern.marker": "記號",
+  "ae2_gvt.pattern.marker.tip": "把這個產物換成發配記號（不是真的物品，JEI / EMI 看不到）：材料全部送進機器就算這一輪完成，訂單的後續步驟可以接在它後面。",
+  "ae2_gvt.pattern.done.list": "發配即完成：%s"
 }

@@ -235,6 +235,9 @@ public class TwinStarJeiPlugin implements IModPlugin {
     @Override
     public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
         runtime = jeiRuntime;
+        // the dispatch marker is no real item: nobody looks it up
+        jeiRuntime.getIngredientManager().removeIngredientsAtRuntime(mezz.jei.api.constants.VanillaTypes.ITEM_STACK,
+                java.util.List.of(new net.minecraft.world.item.ItemStack(com.lumina.ae2_gvt.items.Items.DISPATCH_MARKER.get())));
     }
 
     @Override

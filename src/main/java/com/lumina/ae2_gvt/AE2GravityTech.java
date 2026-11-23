@@ -113,6 +113,7 @@ public class AE2GravityTech {
 
         ITEMS.register(modEventBus);
         Items.register(modEventBus);
+        com.lumina.ae2_gvt.items.DispatchMarker.register();
 
         CREATIVE_MODE_TABS.register(modEventBus);
         Menus.register(modEventBus);

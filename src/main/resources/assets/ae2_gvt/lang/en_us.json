@@ -548,5 +548,13 @@
   "gui.ae2_gvt.machine_access.slot_auto": "Automatic: by its place among this machine's hatches of its kind, now %s",
   "gui.ae2_gvt.machine_access.slot_set": "Set by hand to %s (a line under the number)",
   "gui.ae2_gvt.machine_access.slot_click": "Left click: one more; right click: one less; Shift: ten at a time; down to 0 is automatic",
-  "gui.ae2_gvt.machine_access.slot_is": "Slot %s"
+  "gui.ae2_gvt.machine_access.slot_is": "Slot %s",
+  "item.ae2_gvt.dispatch_marker": "Dispatch Marker",
+  "item.ae2_gvt.dispatch_marker.tooltip": "Not a real item. A pattern names it as its product to count as finished once its materials are in the machine. It never reaches the network.",
+  "ae2_gvt.pattern.done": "Done on dispatch",
+  "ae2_gvt.pattern.done.tip": "The run counts as finished (and this product as made) once all its materials are in the machine. The job does not wait for the product to come back; for machines whose product leaves by itself. Later steps cannot count on it.",
+  "ae2_gvt.pattern.done.marker": "A marker always counts as made once the materials are in.",
+  "ae2_gvt.pattern.marker": "Marker",
+  "ae2_gvt.pattern.marker.tip": "Replaces this product with the dispatch marker (not a real item, hidden from JEI / EMI): the run is finished once its materials are in the machine, and later steps of the order can follow it.",
+  "ae2_gvt.pattern.done.list": "Done on dispatch: %s"
 }
