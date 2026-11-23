@@ -40,7 +40,8 @@ import net.minecraft.world.phys.Vec3;
  * on it. All of its settings and work are {@link MachineAccessCore}'s (shared with the wireless block);
  * this is the cable part around it: its look, its box, its screen, and the grid node.
  */
-public class MachineAccessInterface extends AEBasePart implements IMachineAccess, MachineAccessHost, MachineAccessCore.Host {
+public class MachineAccessInterface extends AEBasePart implements IMachineAccess, MachineAccessHost, MachineAccessCore.Host,
+        appeng.api.upgrades.IUpgradeableObject {
     private final MachineAccessCore core = new MachineAccessCore(this);
 
     public MachineAccessInterface(IPartItem<?> partItem) {
@@ -135,6 +136,17 @@ public class MachineAccessInterface extends AEBasePart implements IMachineAccess
     @Override
     public IActionHost actionHost() {
         return this;
+    }
+
+    @Override
+    public net.minecraft.world.level.ItemLike machineItem() {
+        return getPartItem().asItem();
+    }
+
+    /** the crafting card slot: AE2's upgrade system, the same panel as on AE2's own parts */
+    @Override
+    public appeng.api.upgrades.IUpgradeInventory getUpgrades() {
+        return core.getUpgrades();
     }
 
     @Override

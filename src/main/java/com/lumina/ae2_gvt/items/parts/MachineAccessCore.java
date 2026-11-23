@@ -2,9 +2,11 @@ package com.lumina.ae2_gvt.items.parts;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 
 import org.jetbrains.annotations.Nullable;
@@ -16,8 +18,13 @@ import com.lumina.twinstar.api.IMachineAccess.PortRole;
 
 import appeng.api.config.Actionable;
 import appeng.api.inventories.InternalInventory;
+import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import appeng.api.networking.IManagedGridNode;
+import appeng.api.networking.crafting.CalculationStrategy;
+import appeng.api.networking.crafting.ICraftingLink;
+import appeng.api.networking.crafting.ICraftingPlan;
+import appeng.api.networking.crafting.ICraftingRequester;
 import appeng.api.networking.security.IActionSource;
 import appeng.api.networking.ticking.IGridTickable;
 import appeng.api.networking.ticking.TickRateModulation;
@@ -28,6 +35,12 @@ import appeng.api.stacks.AEKey;
 import appeng.api.stacks.AEKeyType;
 import appeng.api.stacks.GenericStack;
 import appeng.api.storage.MEStorage;
+import appeng.api.storage.StorageHelper;
+import appeng.api.upgrades.IUpgradeInventory;
+import appeng.api.upgrades.IUpgradeableObject;
+import appeng.api.upgrades.UpgradeInventories;
+import appeng.core.definitions.AEItems;
+import com.google.common.collect.ImmutableSet;
 import appeng.helpers.externalstorage.GenericStackFluidStorage;
 import appeng.helpers.externalstorage.GenericStackItemStorage;
 import appeng.util.ConfigInventory;
@@ -43,6 +56,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.fluids.FluidStack;
@@ -59,7 +73,7 @@ import net.minecraftforge.items.ItemHandlerHelper;
  * Every machine it stands for has settings of its own ({@link Settings}): with no machine bound it is the
  * block the part sits on, otherwise each bound machine (the 機器連結器).
  */
-public class MachineAccessCore implements IMachineAccess, InternalInventoryHost, IGridTickable {
+public class MachineAccessCore implements IMachineAccess, InternalInventoryHost, IGridTickable, ICraftingRequester, IUpgradeableObject {
     public static final int MAX_SUB_RANGE = 8;
     public static final int STOCK_SLOTS = 9;
     /** wireless range, in blocks, same dimension */
@@ -86,6 +100,9 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         IManagedGridNode node();
 
         appeng.api.networking.security.IActionHost actionHost();
+
+        /** the item the crafting card is registered for ({@code Upgrades.add}): the part's item, or the block's */
+        ItemLike machineItem();
 
         void save();
 
@@ -313,8 +330,16 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
 
     private final Host host;
 
+    /** the crafting card slot (one): with the card, ME interface mode asks the network to craft what a machine's stock is short of */
+    private final IUpgradeInventory upgrades;
+    /** what is asked for, per item (decisions in {@link StockCrafting}); the plan being calculated and the job running for each */
+    private final StockCrafting<AEKey> stockCrafting = new StockCrafting<>();
+    private final Map<AEKey, Future<ICraftingPlan>> stockPlans = new LinkedHashMap<>();
+    private final Map<AEKey, ICraftingLink> stockLinks = new LinkedHashMap<>();
+
     public MachineAccessCore(Host host) {
         this.host = host;
+        this.upgrades = UpgradeInventories.forMachine(host.machineItem(), 1, this::onUpgradesChanged);
     }
 
     public Host host() {
@@ -328,7 +353,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
 
     /** Picks the interface up on the grid: the host's node runs this. */
     public void setup(IManagedGridNode node) {
-        node.setFlags().setIdlePowerUsage(10).addService(IGridTickable.class, this);
+        node.setFlags().setIdlePowerUsage(10).addService(IGridTickable.class, this).addService(ICraftingRequester.class, this);
     }
 
     private void markForSave() {
@@ -884,6 +909,9 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         boolean stockNow = ++stockTicks >= 10;
         if (stockNow)
             stockTicks = 0;
+        // what each stocked item is wanted at and held at across the machines, for the crafting card
+        boolean craftNow = stockNow && mode == Mode.INTERFACE && upgrades.isInstalled(AEItems.CRAFTING_CARD);
+        Map<AEKey, long[]> stocked = new LinkedHashMap<>();
         for (Target t : targets()) {
             tickPulse(t.settings(), t.link());
             if (mode == Mode.INTERFACE && stockNow)
@@ -892,6 +920,8 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
                 continue;
             if (mode == Mode.INTERFACE && stockNow)
                 topUp(t.settings(), t.level(), network, source, t.pos(), t.face());
+            if (craftNow)
+                countStock(t.settings(), t.level(), t.pos(), t.face(), stocked);
             charge(com.lumina.twinstar.util.Caps.energy(t.level(), t.pos(), t.face()), network, source);
             if (mode == Mode.PROVIDER && t.access() != null
                     && node.getGrid().getService(com.lumina.twinstar.api.ITwinStarService.class)
@@ -909,7 +939,159 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
                 }
             }
         }
+        if (stockNow && (craftNow || !stockCrafting.isEmpty()))
+            craftMissing(node.getGrid(), (ServerLevel) host.level(), source, stocked, craftNow);
         return TickRateModulation.SAME;
+    }
+
+    // ── the crafting card: ask the network to craft what a machine's stock is short of ──
+
+    @Override
+    public IUpgradeInventory getUpgrades() {
+        return upgrades;
+    }
+
+    public boolean hasCraftingCard() {
+        return upgrades.isInstalled(AEItems.CRAFTING_CARD);
+    }
+
+    private void onUpgradesChanged() {
+        markForSave();
+        if (!hasCraftingCard())
+            cancelCrafting();
+    }
+
+    /** The card came out: what was asked for is cancelled, like AE2's interface does. */
+    private void cancelCrafting() {
+        for (ICraftingLink l : stockLinks.values())
+            l.cancel();
+        for (Future<ICraftingPlan> f : stockPlans.values())
+            f.cancel(true);
+        stockLinks.clear();
+        stockPlans.clear();
+        stockCrafting.clear();
+    }
+
+    /**
+     * Adds what this machine's stock wants and what it holds now (after the top-up), per item, to {@code into}: [wanted, held].
+     * Handlers are looked up as the top-up does it.
+     */
+    private void countStock(Settings settings, ServerLevel level, BlockPos pos, Direction face0, Map<AEKey, long[]> into) {
+        if (settings.stock.isEmpty())
+            return;
+        Direction face = settings.insertMode == InsertMode.ANY ? null : face0;
+        IItemHandler items = com.lumina.twinstar.util.Caps.item(level, pos, face);
+        if (items == null)
+            items = com.lumina.twinstar.util.Caps.item(level, pos, null);
+        IFluidHandler fluids = com.lumina.twinstar.util.Caps.fluid(level, pos, face);
+        if (fluids == null)
+            fluids = com.lumina.twinstar.util.Caps.fluid(level, pos, null);
+        Map<AEKey, Long> want = new LinkedHashMap<>();
+        for (int i = 0; i < settings.stock.size(); i++) {
+            GenericStack g = settings.stock.getStack(i);
+            if (g != null && g.amount() > 0)
+                want.merge(g.what(), g.amount(), Long::sum);
+        }
+        for (Map.Entry<AEKey, Long> e : want.entrySet()) {
+            long held = 0;
+            if (e.getKey() instanceof AEItemKey item && items != null) {
+                for (int s = 0; s < items.getSlots(); s++)
+                    if (item.matches(items.getStackInSlot(s)))
+                        held += items.getStackInSlot(s).getCount();
+            } else if (e.getKey() instanceof AEFluidKey fluid && fluids != null) {
+                for (int t = 0; t < fluids.getTanks(); t++)
+                    if (fluid.matches(fluids.getFluidInTank(t)))
+                        held += fluids.getFluidInTank(t).getAmount();
+            }
+            long[] sum = into.computeIfAbsent(e.getKey(), k -> new long[2]);
+            sum[0] += e.getValue();
+            sum[1] += held;
+        }
+    }
+
+    /**
+     * Once every half second: for each stocked item, asks the network to craft what is missing (what is wanted, less what the
+     * machines hold and what the network has), the way AE2's interface does with a crafting card: one calculation
+     * ({@code beginCraftingCalculation}), then {@code submitJob} with this interface as the requester, which keeps the job's
+     * link. {@link StockCrafting} decides when (no second request for an item while one runs, waits after failures).
+     * {@code enabled} false (mode changed, card out): nothing new is asked, what is under way is only looked after.
+     */
+    private void craftMissing(@Nullable IGrid grid, ServerLevel level, IActionSource source, Map<AEKey, long[]> stocked, boolean enabled) {
+        if (grid == null)
+            return;
+        var crafting = grid.getCraftingService();
+        var cached = grid.getStorageService().getCachedInventory();
+        long now = level.getGameTime();
+        Set<AEKey> keys = new LinkedHashSet<>(stocked.keySet());
+        keys.addAll(stockCrafting.keys());
+        for (AEKey key : keys) {
+            long[] sum = stocked.get(key);
+            long need = enabled && sum != null ? StockCrafting.shortfall(sum[0], sum[1], cached.get(key)) : 0;
+            ICraftingLink link = stockLinks.get(key);
+            if (link != null && (link.isDone() || link.isCanceled())) {
+                stockLinks.remove(key);
+                stockCrafting.jobEnded(key, link.isDone(), now);
+            }
+            Future<ICraftingPlan> future = stockPlans.get(key);
+            if (future != null && future.isDone()) {
+                stockPlans.remove(key);
+                ICraftingPlan plan = null;
+                try {
+                    plan = future.get();
+                } catch (Exception e) {
+                    // cancelled or the calculation failed: counts as an unusable plan
+                }
+                boolean usable = plan != null && !plan.simulation();
+                if (stockCrafting.planFinished(key, usable, need > 0, now)) {
+                    var result = crafting.submitJob(plan, this, null, false, source);
+                    boolean ok = result.successful() && result.link() != null;
+                    if (ok)
+                        stockLinks.put(key, result.link());
+                    stockCrafting.submitted(key, ok, now);
+                    markForSave();
+                }
+            }
+            if (stockCrafting.poll(key, need, now) == StockCrafting.Step.CALCULATE)
+                stockPlans.put(key, crafting.beginCraftingCalculation(level, () -> source, key, need, CalculationStrategy.CRAFT_LESS));
+        }
+    }
+
+    /** What the stock slot holding {@code key} shows: 0 nothing going on, 1 asked the network to craft it, 2 could not (retrying later). */
+    public int craftState(@Nullable AEKey key) {
+        if (key == null)
+            return 0;
+        return switch (stockCrafting.phaseOf(key)) {
+            case CALCULATING, RUNNING -> 1;
+            case RETRY -> 2;
+            default -> 0;
+        };
+    }
+
+    // the crafting requester: AE2 tells it about the jobs it asked for
+
+    @Override
+    public ImmutableSet<ICraftingLink> getRequestedJobs() {
+        ImmutableSet.Builder<ICraftingLink> out = ImmutableSet.builder();
+        for (ICraftingLink l : stockLinks.values())
+            if (!l.isDone() && !l.isCanceled())
+                out.add(l);
+        return out.build();
+    }
+
+    /** What the job makes goes into network storage (the machine is topped up from there), so none is taken here. */
+    @Override
+    public long insertCraftedItems(ICraftingLink link, AEKey what, long amount, Actionable mode) {
+        return 0;
+    }
+
+    @Override
+    public void jobStateChange(ICraftingLink link) {
+        // looked at in craftMissing: a finished or cancelled link is let go there
+    }
+
+    @Override
+    public @Nullable IGridNode getActionableNode() {
+        return host.actionHost().getActionableNode();
     }
 
     /** What the machines put out into it and no hub took for two seconds goes into network storage. */
@@ -1184,6 +1366,20 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         }
         editSame = tag.getBoolean("editSame");
         received.readFromChildTag(tag, "received");
+        upgrades.readFromNBT(tag, "upgrades");
+        // the jobs it had asked for: the links come back, so nothing is asked for twice
+        stockLinks.clear();
+        stockPlans.clear();
+        stockCrafting.clear();
+        ListTag asked = tag.getList("craftLinks", 10);
+        for (int i = 0; i < asked.size(); i++) {
+            CompoundTag t = asked.getCompound(i);
+            AEKey what = AEKey.fromTagGeneric(t.getCompound("what"));
+            if (what == null)
+                continue;
+            stockLinks.put(what, StorageHelper.loadCraftingLink(t.getCompound("link"), this));
+            stockCrafting.restore(what, t.getLong("amount"));
+        }
         entries.clear();
         if (tag.contains("own")) {
             own.read(tag.getCompound("own"));
@@ -1220,6 +1416,20 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         tag.putString("mode", mode.name());
         tag.putBoolean("editSame", editSame);
         received.writeToChildTag(tag, "received");
+        upgrades.writeToNBT(tag, "upgrades");
+        ListTag asked = new ListTag();
+        for (Map.Entry<AEKey, ICraftingLink> l : stockLinks.entrySet()) {
+            if (l.getValue().isDone() || l.getValue().isCanceled())
+                continue;
+            CompoundTag t = new CompoundTag();
+            t.put("what", l.getKey().toTagGeneric());
+            CompoundTag link = new CompoundTag();
+            l.getValue().writeToNBT(link);
+            t.put("link", link);
+            t.putLong("amount", stockCrafting.amountOf(l.getKey()));
+            asked.add(t);
+        }
+        tag.put("craftLinks", asked);
         CompoundTag o = new CompoundTag();
         own.write(o);
         tag.put("own", o);
@@ -1236,7 +1446,10 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
     }
 
     public void drops(List<ItemStack> drops) {
-        // the machine slot and the stock are ghost slots; what the machine put out into it is real
+        // the machine slot and the stock are ghost slots; what the machine put out into it is real; so is the card
+        for (ItemStack card : upgrades)
+            if (!card.isEmpty())
+                drops.add(card);
         for (int i = 0; i < received.size(); i++) {
             GenericStack s = received.getStack(i);
             if (s != null && s.what() instanceof AEItemKey item)
@@ -1249,6 +1462,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
     }
 
     public void clear() {
+        upgrades.clear();
         received.clear();
     }
 }

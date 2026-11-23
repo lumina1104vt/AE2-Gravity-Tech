@@ -156,6 +156,13 @@ public class AE2GravityTech {
                 appeng.api.upgrades.Upgrades.add(appeng.core.definitions.AEItems.SPEED_CARD,
                         com.lumina.ae2_gvt.blocks.Blocks.GRAVITY_FACTORY.get(),
                         com.lumina.ae2_gvt.blockentities.GravityFactoryBlockEntity.MAX_SPEED_CARDS)));
+        // the machine access interface (the part and the block) takes one crafting card: in ME interface mode it asks the network to craft what is short
+        modEventBus.addListener((net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent e) -> e.enqueueWork(() -> {
+            appeng.api.upgrades.Upgrades.add(appeng.core.definitions.AEItems.CRAFTING_CARD,
+                    com.lumina.ae2_gvt.items.Items.MACHINE_ACCESS_INTERFACE.get(), 1);
+            appeng.api.upgrades.Upgrades.add(appeng.core.definitions.AEItems.CRAFTING_CARD,
+                    com.lumina.ae2_gvt.blocks.Blocks.MACHINE_ACCESS_BLOCK.get(), 1);
+        }));
         // which machine a synthesis pattern is for, for the twin-star engine
         com.lumina.twinstar.api.PatternMachines.setReader(definition -> {
             return com.lumina.ae2_gvt.terminal.TwinStarTerminal.PATTERN_MACHINE.get(definition);

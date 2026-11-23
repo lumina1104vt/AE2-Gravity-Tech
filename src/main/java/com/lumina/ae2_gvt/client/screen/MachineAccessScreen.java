@@ -24,6 +24,8 @@ import appeng.client.gui.Icon;
 import appeng.client.gui.style.Blitter;
 import appeng.client.gui.style.ScreenStyle;
 import appeng.client.gui.widgets.IconButton;
+import appeng.client.gui.widgets.UpgradesPanel;
+import appeng.menu.SlotSemantics;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.BlockPos;
@@ -92,6 +94,9 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
         addToLeftToolbar(groupButton);
         addToLeftToolbar(range);
         addToLeftToolbar(pulse);
+        // AE2's upgrade panel on the right: the crafting card (ME interface mode asks the network to craft what a machine's stock is short of)
+        widgets.add("upgrades", new UpgradesPanel(menu.getSlots(SlotSemantics.UPGRADE),
+                () -> appeng.api.upgrades.Upgrades.getTooltipLinesForMachine(menu.getPart().host().machineItem())));
     }
 
     /** The mouse button of the click being handled, for buttons that go the other way on a right click. */
@@ -308,11 +313,13 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
             for (int i = 0; i < slots.size(); i++) {
                 GenericStack stack = GenericStack.fromItemStack(slots.get(i).getItem());
                 if (stack != null && inside(lx, ly, 8 + i * 18, NET_Y, 16, 16)) {
-                    g.renderTooltip(font, List.of(AEKeyRendering.getDisplayName(stack.what()),
+                    List<Component> lines = new java.util.ArrayList<>(List.of(AEKeyRendering.getDisplayName(stack.what()),
                             Component.translatable("gui.ae2_gvt.machine_access.keep", String.format("%,d", stack.amount()))
                                     .withStyle(ChatFormatting.GRAY),
                             Component.translatable("gui.ae2_gvt.machine_access.in_network", String.format("%,d", menu.networkCount(i)))
-                                    .withStyle(ChatFormatting.GRAY)), java.util.Optional.empty(), mouseX, mouseY);
+                                    .withStyle(ChatFormatting.GRAY)));
+                    addCraftLines(lines, i);
+                    g.renderTooltip(font, lines, java.util.Optional.empty(), mouseX, mouseY);
                     return;
                 }
             }
@@ -582,6 +589,73 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
 
     /** ME interface mode, like AE2's: the config label, a gear over each slot that holds something, an arrow in each empty one,
      * and under them that item as the network has it. */
+    /** Over the small mark in the corner of a stock slot (what the crafting card is doing for it): that, not the slot's own tooltip. */
+    @Override
+    protected void renderTooltip(GuiGraphics g, int x, int y) {
+        if (!providerMode() && hoveredSlot != null && menu.stockSlots().contains(hoveredSlot)) {
+            int i = menu.stockSlots().indexOf(hoveredSlot);
+            if (menu.craftState(i) != 0 && inside(x - leftPos, y - topPos, badgeX(i), STOCK_ROW_Y, BADGE, BADGE)) {
+                List<Component> lines = new java.util.ArrayList<>();
+                GenericStack stack = GenericStack.fromItemStack(hoveredSlot.getItem());
+                if (stack != null)
+                    lines.add(AEKeyRendering.getDisplayName(stack.what()));
+                addCraftLines(lines, i);
+                drawTooltip(g, x, y, lines);
+                return;
+            }
+        }
+        super.renderTooltip(g, x, y);
+    }
+
+    /** The mark's size and place: the top right corner of stock slot {@code i}. */
+    private static final int BADGE = 7;
+
+    private static int badgeX(int i) {
+        return 8 + i * 18 + 16 - BADGE;
+    }
+
+    /** What the crafting card is doing for stock slot {@code i}, as tooltip lines (none when nothing). */
+    private void addCraftLines(List<Component> lines, int i) {
+        switch (menu.craftState(i)) {
+            case 1 -> {
+                lines.add(Component.translatable("gui.ae2_gvt.machine_access.craft.running").withStyle(ChatFormatting.AQUA));
+                lines.add(Component.translatable("gui.ae2_gvt.machine_access.craft.running_desc").withStyle(ChatFormatting.GRAY));
+            }
+            case 2 -> {
+                lines.add(Component.translatable("gui.ae2_gvt.machine_access.craft.retry").withStyle(ChatFormatting.GOLD));
+                lines.add(Component.translatable("gui.ae2_gvt.machine_access.craft.retry_desc").withStyle(ChatFormatting.GRAY));
+            }
+            default -> {
+            }
+        }
+    }
+
+    /**
+     * The mark for a stock slot the crafting card is working for. Two shapes, so it never depends on colour: an hourglass (blue on
+     * light) while the network crafts it, an exclamation mark (white on orange) when it could not and tries again later.
+     */
+    private static void drawCraftBadge(GuiGraphics g, int x, int y, int state) {
+        g.pose().pushPose();
+        g.pose().translate(0, 0, 250);
+        if (state == 1) {
+            g.fill(x, y, x + BADGE, y + BADGE, 0xFF1B3F66);
+            g.fill(x + 1, y + 1, x + BADGE - 1, y + BADGE - 1, 0xFFF2F2F2);
+            int c = 0xFF2F86C8;
+            g.fill(x + 1, y + 1, x + 6, y + 2, c);      // top bar
+            g.fill(x + 2, y + 2, x + 5, y + 3, c);
+            g.fill(x + 3, y + 3, x + 4, y + 4, c);      // the neck
+            g.fill(x + 2, y + 4, x + 5, y + 5, c);
+            g.fill(x + 1, y + 5, x + 6, y + 6, c);      // bottom bar
+        } else {
+            g.fill(x, y, x + BADGE, y + BADGE, 0xFF5A3200);
+            g.fill(x + 1, y + 1, x + BADGE - 1, y + BADGE - 1, 0xFFE08A00);
+            int c = 0xFFFFFFFF;
+            g.fill(x + 3, y + 1, x + 4, y + 4, c);      // the stroke
+            g.fill(x + 3, y + 5, x + 4, y + 6, c);      // the dot
+        }
+        g.pose().popPose();
+    }
+
     private void drawStock(GuiGraphics g, int mx, int my) {
         g.drawString(font, Component.translatable("gui.ae2_gvt.machine_access.stock"), 8, STOCK_LABEL_Y, TEXT, false);
         var slots = menu.stockSlots();
@@ -597,6 +671,8 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
                 Icon.WHITE_ARROW_DOWN.getBlitter().dest(8 + i * 18, STOCK_ROW_Y).blit(g);
                 continue;
             }
+            if (menu.craftState(i) != 0)
+                drawCraftBadge(g, badgeX(i), STOCK_ROW_Y, menu.craftState(i));
             // the cell is the network's count of it (nothing written when it has none); the slot above says what to keep
             // by default no more than the amount above (its limit); after a shift + left click on its gear, all of it, and the slot above writes no amount
             long amount = aeCounts[i] ? menu.networkCount(i) : Math.min(menu.networkCount(i), stack.amount());
