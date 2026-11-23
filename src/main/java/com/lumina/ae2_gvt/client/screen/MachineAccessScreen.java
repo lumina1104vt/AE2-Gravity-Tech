@@ -6,6 +6,7 @@ import java.util.Locale;
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.client.LinkToolClient;
 import com.lumina.ae2_gvt.items.parts.MachineAccessCore;
+import com.lumina.ae2_gvt.items.parts.MachineRemoval;
 import com.lumina.ae2_gvt.items.tools.MachineLinkTool;
 import com.lumina.ae2_gvt.menus.MachineAccessMenu;
 import com.lumina.twinstar.api.IMachineAccess;
@@ -49,6 +50,8 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
     private static final int BAR_X = 8, BAR_W = 160, BAR_H = 6;
     /** the machine cells: x of the first, y, spacing */
     private static final int CELL_X = 8, CELL_Y = 30, CELL = 18;
+    /** the three removal buttons next to the "machines" label: marked, same kind, all (screen-relative corner, size) */
+    private static final int REMOVE_X = 62, REMOVE_Y = 17, REMOVE_W = 11, REMOVE_STEP = 13;
     private static final int NET_Y = 102, BAR_Y = 106, GEAR_Y = 68, STOCK_ROW_Y = 84, STOCK_LABEL_Y = 52, NET_LABEL_Y = 115;
 
     private final ModeButton modeButton = new ModeButton();
@@ -64,6 +67,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
     private final RoleButton roleButton = new RoleButton();
     private final SlotButton slotButton = new SlotButton();
     private final ApplySameButton applySame = new ApplySameButton();
+    private final EditSameButton editSameButton = new EditSameButton();
     private final SubRangeButton range = new SubRangeButton();
     private final PulseButton pulse = new PulseButton();
     /** what each slot's lower cell shows: false the amount it is set to keep, true the network's count of it */
@@ -82,6 +86,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
         addToLeftToolbar(blocking);
         addToLeftToolbar(insert);
         addToLeftToolbar(roleButton);
+        addToLeftToolbar(editSameButton);
         addToLeftToolbar(applySame);
         addToLeftToolbar(slotButton);
         addToLeftToolbar(groupButton);
@@ -91,7 +96,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
 
     /** The mouse button of the click being handled, for buttons that go the other way on a right click. */
     private int lastMouseButton;
-    private double lastMouseX, lastMouseY;
+    private double lastMouseX, lastMouseY, hoverX, hoverY;
     /** the faces panel (opened by the faces button): a cube's net of big cells, each face on or off, any number of them */
     private boolean facesOpen;
     private static final int PANEL_X = 104, PANEL_Y = 58, CELL_BIG = 20;
@@ -120,6 +125,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
             b.setVisibility(provider && !menu.isHatch());     // the machine's settings are the provider's; a hatch has none of them
         roleButton.setVisibility(provider && wireless);       // a bound block is a machine or a hatch of the machine before it
         slotButton.setVisibility(provider && wireless && menu.isNumbered());
+        editSameButton.setVisibility(wireless);               // one machine at a time, or every machine of the kind together
         applySame.setVisibility(provider && wireless && !menu.isHatch() && menu.sameCount >= 2);     // only when another one of the same kind is listed
         recoverButton.setVisibility(!provider);
         recoverEnergyButton.setVisibility(!provider && menu.recover);     // the FE a machine gives out, taken back as well
@@ -219,10 +225,21 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
                 return true;
             }
         }
+        if (button == 0 && menu.getPart().isWireless()) {
+            MachineRemoval.Scope scope = removeButtonAt(lx, ly);
+            if (scope != null) {
+                menu.removeMachines(scope.ordinal());
+                return true;
+            }
+        }
         if (button == 0) {
             for (int i = 0; i < MachineAccessMenu.PER_PAGE; i++) {
                 int index = menu.machinePage * MachineAccessMenu.PER_PAGE + i;
                 if (index < menu.machineCount && inside(lx, ly, CELL_X + i * CELL, CELL_Y, 16, 16)) {
+                    if (hasShiftDown() && menu.getPart().isWireless()) {      // shift + click: mark it for "remove the marked ones"
+                        menu.toggleMark(index);
+                        return true;
+                    }
                     long now = System.currentTimeMillis();
                     if (lastClickCell == index && now - lastClickAt < 350)
                         highlight(index);                 // a double click lights the machine up in the world
@@ -300,6 +317,25 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
                 }
             }
         }
+        if (part.isWireless()) {
+            MachineRemoval.Scope scope = removeButtonAt(lx, ly);
+            if (scope != null) {
+                int count = switch (scope) {
+                    case MARKED -> menu.removeMarkedCount;
+                    case SAME -> menu.removeSameCount;
+                    case ALL -> menu.removeAllCount;
+                };
+                String key = scope.name().toLowerCase(Locale.ROOT);
+                List<Component> lines = new java.util.ArrayList<>();
+                lines.add(Component.translatable("gui.ae2_gvt.machine_access.remove." + key));
+                lines.add(Component.translatable("gui.ae2_gvt.machine_access.remove." + key + ".desc").withStyle(ChatFormatting.GRAY));
+                lines.add(Component.translatable("gui.ae2_gvt.machine_access.remove_count", count).withStyle(ChatFormatting.WHITE));
+                lines.add(Component.translatable(menu.removeArmed == scope.ordinal() + 1 ? "gui.ae2_gvt.machine_access.remove_armed"
+                        : "gui.ae2_gvt.machine_access.remove_twice").withStyle(ChatFormatting.GOLD));
+                g.renderTooltip(font, lines, java.util.Optional.empty(), mouseX, mouseY);
+                return;
+            }
+        }
         for (int i = 0; i < MachineAccessMenu.PER_PAGE; i++) {
             int index = menu.machinePage * MachineAccessMenu.PER_PAGE + i;
             if (index >= menu.machineCount)
@@ -330,8 +366,38 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
             if (!also.isEmpty())
                 lines.add(Component.translatable("gui.ae2_gvt.machine_access.also", also.getHoverName()).withStyle(ChatFormatting.GRAY));
             lines.add(Component.translatable("gui.ae2_gvt.machine_access.cell_hint").withStyle(ChatFormatting.DARK_GRAY));
+            if (part.isWireless()) {
+                if (menu.isMarked(index))
+                    lines.add(Component.translatable("gui.ae2_gvt.machine_access.marked").withStyle(ChatFormatting.GOLD));
+                lines.add(Component.translatable("gui.ae2_gvt.machine_access.mark_hint").withStyle(ChatFormatting.DARK_GRAY));
+            }
             g.renderTooltip(font, lines, java.util.Optional.empty(), mouseX, mouseY);
             return;
+        }
+    }
+
+    /** The removal button under the point (relative to the screen's corner), or null. */
+    private static @Nullable MachineRemoval.Scope removeButtonAt(double lx, double ly) {
+        for (MachineRemoval.Scope scope : MachineRemoval.Scope.values())
+            if (inside(lx, ly, REMOVE_X + scope.ordinal() * REMOVE_STEP, REMOVE_Y, REMOVE_W, REMOVE_W))
+                return scope;
+        return null;
+    }
+
+    /** The three removal buttons: a bin, with one, two or three dots under it for marked / same kind / all; lit gold when waiting for the second press. */
+    private void drawRemoveButtons(GuiGraphics g, double lx, double ly) {
+        for (MachineRemoval.Scope scope : MachineRemoval.Scope.values()) {
+            int x = REMOVE_X + scope.ordinal() * REMOVE_STEP, y = REMOVE_Y;
+            boolean armed = menu.removeArmed == scope.ordinal() + 1, over = inside(lx, ly, x, y, REMOVE_W, REMOVE_W);
+            g.fill(x, y, x + REMOVE_W, y + REMOVE_W, armed ? 0xFF7A4A00 : 0xFF413F54);
+            g.fill(x + 1, y + 1, x + REMOVE_W - 1, y + REMOVE_W - 1, armed ? 0xFFF0A020 : over ? 0xFFE6E8F4 : 0xFFCBCCD4);
+            int ink = armed ? 0xFF2A1800 : 0xFF282C3C;
+            g.fill(x + 2, y + 2, x + 9, y + 3, ink);          // the lid
+            g.fill(x + 4, y + 1, x + 7, y + 2, ink);
+            g.fill(x + 3, y + 3, x + 8, y + 7, ink);          // the bin
+            int dots = scope.ordinal() + 1;
+            for (int d = 0; d < dots; d++)
+                g.fill(x + 2 + d * 3, y + 8, x + 3 + d * 3, y + 9, ink);
         }
     }
 
@@ -380,6 +446,8 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
     @Override
     public void drawFG(GuiGraphics guiGraphics, int offsetX, int offsetY, int mouseX, int mouseY) {
         super.drawFG(guiGraphics, offsetX, offsetY, mouseX, mouseY);
+        hoverX = mouseX - leftPos;
+        hoverY = mouseY - topPos;
         drawMachines(guiGraphics);
         if (providerMode())
             drawStatus(guiGraphics);
@@ -438,6 +506,8 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
         BlockPos hostPos = part.host().pos();
         Direction hostSide = part.host().side();
         g.drawString(font, Component.translatable("gui.ae2_gvt.machine_access.machines"), 8, 20, TEXT, false);
+        if (part.isWireless())
+            drawRemoveButtons(g, hoverX, hoverY);
         if (menu.machinePages() > 1) {
             String n = (menu.machinePage + 1) + "/" + menu.machinePages();
             g.drawString(font, n, 140 - font.width(n) / 2, 13, TEXT, false);
@@ -481,6 +551,14 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
                 g.pose().translate(cx, cy, 10);
                 g.pose().scale(0.5f, 0.5f, 1f);
                 g.renderItem(also, 0, 0);
+                g.pose().popPose();
+            }
+            if (menu.isMarked(index)) {         // marked for removal: a gold square in the top left corner, so it does not hide the selection frame
+                int mx = CELL_X + i * CELL;
+                g.pose().pushPose();
+                g.pose().translate(0, 0, 160);
+                g.fill(mx, CELL_Y, mx + 6, CELL_Y + 6, 0xFF282C3C);
+                g.fill(mx + 1, CELL_Y + 1, mx + 5, CELL_Y + 5, 0xFFF0A020);
                 g.pose().popPose();
             }
             if (index == menu.selected) {       // the selected one: a frame round its cell
@@ -958,6 +1036,55 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
             return List.of(Component.translatable("gui.ae2_gvt.machine_access.apply_same"),
                     Component.translatable("gui.ae2_gvt.machine_access.apply_same_desc", menu.sameCount - 1).withStyle(ChatFormatting.GRAY),
                     Component.translatable("gui.ae2_gvt.machine_access.apply_same_hint").withStyle(ChatFormatting.DARK_GRAY));
+        }
+    }
+
+    /**
+     * One machine at a time, or every machine of the same kind together: one box when single, three boxes tied by a line (and a gold
+     * frame) when together. The shape says it, not a colour.
+     */
+    private final class EditSameButton extends IconButton {
+        EditSameButton() {
+            super(btn -> menu.toggleEditSame());
+        }
+
+        @Override
+        protected Icon getIcon() {
+            return Icon.TOOLBAR_BUTTON_BACKGROUND;    // the background only (AE2 15's button needs an icon); the boxes are drawn on it
+        }
+
+        @Override
+        public void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+            super.renderWidget(g, mouseX, mouseY, partialTick);
+            if (!visible)
+                return;
+            int x = getX(), y = getY() + (isHovered() ? 1 : 0);
+            g.pose().pushPose();
+            g.pose().translate(0, 0, 100);
+            if (!menu.editSame) {
+                g.fill(x + 4, y + 4, x + 12, y + 12, 0xFF282C3C);
+                g.fill(x + 5, y + 5, x + 11, y + 11, 0xFFF4F9FF);
+            } else {
+                g.fill(x + 1, y + 1, x + 15, y + 2, 0xFFF0A020);        // a frame round all of it
+                g.fill(x + 1, y + 14, x + 15, y + 15, 0xFFF0A020);
+                g.fill(x + 1, y + 1, x + 2, y + 15, 0xFFF0A020);
+                g.fill(x + 14, y + 1, x + 15, y + 15, 0xFFF0A020);
+                g.fill(x + 4, y + 7, x + 12, y + 9, 0xFFB0B0C8);        // the tie
+                for (int k = 0; k < 3; k++) {
+                    g.fill(x + 3 + k * 4, y + 5, x + 6 + k * 4, y + 11, 0xFF282C3C);
+                    g.fill(x + 4 + k * 4, y + 6, x + 5 + k * 4, y + 10, 0xFFF4F9FF);
+                }
+            }
+            g.pose().popPose();
+        }
+
+        @Override
+        public List<Component> getTooltipMessage() {
+            String key = menu.editSame ? "together" : "single";
+            return List.of(Component.translatable("gui.ae2_gvt.machine_access.edit_same"),
+                    Component.translatable("gui.ae2_gvt.machine_access.edit_same." + key).withStyle(ChatFormatting.WHITE),
+                    Component.translatable("gui.ae2_gvt.machine_access.edit_same." + key + ".desc").withStyle(ChatFormatting.GRAY),
+                    Component.translatable("gui.ae2_gvt.machine_access.edit_same_hint").withStyle(ChatFormatting.DARK_GRAY));
         }
     }
 
