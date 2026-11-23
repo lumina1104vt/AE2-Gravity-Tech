@@ -103,6 +103,18 @@
       "width": 38,
       "height": 16
     },
+    "dispatchDone": {
+      "left": 8,
+      "top": 17,
+      "width": 90,
+      "height": 12
+    },
+    "useMarker": {
+      "left": 100,
+      "top": 15,
+      "width": 50,
+      "height": 14
+    },
     "ignoreNbt": {
       "left": 8,
       "top": 150,

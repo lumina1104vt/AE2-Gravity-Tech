@@ -13,6 +13,7 @@ import com.lumina.twinstar.algorithm.ae2.PatternIgnoreNbt;
 import com.lumina.twinstar.algorithm.ae2.PatternInputFaces;
 import com.lumina.twinstar.algorithm.ae2.PatternInputRoles;
 import com.lumina.twinstar.algorithm.ae2.PatternInputTargets;
+import com.lumina.twinstar.algorithm.ae2.PatternDispatchDone;
 import com.lumina.twinstar.algorithm.ae2.PatternOutputGuiSlots;
 import com.mojang.serialization.Dynamic;
 
@@ -50,6 +51,8 @@ public class TwinStarTermState implements InternalInventoryHost {
     private final Map<Integer, Integer> inputGuiSlots = new LinkedHashMap<>();
     /** per product the slot of the machine's GUI it is taken out of (PatternOutputGuiSlots); not listed = any result slot */
     private final Map<AEKey, Integer> outputGuiSlots = new LinkedHashMap<>();
+    /** products that count as made once the run's materials are in the machine (PatternDispatchDone); not listed = waited for */
+    private final java.util.Set<AEKey> dispatchDone = new java.util.LinkedHashSet<>();
     /** materials and products whose NBT does not matter */
     private final java.util.Set<AEKey> ignoreNbtInputs = new java.util.LinkedHashSet<>(), ignoreNbtOutputs = new java.util.LinkedHashSet<>();
     /** per machine the sub-machines of the last pattern encoded with it: filled in again for the next */
@@ -222,6 +225,26 @@ public class TwinStarTermState implements InternalInventoryHost {
         markForSave();
     }
 
+    public boolean isDispatchDone(AEKey key) {
+        return dispatchDone.contains(key);
+    }
+
+    public void setDispatchDone(AEKey key, boolean done) {
+        if (done ? dispatchDone.add(key) : dispatchDone.remove(key))
+            markForSave();
+    }
+
+    public java.util.Set<AEKey> dispatchDoneKeys() {
+        return java.util.Set.copyOf(dispatchDone);
+    }
+
+    public void clearDispatchDone() {
+        if (!dispatchDone.isEmpty()) {
+            dispatchDone.clear();
+            markForSave();
+        }
+    }
+
     public void clearOutputGuiSlots() {
         if (!outputGuiSlots.isEmpty()) {
             outputGuiSlots.clear();
@@ -260,6 +283,7 @@ public class TwinStarTermState implements InternalInventoryHost {
         inputRoles.clear();
         inputGuiSlots.clear();
         outputGuiSlots.clear();
+        dispatchDone.clear();
         ignoreNbtInputs.clear();
         ignoreNbtOutputs.clear();
         recipe = null;
@@ -297,6 +321,10 @@ public class TwinStarTermState implements InternalInventoryHost {
         if (tag.contains("outputGuiSlots"))
             PatternOutputGuiSlots.CODEC.parse(new Dynamic<>(registries.createSerializationContext(NbtOps.INSTANCE), tag.get("outputGuiSlots")))
                     .result().ifPresent(f -> f.entries().forEach(e -> outputGuiSlots.put(e.key(), e.slot())));
+        dispatchDone.clear();
+        if (tag.contains("dispatchDone"))
+            PatternDispatchDone.CODEC.parse(new Dynamic<>(registries.createSerializationContext(NbtOps.INSTANCE), tag.get("dispatchDone")))
+                    .result().ifPresent(d -> dispatchDone.addAll(d.keys()));
         recipe = tag.contains("recipe") ? ResourceLocation.tryParse(tag.getString("recipe")) : null;
         ignoreNbtInputs.clear();
         ignoreNbtOutputs.clear();
@@ -368,6 +396,9 @@ public class TwinStarTermState implements InternalInventoryHost {
             PatternOutputGuiSlots.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), new PatternOutputGuiSlots(entries))
                     .result().ifPresent(t -> tag.put("outputGuiSlots", t));
         }
+        if (!dispatchDone.isEmpty())
+            PatternDispatchDone.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE),
+                    new PatternDispatchDone(List.copyOf(dispatchDone))).result().ifPresent(t -> tag.put("dispatchDone", t));
         if (recipe != null)
             tag.putString("recipe", recipe.toString());
         if (!ignoreNbtInputs.isEmpty() || !ignoreNbtOutputs.isEmpty())

@@ -455,6 +455,10 @@
   "gui.ae2_gvt.machine_access.gear": "Set stock amount",
   "gui.ae2_gvt.machine_access.gear_hint": "Left click: set the limit. Shift + left click: this cell shows everything the network has and the slot above writes no amount; again to go back",
   "gui.ae2_gvt.machine_access.keep": "Set to keep: %s",
+  "gui.ae2_gvt.machine_access.craft.running": "Crafting",
+  "gui.ae2_gvt.machine_access.craft.running_desc": "The crafting card asked the network to craft what this stock is short of. Nothing more is asked for this item until it is done",
+  "gui.ae2_gvt.machine_access.craft.retry": "Cannot craft now",
+  "gui.ae2_gvt.machine_access.craft.retry_desc": "No pattern, missing materials or no free crafting CPU. It tries again later, waiting longer each time (5 minutes at most)",
   "gui.ae2_gvt.machine_access.recover": "Take back",
   "gui.ae2_gvt.machine_access.recover_on": "On: takes what the machine gives out back into the network (except the items it keeps)",
   "gui.ae2_gvt.machine_access.recover_off": "Off: takes nothing back",
@@ -548,5 +552,13 @@
   "gui.ae2_gvt.machine_access.slot_auto": "Automatic: by its place among this machine's hatches of its kind, now %s",
   "gui.ae2_gvt.machine_access.slot_set": "Set by hand to %s (a line under the number)",
   "gui.ae2_gvt.machine_access.slot_click": "Left click: one more; right click: one less; Shift: ten at a time; down to 0 is automatic",
-  "gui.ae2_gvt.machine_access.slot_is": "Slot %s"
+  "gui.ae2_gvt.machine_access.slot_is": "Slot %s",
+  "item.ae2_gvt.dispatch_marker": "Dispatch Marker",
+  "item.ae2_gvt.dispatch_marker.tooltip": "Not a real item. A pattern names it as its product to count as finished once its materials are in the machine. It never reaches the network.",
+  "ae2_gvt.pattern.done": "Done on dispatch",
+  "ae2_gvt.pattern.done.tip": "The run counts as finished (and this product as made) once all its materials are in the machine. The job does not wait for the product to come back; for machines whose product leaves by itself. Later steps cannot count on it.",
+  "ae2_gvt.pattern.done.marker": "A marker always counts as made once the materials are in.",
+  "ae2_gvt.pattern.marker": "Marker",
+  "ae2_gvt.pattern.marker.tip": "Replaces this product with the dispatch marker (not a real item, hidden from JEI / EMI): the run is finished once its materials are in the machine, and later steps of the order can follow it.",
+  "ae2_gvt.pattern.done.list": "Done on dispatch: %s"
 }

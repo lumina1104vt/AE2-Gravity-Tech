@@ -111,6 +111,11 @@ public final class TwinStarTerminalClient {
                             .withStyle(ChatFormatting.GRAY));
                 }
             }
+            var doneKeys = event.getItemStack().get(TwinstarContent.PATTERN_DISPATCH_DONE.get());
+            if (doneKeys != null && !doneKeys.keys().isEmpty()) {
+                Component names = net.minecraft.network.chat.ComponentUtils.formatList(doneKeys.keys(), Component.literal("、"), AEKeyRendering::getDisplayName);
+                event.getToolTip().add(Component.translatable("ae2_gvt.pattern.done.list", names).withStyle(ChatFormatting.GRAY));
+            }
             var outGuiSlots = event.getItemStack().get(TwinstarContent.PATTERN_OUTPUT_GUI_SLOTS.get());
             if (outGuiSlots != null) {
                 for (var e : outGuiSlots.entries())

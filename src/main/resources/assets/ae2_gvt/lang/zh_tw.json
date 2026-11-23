@@ -455,6 +455,10 @@
   "gui.ae2_gvt.machine_access.gear": "設置庫存量",
   "gui.ae2_gvt.machine_access.gear_hint": "左鍵：設定上限數量。Shift + 左鍵：這一格改成直接顯示網路內的全部數量，上面不再寫數量，再按一次改回",
   "gui.ae2_gvt.machine_access.keep": "要維持：%s",
+  "gui.ae2_gvt.machine_access.craft.running": "合成中",
+  "gui.ae2_gvt.machine_access.craft.running_desc": "合成卡已經請網路合成這個存貨缺少的數量。完成之前不會再重複要求這個物品",
+  "gui.ae2_gvt.machine_access.craft.retry": "暫時無法合成",
+  "gui.ae2_gvt.machine_access.craft.retry_desc": "沒有樣板、缺材料，或沒有空閒的合成 CPU。稍後會再試，每次等得更久（最久 5 分鐘）",
   "gui.ae2_gvt.machine_access.recover": "回收",
   "gui.ae2_gvt.machine_access.recover_on": "開：把機器能取出的產物收回網路（設定要維持的物品除外）",
   "gui.ae2_gvt.machine_access.recover_off": "關：不回收",
@@ -548,5 +552,13 @@
   "gui.ae2_gvt.machine_access.slot_auto": "自動：依它在這台機器的同類艙口裡的順序，現在是 %s",
   "gui.ae2_gvt.machine_access.slot_set": "手動設為 %s（數字下面有一條線）",
   "gui.ae2_gvt.machine_access.slot_click": "左鍵加一，右鍵減一，Shift 一次十，減到 0 回到自動",
-  "gui.ae2_gvt.machine_access.slot_is": "欄位 %s"
+  "gui.ae2_gvt.machine_access.slot_is": "欄位 %s",
+  "item.ae2_gvt.dispatch_marker": "發配記號",
+  "item.ae2_gvt.dispatch_marker.tooltip": "不是真的物品。樣板把它當成產物時，材料全部送進機器就算合成完畢。它不會進入網路。",
+  "ae2_gvt.pattern.done": "發配即完成",
+  "ae2_gvt.pattern.done.tip": "材料全部送進機器，這一輪就算完成（這個產物就算做好了），工作不會等產物送回來；給產物自己離開機器的機器用。後面的步驟不能指望拿到它。",
+  "ae2_gvt.pattern.done.marker": "記號一律在材料送進機器後就算做好。",
+  "ae2_gvt.pattern.marker": "記號",
+  "ae2_gvt.pattern.marker.tip": "把這個產物換成發配記號（不是真的物品，JEI / EMI 看不到）：材料全部送進機器就算這一輪完成，訂單的後續步驟可以接在它後面。",
+  "ae2_gvt.pattern.done.list": "發配即完成：%s"
 }

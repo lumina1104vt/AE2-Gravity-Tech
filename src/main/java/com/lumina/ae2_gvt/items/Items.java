@@ -19,6 +19,9 @@ public class Items {
 
     public static final DeferredItem<Item> ANTI_SINGULARITY =
             ITEMS.registerSimpleItem("anti_singularity");
+    /** the product of a pattern that is done on dispatch; no real item (see DispatchMarker) */
+    public static final DeferredItem<DispatchMarkerItem> DISPATCH_MARKER =
+            ITEMS.registerItem("dispatch_marker", DispatchMarkerItem::new, new Item.Properties().stacksTo(1));
     public static final DeferredItem<Item> CHAOS_MATTER =
             ITEMS.registerSimpleItem("chaos_matter");
 

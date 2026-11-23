@@ -8,6 +8,7 @@ import java.util.Locale;
 import org.jetbrains.annotations.Nullable;
 
 import com.lumina.ae2_gvt.terminal.TwinStarPatternTermMenu;
+import com.lumina.ae2_gvt.items.DispatchMarker;
 import com.lumina.twinstar.algorithm.ae2.PatternOutputGuiSlots;
 
 import appeng.api.stacks.AEItemKey;
@@ -18,6 +19,7 @@ import appeng.client.gui.Icon;
 import appeng.client.gui.NumberEntryType;
 import appeng.client.gui.me.common.ClientDisplaySlot;
 import appeng.client.gui.widgets.AE2Button;
+import appeng.client.gui.widgets.AECheckbox;
 import appeng.client.gui.widgets.AETextField;
 import appeng.client.gui.widgets.NumberEntryWidget;
 import appeng.client.gui.widgets.TabButton;
@@ -57,6 +59,7 @@ public class SetOutputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, 
     /** the slot of the machine's GUI the product is taken out of (0 = any result slot) */
     private int guiSlot;
     private final @Nullable AE2Button guiLess, guiMore;
+    private final @Nullable AE2Button marker;
 
     public SetOutputAmountScreen(TwinStarPatternTermScreen parent, GenericStack currentStack, Slot slot, int outputIndex) {
         this(parent, currentStack, slot, outputIndex, chanceTextOf(parent.getMenu().getOutputChance(outputIndex)),
@@ -100,11 +103,29 @@ public class SetOutputAmountScreen extends AESubScreen<TwinStarPatternTermMenu, 
             guiLess.setTooltip(guiHint);
             guiMore.setTooltip(guiHint);
             IgnoreNbt.add(widgets, getMenu(), outputIndex, true);
+            // done on dispatch: the run counts as finished once its materials are in the machine (a marker always does)
+            boolean isMarker = DispatchMarker.is(currentStack.what());
+            AECheckbox[] done = new AECheckbox[1];
+            done[0] = widgets.addCheckbox("dispatchDone", Component.translatable("ae2_gvt.pattern.done"),
+                    () -> getMenu().setOutputDone(outputIndex, done[0].isSelected()));
+            done[0].setSelected(getMenu().isOutputDone(outputIndex));
+            done[0].active = !isMarker;
+            done[0].setTooltip(Tooltip.create(Component.translatable(isMarker ? "ae2_gvt.pattern.done.marker" : "ae2_gvt.pattern.done.tip")));
+            marker = widgets.addButton("useMarker", Component.translatable("ae2_gvt.pattern.marker"), this::useMarker);
+            marker.active = !isMarker;
+            marker.setTooltip(Tooltip.create(Component.translatable("ae2_gvt.pattern.marker.tip")));
         } else {
             chance = null;
             fromRecipe = null;
             guiLess = guiMore = null;
+            marker = null;
         }
+    }
+
+    /** The product becomes the dispatch marker (the amount stays); the dialog closes, as what it would set no longer applies. */
+    private void useMarker() {
+        getMenu().useMarker(outputIndex);
+        returnToParent();
     }
 
     /** The GUI slot up or down; 0 (any result slot) is the bottom. */

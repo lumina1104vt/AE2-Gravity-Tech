@@ -31,7 +31,7 @@ public class Config {
     public static final ModConfigSpec.IntValue PICK_CRAFT_AMOUNT;
     public static final ModConfigSpec.BooleanValue ARMOR_LINK_RANGE;
     public static final ModConfigSpec.LongValue FUSION_OUTPUT_BUFFER;
-    public static final ModConfigSpec.IntValue GUI_POLL_TICKS, TOOL_DELAY_TICKS, LINK_ALL_RADIUS, LINK_ALL_MAX;
+    public static final ModConfigSpec.IntValue GUI_POLL_TICKS, TOOL_DELAY_TICKS, LINK_ALL_RADIUS, LINK_ALL_MAX, FORCED_IDLE_MINUTES, FORCED_MAX_JOBS;
 
     static {
         BUILDER.comment("Generators").push("generators");
@@ -56,6 +56,10 @@ public class Config {
                 .defineInRange("guiPollTicks", 1, 1, 1200);
         TOOL_DELAY_TICKS = BUILDER.comment("How long (ticks) such a machine is left alone between its last material and the tool right-click")
                 .defineInRange("toolDelayTicks", 1, 0, 200);
+        FORCED_IDLE_MINUTES = BUILDER.comment("Forced orders (start although materials are missing): minutes a job that still lacks materials may make no progress before it is cancelled and gives everything back")
+                .defineInRange("forcedIdleMinutes", 30, 1, 10_080);
+        FORCED_MAX_JOBS = BUILDER.comment("Forced orders: the most that may wait for missing materials at once on one hub")
+                .defineInRange("forcedMaxJobs", 4, 1, 64);
         LINK_ALL_RADIUS = BUILDER.comment("Machine Linker, Ctrl + right click: links every block of the same kind within this many blocks of the one clicked")
                 .defineInRange("linkAllRadius", 16, 1, 64);
         LINK_ALL_MAX = BUILDER.comment("Machine Linker, Ctrl + right click: the most machines one click links")
@@ -106,6 +110,9 @@ public class Config {
     @SubscribeEvent
     static void onConfig(ModConfigEvent event) {
         if (event.getConfig().getSpec() == SPEC)
+        {
             ExecutionSettings.set(GUI_POLL_TICKS.get(), TOOL_DELAY_TICKS.get());
+            ExecutionSettings.setForced(FORCED_IDLE_MINUTES.get() * 60L, FORCED_MAX_JOBS.get());
+        }
     }
 }

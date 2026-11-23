@@ -11,7 +11,9 @@ import com.lumina.twinstar.algorithm.ae2.PatternChances;
 import com.lumina.twinstar.algorithm.ae2.PatternInputFaces;
 import com.lumina.twinstar.algorithm.ae2.PatternIgnoreNbt;
 import com.lumina.twinstar.algorithm.ae2.PatternInputGuiSlots;
+import com.lumina.twinstar.algorithm.ae2.PatternDispatchDone;
 import com.lumina.twinstar.algorithm.ae2.PatternOutputGuiSlots;
+import com.lumina.ae2_gvt.items.DispatchMarker;
 import com.lumina.twinstar.algorithm.ae2.PatternInputRoles;
 import com.lumina.twinstar.algorithm.ae2.PatternInputTargets;
 import com.lumina.twinstar.storage.TwinstarContent;
@@ -52,6 +54,8 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
     private static final String SET_OUTPUT_GUI_SLOT = "setOutputGuiSlot";
     private static final String SET_SEQUENCE_START = "setSequenceStart";
     private static final String SET_IGNORE_NBT = "setIgnoreNbt";
+    private static final String SET_OUTPUT_DONE = "setOutputDone";
+    private static final String USE_MARKER = "useMarker";
 
     private final ITwinStarTermHost host;
     private final FakeSlot machineSlot;
@@ -89,6 +93,9 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
     public String ignoreNbtIn = "";
     @GuiSync(205)
     public String ignoreNbtOut = "";
+    /** Per processing output slot: 1 when it counts as made once the run's materials are in the machine (a marker always does). */
+    @GuiSync(210)
+    public String outputDone = "";
     /** the probabilities of {@link TwinStarTermState#getRecipe()}, read once per recipe */
     private @Nullable ResourceLocation readRecipe;
     private @Nullable Map<String, Double> readChances;
@@ -131,6 +138,8 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
         registerClientAction(SET_OUTPUT_GUI_SLOT, String.class, this::receiveOutputGuiSlot);
         registerClientAction(SET_SEQUENCE_START, String.class, this::receiveSequenceStart);
         registerClientAction(SET_IGNORE_NBT, String.class, this::receiveIgnoreNbt);
+        registerClientAction(SET_OUTPUT_DONE, String.class, this::receiveOutputDone);
+        registerClientAction(USE_MARKER, String.class, this::receiveUseMarker);
     }
 
     private Slot encodedSlot() {
@@ -263,6 +272,18 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
                 outGui.add(new PatternOutputGuiSlots.Entry(out.what(), g));
             }
         }
+        List<appeng.api.stacks.AEKey> done = new ArrayList<>();
+        for (FakeSlot slot : getProcessingOutputSlots()) {
+            GenericStack out = GenericStack.fromItemStack(slot.getItem());
+            if (out != null && !done.contains(out.what()) && host.state().isDispatchDone(out.what())) {
+                done.add(out.what());
+            }
+        }
+        if (done.isEmpty()) {
+            pattern.remove(TwinstarContent.PATTERN_DISPATCH_DONE.get());
+        } else {
+            pattern.set(TwinstarContent.PATTERN_DISPATCH_DONE.get(), new PatternDispatchDone(done));
+        }
         if (outGui.isEmpty()) {
             pattern.remove(TwinstarContent.PATTERN_OUTPUT_GUI_SLOTS.get());
         } else {
@@ -366,6 +387,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             host.state().clearInputRoles();
             host.state().clearInputGuiSlots();
             host.state().clearOutputGuiSlots();
+            host.state().clearDispatchDone();
             host.state().clearIgnoreNbt();
             host.state().setRecipe(null);
             clearSubMachines();
@@ -424,6 +446,11 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
                     if (n != null) {
                         n.inputs().forEach(k -> host.state().setIgnoreNbt(k, false, true));
                         n.outputs().forEach(k -> host.state().setIgnoreNbt(k, true, true));
+                    }
+                    host.state().clearDispatchDone();
+                    PatternDispatchDone doneNow = now.get(TwinstarContent.PATTERN_DISPATCH_DONE.get());
+                    if (doneNow != null) {
+                        doneNow.keys().forEach(k -> host.state().setDispatchDone(k, true));
                     }
                     host.state().clearOutputGuiSlots();
                     PatternOutputGuiSlots outGuiNow = now.get(TwinstarContent.PATTERN_OUTPUT_GUI_SLOTS.get());
@@ -530,6 +557,12 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             applyPendingGuiSlots();
             ignoreNbtIn = nbtFlags(ins, false);
             ignoreNbtOut = nbtFlags(outs, true);
+            StringBuilder db = new StringBuilder();
+            for (FakeSlot slot : outs) {
+                GenericStack g = GenericStack.fromItemStack(slot.getItem());
+                db.append(g != null && (host.state().isDispatchDone(g.what()) || DispatchMarker.is(g.what())) ? '1' : '0');
+            }
+            outputDone = db.toString();
         }
         super.broadcastChanges();
     }
@@ -727,6 +760,57 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             GenericStack g = GenericStack.fromItemStack(slots[index].getItem());
             if (g != null) {
                 host.state().setIgnoreNbt(g.what(), output, parts[2].equals("1"));
+            }
+        } catch (NumberFormatException e) {
+            // a malformed request: ignore it
+        }
+    }
+
+    /** The product in processing output slot {@code index} counts as made once the run's materials are in the machine. */
+    public boolean isOutputDone(int index) {
+        return index >= 0 && index < outputDone.length() && outputDone.charAt(index) == '1';
+    }
+
+    /** Client: sets whether the product in that output slot counts as made when the materials are in. */
+    public void setOutputDone(int index, boolean done) {
+        sendClientAction(SET_OUTPUT_DONE, index + ";" + (done ? 1 : 0));
+    }
+
+    private void receiveOutputDone(String arg) {
+        String[] parts = arg.split(";");
+        if (parts.length != 2) {
+            return;
+        }
+        try {
+            int index = Integer.parseInt(parts[0]);
+            FakeSlot[] outs = getProcessingOutputSlots();
+            if (index < 0 || index >= outs.length) {
+                return;
+            }
+            GenericStack out = GenericStack.fromItemStack(outs[index].getItem());
+            if (out != null) {
+                host.state().setDispatchDone(out.what(), parts[1].equals("1"));
+            }
+        } catch (NumberFormatException e) {
+            // a malformed request: ignore it
+        }
+    }
+
+    /** Client: turns the product in that output slot into the dispatch marker (the amount stays). */
+    public void useMarker(int index) {
+        sendClientAction(USE_MARKER, String.valueOf(index));
+    }
+
+    private void receiveUseMarker(String arg) {
+        try {
+            int index = Integer.parseInt(arg);
+            FakeSlot[] outs = getProcessingOutputSlots();
+            if (index < 0 || index >= outs.length) {
+                return;
+            }
+            GenericStack out = GenericStack.fromItemStack(outs[index].getItem());
+            if (out != null) {
+                outs[index].set(GenericStack.wrapInItemStack(new GenericStack(DispatchMarker.key(), Math.max(1, out.amount()))));
             }
         } catch (NumberFormatException e) {
             // a malformed request: ignore it

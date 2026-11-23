@@ -50,6 +50,8 @@ public class GravityTechEmi implements EmiPlugin {
 
     @Override
     public void register(EmiRegistry registry) {
+        // the dispatch marker is no real item: nobody looks it up
+        registry.removeEmiStacks(EmiStack.of(com.lumina.ae2_gvt.items.Items.DISPATCH_MARKER.get()));
         registry.addCategory(FACTORY);
         registry.addCategory(FUSION);
         registry.addCategory(WORLD);
