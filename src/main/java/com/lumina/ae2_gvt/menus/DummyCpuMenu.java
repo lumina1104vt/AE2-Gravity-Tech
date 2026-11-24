@@ -12,7 +12,7 @@ import appeng.menu.guisync.GuiSync;
 import appeng.menu.slot.RestrictedInputSlot;
 import appeng.util.inv.AppEngInternalInventory;
 import com.lumina.ae2_gvt.blockentities.cpu.DummyTwinStarCPUBlockEntity;
-import com.lumina.twinstar.util.AmountParser;
+import com.lumina.corelib.util.AmountParser;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
