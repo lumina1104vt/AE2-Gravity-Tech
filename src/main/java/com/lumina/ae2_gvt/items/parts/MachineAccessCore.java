@@ -646,7 +646,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         @Override public boolean isAccessActive() { return MachineAccessCore.this.isAccessActive(); }
         @Override public Pos getMachinePos() { return Positions.of(entry.link.pos()); }
         @Override public Face getMachineFace() { return Positions.of(entry.link.face()); }
-        @Override public @Nullable net.minecraft.core.GlobalPos interfacePlace() { return MachineAccessCore.this.interfacePlace(); }
+        @Override public @Nullable com.lumina.bridge.Place interfacePlace() { return MachineAccessCore.this.interfacePlace(); }
         @Override public int interfaceSide() { return MachineAccessCore.this.interfaceSide(); }
         @Override public @Nullable net.minecraft.network.chat.Component interfaceName() { return MachineAccessCore.this.interfaceName(); }
 
@@ -881,8 +881,9 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
     // ── for the list of what machines use up ──
 
     @Override
-    public @Nullable net.minecraft.core.GlobalPos interfacePlace() {
-        return host.level() == null || host.pos() == null ? null : net.minecraft.core.GlobalPos.of(host.level().dimension(), host.pos());
+    public @Nullable com.lumina.bridge.Place interfacePlace() {
+        return host.level() == null || host.pos() == null ? null
+                : Positions.of(net.minecraft.core.GlobalPos.of(host.level().dimension(), host.pos()));
     }
 
     @Override
@@ -897,10 +898,10 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
 
     /** Every machine this interface works on: the bound ones, or the block the part sits on. */
     @Override
-    public List<net.minecraft.core.GlobalPos> machinePlaces() {
-        List<net.minecraft.core.GlobalPos> out = new ArrayList<>();
+    public List<com.lumina.bridge.Place> machinePlaces() {
+        List<com.lumina.bridge.Place> out = new ArrayList<>();
         for (Target t : targets())
-            out.add(net.minecraft.core.GlobalPos.of(t.level().dimension(), t.pos()));
+            out.add(Positions.of(net.minecraft.core.GlobalPos.of(t.level().dimension(), t.pos())));
         return out;
     }
 
@@ -1283,7 +1284,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         }
         Direction face = settings.insertMode == InsertMode.ANY ? null : face0;
         // what goes into the machine counts as used up there (the list of what machines use)
-        BiConsumer<AEKey, Long> used = (k, n) -> com.lumina.twinstar.usage.UsageStore.record(level, pos, interfacePlace(), interfaceSide(), k, n,
+        BiConsumer<AEKey, Long> used = (k, n) -> com.lumina.twinstar.usage.UsageStore.record(level, pos, Positions.toMc(interfacePlace()), interfaceSide(), k, n,
                 com.lumina.twinstar.usage.UsageStore.STOCK);
         IItemHandler items = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, face);
         if (items == null)

@@ -128,10 +128,10 @@ public class MachineAccessBlockEntity extends AENetworkedBlockEntity implements 
     @Override public void takeReceived(BiConsumer<Key, Long> taken) { core.takeReceived(taken); }
     @Override public boolean isAccessActive() { return core.isAccessActive(); }
     @Override public List<IMachineAccess> accessPoints() { return core.accessPoints(); }
-    @Override public @Nullable net.minecraft.core.GlobalPos interfacePlace() { return core.interfacePlace(); }
+    @Override public @Nullable com.lumina.bridge.Place interfacePlace() { return core.interfacePlace(); }
     @Override public int interfaceSide() { return core.interfaceSide(); }
     @Override public @Nullable net.minecraft.network.chat.Component interfaceName() { return core.interfaceName(); }
-    @Override public List<net.minecraft.core.GlobalPos> machinePlaces() { return core.machinePlaces(); }
+    @Override public List<com.lumina.bridge.Place> machinePlaces() { return core.machinePlaces(); }
 
     // ── saving, the client ──
 
