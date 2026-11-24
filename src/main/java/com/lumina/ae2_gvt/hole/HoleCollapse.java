@@ -17,7 +17,7 @@ import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
-import com.lumina.twinstar.util.RecipeHolder;
+import com.lumina.twinstar.algorithm.ae2.RecipeHolder;
 import net.minecraft.world.level.block.Block;
 import com.lumina.ae2_gvt.recipes.SizedIngredient;
 import net.minecraftforge.event.level.ExplosionEvent;

@@ -42,7 +42,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import com.lumina.twinstar.util.RecipeHolder;
+import com.lumina.twinstar.algorithm.ae2.RecipeHolder;
 import com.lumina.ae2_gvt.recipes.SizedIngredient;
 
 /**

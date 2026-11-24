@@ -33,7 +33,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import com.lumina.twinstar.util.RecipeHolder;
+import com.lumina.twinstar.algorithm.ae2.RecipeHolder;
 
 /**
  * AE2's pattern encoding menu, locked to the processing layout, plus the machine ghost slot and the
@@ -345,14 +345,14 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
         if (machine.isEmpty()) {
             return "ae2_gvt.pattern.refused.no_machine";
         }
-        if (!com.lumina.twinstar.algorithm.ae2.WorkstationRecipes.isWorkstation(machine.getItem())) {
+        if (!com.lumina.twinstar.algorithm.ae2.PatternJudging.isJudged(machine.getItem())) {
             return null;
         }
-        List<com.lumina.twinstar.algorithm.ae2.WorkstationRecipes.In> ins = new ArrayList<>();
+        List<GenericStack> ins = new ArrayList<>();
         for (FakeSlot slot : getProcessingInputSlots()) {
             GenericStack in = GenericStack.fromItemStack(slot.getItem());
             if (in != null) {
-                ins.add(new com.lumina.twinstar.algorithm.ae2.WorkstationRecipes.In(List.of(in.what()), in.amount()));
+                ins.add(in);
             }
         }
         List<GenericStack> outs = new ArrayList<>();
@@ -363,8 +363,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             }
         }
         var level = getPlayer().level();
-        return com.lumina.twinstar.algorithm.ae2.WorkstationRecipes.matches(machine.getItem(), ins, outs,
-                level.getRecipeManager(), level.registryAccess()) ? null : "ae2_gvt.pattern.refused.not_recipe";
+        return com.lumina.twinstar.algorithm.ae2.PatternJudging.acceptsTyped(machine.getItem(), ins, outs, level) ? null : "ae2_gvt.pattern.refused.not_recipe";
     }
 
     /** A pattern put in: its machine and sub-machines go back in their slots, like AE2 puts back the rest. */

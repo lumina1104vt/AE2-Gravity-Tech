@@ -7,7 +7,7 @@ import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.menus.HubControllerMenu;
 import com.lumina.ae2_gvt.hub.TwinStarHubBlockEntity;
 import com.lumina.twinstar.client.TheoryScreen;
-import com.lumina.twinstar.util.BigAmountFormat;
+import com.lumina.corelib.util.BigAmountFormat;
 
 import appeng.client.gui.AEBaseScreen;
 import appeng.client.gui.style.Blitter;

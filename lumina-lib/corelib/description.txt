@@ -1,0 +1,3 @@
+Shared infrastructure of the Lumina mods: plugin discovery and lifecycle, and common tools.
+
+Lumina 模組的共用基礎設施：插件發現與生命週期，以及共用工具。

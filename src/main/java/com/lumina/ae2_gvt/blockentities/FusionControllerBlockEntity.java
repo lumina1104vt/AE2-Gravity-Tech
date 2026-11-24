@@ -51,7 +51,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Containers;
 import net.minecraft.world.item.ItemStack;
-import com.lumina.twinstar.util.RecipeHolder;
+import com.lumina.twinstar.algorithm.ae2.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraft.world.level.block.Block;

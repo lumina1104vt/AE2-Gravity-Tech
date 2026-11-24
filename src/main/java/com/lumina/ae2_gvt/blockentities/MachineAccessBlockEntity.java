@@ -1,5 +1,9 @@
 package com.lumina.ae2_gvt.blockentities;
 
+import com.lumina.bridge.Face;
+import com.lumina.bridge.Pos;
+import com.lumina.bridge.Positions;
+import com.lumina.twinstar.port.World;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -14,6 +18,8 @@ import com.lumina.twinstar.api.IMachineAccess;
 import appeng.api.networking.IManagedGridNode;
 import appeng.api.networking.security.IActionHost;
 import appeng.api.stacks.AEKey;
+import com.lumina.bridge.key.Key;
+import com.lumina.bridge.key.Keys;
 import appeng.blockentity.grid.AENetworkBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -107,24 +113,25 @@ public class MachineAccessBlockEntity extends AENetworkBlockEntity implements IM
 
     // ── IMachineAccess ──
 
-    @Override public @Nullable Item getMachine() { return core.getMachine(); }
+    @Override public @Nullable Key getMachine() { return core.getMachine(); }
     @Override public boolean isBlocking() { return core.isBlocking(); }
     @Override public BlockMode getBlockMode() { return core.getBlockMode(); }
     @Override public InsertMode getInsertMode() { return core.getInsertMode(); }
     @Override public @Nullable ServerLevel getMachineLevel() { return core.getMachineLevel(); }
-    @Override public BlockPos getMachinePos() { return core.getMachinePos(); }
-    @Override public Direction getMachineFace() { return core.getMachineFace(); }
+    @Override public @Nullable World getMachineWorld() { return core.getMachineWorld(); }
+    @Override public Pos getMachinePos() { return core.getMachinePos(); }
+    @Override public Face getMachineFace() { return core.getMachineFace(); }
     @Override public int getGroup() { return core.getGroup(); }
     @Override public int getSubRange() { return core.getSubRange(); }
     @Override public void onRunFed() { core.onRunFed(); }
-    @Override public Set<AEKey> getStockedKeys() { return core.getStockedKeys(); }
-    @Override public void takeReceived(BiConsumer<AEKey, Long> taken) { core.takeReceived(taken); }
+    @Override public Set<Key> getStockedKeys() { return core.getStockedKeys(); }
+    @Override public void takeReceived(BiConsumer<Key, Long> taken) { core.takeReceived(taken); }
     @Override public boolean isAccessActive() { return core.isAccessActive(); }
     @Override public List<IMachineAccess> accessPoints() { return core.accessPoints(); }
-    @Override public @Nullable net.minecraft.core.GlobalPos interfacePlace() { return core.interfacePlace(); }
+    @Override public @Nullable com.lumina.bridge.Place interfacePlace() { return core.interfacePlace(); }
     @Override public int interfaceSide() { return core.interfaceSide(); }
     @Override public @Nullable net.minecraft.network.chat.Component interfaceName() { return core.interfaceName(); }
-    @Override public List<net.minecraft.core.GlobalPos> machinePlaces() { return core.machinePlaces(); }
+    @Override public List<com.lumina.bridge.Place> machinePlaces() { return core.machinePlaces(); }
 
     // ── saving, the client ──
 

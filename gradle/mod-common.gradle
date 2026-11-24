@@ -93,12 +93,15 @@ dependencies {
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     compileOnly 'org.spongepowered:mixin:0.8.5'
 }
-mixin {
-    add sourceSets.main, "${mod_id}.refmap.json"
-    config "${mod_id}.mixins.json"
-}
-jar {
-    manifest.attributes(["MixinConfigs": "${mod_id}.mixins.json"])
+// (only the modules that have a mixin config: a module without one has no refmap to remap)
+if (file("src/main/resources/${mod_id}.mixins.json").exists()) {
+    mixin {
+        add sourceSets.main, "${mod_id}.refmap.json"
+        config "${mod_id}.mixins.json"
+    }
+    jar {
+        manifest.attributes(["MixinConfigs": "${mod_id}.mixins.json"])
+    }
 }
 
 // IDEA no longer downloads sources / javadoc for dependencies by itself

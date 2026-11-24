@@ -24,6 +24,12 @@ tasks.named('wrapper', Wrapper).configure {
 // the runs below reference the lib mods' source sets, so configure those projects first
 evaluationDependsOn(':core')
 evaluationDependsOn(':lumina-multiblock')
+evaluationDependsOn(':lumina-multiblock-engine')
+evaluationDependsOn(':twinstar-core')
+evaluationDependsOn(':twinstar-api')
+evaluationDependsOn(':twinstar-ae2')
+evaluationDependsOn(':lumina-bridge')
+evaluationDependsOn(':lumina-corelib')
 
 legacyForge {
     // access transformers are picked up from META-INF/accesstransformer.cfg automatically
@@ -92,6 +98,24 @@ legacyForge {
         "lumina_multiblock" {
             sourceSet(project(':lumina-multiblock').sourceSets.main)
         }
+        "lumina_multiblock_engine" {
+            sourceSet(project(':lumina-multiblock-engine').sourceSets.main)
+        }
+        "twinstar_core" {
+            sourceSet(project(':twinstar-core').sourceSets.main)
+        }
+        "twinstar_api" {
+            sourceSet(project(':twinstar-api').sourceSets.main)
+        }
+        "twinstar_ae2" {
+            sourceSet(project(':twinstar-ae2').sourceSets.main)
+        }
+        "lumina_bridge" {
+            sourceSet(project(':lumina-bridge').sourceSets.main)
+        }
+        "lumina_corelib" {
+            sourceSet(project(':lumina-corelib').sourceSets.main)
+        }
     }
 }
 
@@ -125,6 +149,18 @@ dependencies {
     localRuntime project(':core')
     compileOnly project(':lumina-multiblock')
     localRuntime project(':lumina-multiblock')
+    compileOnly project(':lumina-multiblock-engine')
+    localRuntime project(':lumina-multiblock-engine')
+    compileOnly project(':twinstar-core')
+    localRuntime project(':twinstar-core')
+    compileOnly project(':twinstar-api')
+    localRuntime project(':twinstar-api')
+    compileOnly project(':twinstar-ae2')
+    localRuntime project(':twinstar-ae2')
+    compileOnly project(':lumina-bridge')
+    localRuntime project(':lumina-bridge')
+    compileOnly project(':lumina-corelib')
+    localRuntime project(':lumina-corelib')
 
     // dev runs: Forge reads a mod's mixin config from the classpath before the mod layer exists, so it is put there on its own
     additionalRuntimeClasspath files(tasks.register('devMixinConfig', Copy) {
@@ -144,6 +180,12 @@ dependencies {
     // bundled into the ae2_gvt jar (jar-in-jar); each lib keeps its own mod id
     jarJar(project(':core'))
     jarJar(project(':lumina-multiblock'))
+    jarJar(project(':lumina-multiblock-engine'))
+    jarJar(project(':twinstar-core'))
+    jarJar(project(':twinstar-api'))
+    jarJar(project(':twinstar-ae2'))
+    jarJar(project(':lumina-bridge'))
+    jarJar(project(':lumina-corelib'))
 
     // AE2: we build against it (the terminal extends AE2's classes) and run it in the dev client.
     // The mods on Modrinth are obfuscated (SRG): the mod* configurations remap them to the names we write.

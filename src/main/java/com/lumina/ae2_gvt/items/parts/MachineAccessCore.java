@@ -1,5 +1,10 @@
 package com.lumina.ae2_gvt.items.parts;
 
+import com.lumina.bridge.Face;
+import com.lumina.bridge.Pos;
+import com.lumina.bridge.Positions;
+import com.lumina.twinstar.platform.Ae2Adapters;
+import com.lumina.twinstar.port.World;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -13,8 +18,8 @@ import org.jetbrains.annotations.Nullable;
 
 import com.lumina.ae2_gvt.items.tools.MachineLinkTool;
 import com.lumina.twinstar.api.IMachineAccess;
-import com.lumina.twinstar.api.IMachineAccess.Port;
-import com.lumina.twinstar.api.IMachineAccess.PortRole;
+import com.lumina.twinstar.api.IMachine.Port;
+import com.lumina.twinstar.api.IMachine.PortRole;
 
 import appeng.api.config.Actionable;
 import appeng.api.inventories.InternalInventory;
@@ -32,6 +37,8 @@ import appeng.api.networking.ticking.TickingRequest;
 import appeng.api.stacks.AEFluidKey;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
+import com.lumina.bridge.key.Key;
+import com.lumina.bridge.key.Keys;
 import appeng.api.stacks.AEKeyType;
 import appeng.api.stacks.GenericStack;
 import appeng.api.storage.MEStorage;
@@ -620,9 +627,9 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         }
 
         @Override
-        public @Nullable Item getMachine() {
+        public @Nullable Key getMachine() {
             ItemStack s = entry.settings.machine;
-            return s.isEmpty() ? null : s.getItem();
+            return s.isEmpty() ? null : Keys.of(appeng.api.stacks.AEItemKey.of(s.getItem()));
         }
 
         @Override public boolean isBlocking() { return entry.settings.blockMode != BlockMode.NONE; }
@@ -631,16 +638,16 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         @Override public int getGroup() { return entry.settings.group; }
         @Override public int getSubRange() { return entry.settings.subRange; }
         @Override public void onRunFed() { queuePulse(entry.settings); }
-        @Override public Set<AEKey> getStockedKeys() { return entry.settings.stock.keySet(); }
+        @Override public Set<Key> getStockedKeys() { return stocked(entry.settings.stock.keySet()); }
         @Override public boolean isAccessActive() { return MachineAccessCore.this.isAccessActive(); }
-        @Override public BlockPos getMachinePos() { return entry.link.pos(); }
-        @Override public Direction getMachineFace() { return entry.link.face(); }
-        @Override public @Nullable net.minecraft.core.GlobalPos interfacePlace() { return MachineAccessCore.this.interfacePlace(); }
+        @Override public Pos getMachinePos() { return Positions.of(entry.link.pos()); }
+        @Override public Face getMachineFace() { return Positions.of(entry.link.face()); }
+        @Override public @Nullable com.lumina.bridge.Place interfacePlace() { return MachineAccessCore.this.interfacePlace(); }
         @Override public int interfaceSide() { return MachineAccessCore.this.interfaceSide(); }
         @Override public @Nullable net.minecraft.network.chat.Component interfaceName() { return MachineAccessCore.this.interfaceName(); }
 
         @Override
-        public void takeReceived(BiConsumer<AEKey, Long> taken) {
+        public void takeReceived(BiConsumer<Key, Long> taken) {
             if (first())
                 MachineAccessCore.this.takeReceived(taken);
         }
@@ -648,6 +655,11 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         @Override
         public @Nullable ServerLevel getMachineLevel() {
             return linkLevel(entry.link);
+        }
+
+        @Override
+        public @Nullable World getMachineWorld() {
+            return Ae2Adapters.world(getMachineLevel());
         }
     }
 
@@ -682,7 +694,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
                 slot = e.settings.slot > 0 ? e.settings.slot : ++items;
             else if (role == PortRole.FLUID_IN)
                 slot = e.settings.slot > 0 ? e.settings.slot : ++fluids;
-            out.add(new Port(e.link.pos(), role, slot));
+            out.add(new Port(Positions.of(e.link.pos()), role, slot));
         }
         return out;
     }
@@ -728,12 +740,19 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
     }
 
     @Override
-    public Set<AEKey> getStockedKeys() {
-        return own.stock.keySet();
+    public Set<Key> getStockedKeys() {
+        return stocked(own.stock.keySet());
+    }
+
+    private static Set<Key> stocked(Set<AEKey> keys) {
+        Set<Key> out = new java.util.HashSet<>();
+        for (AEKey k : keys)
+            out.add(Keys.of(k));
+        return out;
     }
 
     @Override
-    public void takeReceived(BiConsumer<AEKey, Long> taken) {
+    public void takeReceived(BiConsumer<Key, Long> taken) {
         receivedIdle = 0;
         for (int i = 0; i < received.size(); i++) {
             GenericStack s = received.getStack(i);
@@ -741,15 +760,15 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
                 continue;
             long got = received.extract(i, s.what(), s.amount(), Actionable.MODULATE);
             if (got > 0)
-                taken.accept(s.what(), got);
+                taken.accept(Keys.of(s.what()), got);
         }
     }
 
     // ── IMachineAccess: the block the part sits on (no machine bound) ──
 
     @Override
-    public @Nullable Item getMachine() {
-        return own.machine.isEmpty() ? null : own.machine.getItem();
+    public @Nullable Key getMachine() {
+        return own.machine.isEmpty() ? null : Keys.of(appeng.api.stacks.AEItemKey.of(own.machine.getItem()));
     }
 
     @Override
@@ -835,14 +854,19 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
     }
 
     @Override
-    public BlockPos getMachinePos() {
-        BlockPos here = host.pos();
-        return here == null || host.side() == null ? BlockPos.ZERO : here.relative(host.side());
+    public @Nullable World getMachineWorld() {
+        return Ae2Adapters.world(getMachineLevel());
     }
 
     @Override
-    public Direction getMachineFace() {
-        return host.side() == null ? Direction.UP : host.side().getOpposite();
+    public Pos getMachinePos() {
+        BlockPos here = host.pos();
+        return Positions.of(here == null || host.side() == null ? BlockPos.ZERO : here.relative(host.side()));
+    }
+
+    @Override
+    public Face getMachineFace() {
+        return Positions.of(host.side() == null ? Direction.UP : host.side().getOpposite());
     }
 
     @Override
@@ -853,8 +877,9 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
     // ── for the list of what machines use up ──
 
     @Override
-    public @Nullable net.minecraft.core.GlobalPos interfacePlace() {
-        return host.level() == null || host.pos() == null ? null : net.minecraft.core.GlobalPos.of(host.level().dimension(), host.pos());
+    public @Nullable com.lumina.bridge.Place interfacePlace() {
+        return host.level() == null || host.pos() == null ? null
+                : Positions.of(net.minecraft.core.GlobalPos.of(host.level().dimension(), host.pos()));
     }
 
     @Override
@@ -869,10 +894,10 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
 
     /** Every machine this interface works on: the bound ones, or the block the part sits on. */
     @Override
-    public List<net.minecraft.core.GlobalPos> machinePlaces() {
-        List<net.minecraft.core.GlobalPos> out = new ArrayList<>();
+    public List<com.lumina.bridge.Place> machinePlaces() {
+        List<com.lumina.bridge.Place> out = new ArrayList<>();
         for (Target t : targets())
-            out.add(net.minecraft.core.GlobalPos.of(t.level().dimension(), t.pos()));
+            out.add(Positions.of(net.minecraft.core.GlobalPos.of(t.level().dimension(), t.pos())));
         return out;
     }
 
@@ -917,7 +942,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         if (entries.isEmpty()) {
             ServerLevel level = getMachineLevel();
             if (level != null)
-                out.add(new Target(own, null, level, getMachinePos(), getMachineFace(), this));
+                out.add(new Target(own, null, level, Positions.toMc(getMachinePos()), Positions.toMc(getMachineFace()), this));
             return out;
         }
         for (Entry e : entries) {
@@ -960,7 +985,8 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
             if (mode == Mode.PROVIDER && t.access() != null
                     && node.getGrid().getService(com.lumina.twinstar.api.ITwinStarService.class)
                     instanceof com.lumina.twinstar.service.TwinStarService service) {
-                for (BlockPos sub : service.subMachinesOf(t.access())) {
+                for (com.lumina.bridge.Pos subPos : service.subMachinesOf(t.access())) {
+                    BlockPos sub = com.lumina.bridge.Positions.toMc(subPos);
                     IEnergyStorage e = com.lumina.twinstar.util.Caps.energy(t.level(), sub, null);
                     if (e == null) {
                         for (Direction d : Direction.values()) {
@@ -1254,7 +1280,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         }
         Direction face = settings.insertMode == InsertMode.ANY ? null : face0;
         // what goes into the machine counts as used up there (the list of what machines use)
-        BiConsumer<AEKey, Long> used = (k, n) -> com.lumina.twinstar.usage.UsageStore.record(level, pos, interfacePlace(), interfaceSide(), k, n,
+        BiConsumer<AEKey, Long> used = (k, n) -> com.lumina.twinstar.usage.UsageStore.record(level, pos, Positions.toMc(interfacePlace()), interfaceSide(), k, n,
                 com.lumina.twinstar.usage.UsageStore.STOCK);
         IItemHandler items = com.lumina.twinstar.util.Caps.item(level, pos, face);
         if (items == null)

@@ -10,7 +10,6 @@
 - Machine Access Interface: in ME interface mode it takes back the FE a machine gives out into the network (a button beside the recover button turns it off).
 - Machine Linker: Ctrl + right-click a machine links every block of the same kind within 16 blocks of it at once (up to 64 machines; both are in the config). It only adds; a plain right-click is still one machine.
 - Machine Access Interface: a button beside the optional-machine slot (provider mode) gives every machine of the same kind in the list the optional machine you set on this one.
-- Jade shows the FE a generator makes, and the Fusion Generator's temperature and FE; its Energy Ports show an energy bar.
 - The world interaction pages in JEI and EMI are pictures now.
 - The guide book's recipe tags show the Gravity Processing Factory and Fusion Generator recipes, and black and white holes show in its scenes.
 
@@ -41,7 +40,6 @@
 - 機器接入接口：ME 介面模式下，會把機器輸出的 FE 也收回網路（回收按鈕旁多一顆按鈕可以關掉）。
 - 機器連結器：Ctrl + 右鍵機器，一次連接它周圍 16 格內所有相同的機器（最多 64 台，兩個數字都能在設定檔調整）。只會增加；一般右鍵還是只連一台。
 - 機器接入接口：供應器模式下，可選機器格旁多一顆按鈕，把這台設定的可選機器一次套用到清單裡所有相同的機器。
-- Jade 會顯示發電機發的 FE，以及核融合發生器的溫度和 FE；能量接口也會顯示能量條。
 - JEI 和 EMI 的世界交互頁改用圖像。
 - 導覽書的配方標籤可以顯示引力加工工廠和核融合發生器的配方，黑洞和白洞也能顯示在場景裡。
 

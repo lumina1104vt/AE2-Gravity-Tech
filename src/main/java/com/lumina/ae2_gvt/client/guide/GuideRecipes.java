@@ -13,7 +13,7 @@ import guideme.document.block.LytBlock;
 import guideme.document.block.LytSlotGrid;
 import guideme.document.block.recipes.LytStandardRecipeBox;
 import net.minecraft.world.item.ItemStack;
-import com.lumina.twinstar.util.RecipeHolder;
+import com.lumina.twinstar.algorithm.ae2.RecipeHolder;
 import com.lumina.ae2_gvt.recipes.SizedIngredient;
 
 /**

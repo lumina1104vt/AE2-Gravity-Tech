@@ -1,5 +1,13 @@
 package com.lumina.ae2_gvt.hub;
 
+import com.lumina.twinstar.platform.Ae2Adapters;
+import com.lumina.bridge.key.Key;
+import com.lumina.bridge.key.Keys;
+import com.lumina.bridge.Face;
+import com.lumina.bridge.Pos;
+import com.lumina.bridge.Positions;
+
+import com.lumina.twinstar.port.World;
 import appeng.blockentity.grid.AENetworkBlockEntity;
 import com.lumina.ae2_gvt.blockentities.FusionControllerBlockEntity;
 import com.lumina.twinstar.api.IMachineAccess;
@@ -43,8 +51,8 @@ public class HubPortBlockEntity extends AENetworkBlockEntity implements IMachine
     // ── IMachineAccess ──
 
     @Override
-    public @Nullable Item getMachine() {
-        return machine == null ? null : machine.getBlockState().getBlock().asItem();
+    public @Nullable Key getMachine() {
+        return machine == null ? null : Keys.of(appeng.api.stacks.AEItemKey.of(machine.getBlockState().getBlock().asItem()));
     }
 
     @Override
@@ -63,13 +71,18 @@ public class HubPortBlockEntity extends AENetworkBlockEntity implements IMachine
     }
 
     @Override
-    public BlockPos getMachinePos() {
-        return machine == null ? worldPosition : machine.getBlockPos();
+    public @Nullable World getMachineWorld() {
+        return Ae2Adapters.world(getMachineLevel());
     }
 
     @Override
-    public Direction getMachineFace() {
-        return Direction.NORTH;
+    public Pos getMachinePos() {
+        return Positions.of(machine == null ? worldPosition : machine.getBlockPos());
+    }
+
+    @Override
+    public Face getMachineFace() {
+        return Face.NORTH;
     }
 
     @Override
