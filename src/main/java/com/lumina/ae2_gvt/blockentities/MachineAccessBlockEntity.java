@@ -1,5 +1,8 @@
 package com.lumina.ae2_gvt.blockentities;
 
+import com.lumina.bridge.Face;
+import com.lumina.bridge.Pos;
+import com.lumina.bridge.Positions;
 import com.lumina.twinstar.port.World;
 import java.util.List;
 import java.util.Set;
@@ -116,8 +119,8 @@ public class MachineAccessBlockEntity extends AENetworkedBlockEntity implements 
     @Override public InsertMode getInsertMode() { return core.getInsertMode(); }
     @Override public @Nullable ServerLevel getMachineLevel() { return core.getMachineLevel(); }
     @Override public @Nullable World getMachineWorld() { return core.getMachineWorld(); }
-    @Override public BlockPos getMachinePos() { return core.getMachinePos(); }
-    @Override public Direction getMachineFace() { return core.getMachineFace(); }
+    @Override public Pos getMachinePos() { return core.getMachinePos(); }
+    @Override public Face getMachineFace() { return core.getMachineFace(); }
     @Override public int getGroup() { return core.getGroup(); }
     @Override public int getSubRange() { return core.getSubRange(); }
     @Override public void onRunFed() { core.onRunFed(); }

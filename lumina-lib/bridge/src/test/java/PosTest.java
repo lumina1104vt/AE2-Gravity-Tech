@@ -24,4 +24,13 @@ class PosTest {
         assertEquals(Face.UP, Face.DOWN.opposite());
         assertEquals(Face.WEST, Face.EAST.opposite());
     }
+
+    @Test
+    void distances() {
+        Pos a = Pos.of(0, 0, 0), b = Pos.of(3, -4, 12);
+        assertEquals(19, a.distManhattan(b));
+        assertEquals(169.0, a.distSqr(b));
+        assertEquals("3, -4, 12", b.toShortString());
+        assertEquals(b, a.offset(3, -4, 12));
+    }
 }

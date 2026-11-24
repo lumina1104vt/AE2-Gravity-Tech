@@ -27,6 +27,26 @@ public record Pos(long packed) {
         return (int) (packed << (64 - XZ_BITS - Y_BITS) >> (64 - XZ_BITS));
     }
 
+    public Pos offset(int dx, int dy, int dz) {
+        return of(x() + dx, y() + dy, z() + dz);
+    }
+
+    /** |dx| + |dy| + |dz| to the other position. */
+    public int distManhattan(Pos o) {
+        return Math.abs(x() - o.x()) + Math.abs(y() - o.y()) + Math.abs(z() - o.z());
+    }
+
+    /** Squared straight distance to the other position. */
+    public double distSqr(Pos o) {
+        double dx = x() - o.x(), dy = y() - o.y(), dz = z() - o.z();
+        return dx * dx + dy * dy + dz * dz;
+    }
+
+    /** "x, y, z", for messages. */
+    public String toShortString() {
+        return x() + ", " + y() + ", " + z();
+    }
+
     public Pos relative(Face face, int distance) {
         return of(x() + face.dx * distance, y() + face.dy * distance, z() + face.dz * distance);
     }

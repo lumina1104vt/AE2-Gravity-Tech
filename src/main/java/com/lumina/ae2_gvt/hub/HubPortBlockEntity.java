@@ -1,5 +1,8 @@
 package com.lumina.ae2_gvt.hub;
 
+import com.lumina.bridge.Face;
+import com.lumina.bridge.Pos;
+import com.lumina.bridge.Positions;
 import com.lumina.twinstar.algorithm.execution.Ae2Adapters;
 import com.lumina.twinstar.port.World;
 import appeng.blockentity.grid.AENetworkedBlockEntity;
@@ -72,13 +75,13 @@ public class HubPortBlockEntity extends AENetworkedBlockEntity implements IMachi
     }
 
     @Override
-    public BlockPos getMachinePos() {
-        return machine == null ? worldPosition : machine.getBlockPos();
+    public Pos getMachinePos() {
+        return Positions.of(machine == null ? worldPosition : machine.getBlockPos());
     }
 
     @Override
-    public Direction getMachineFace() {
-        return Direction.NORTH;
+    public Face getMachineFace() {
+        return Face.NORTH;
     }
 
     @Override

@@ -14,6 +14,11 @@ public enum Face {
         this.dz = dz;
     }
 
+    /** Lower case name ("north"), as Minecraft names it; for messages. */
+    public String getName() {
+        return name().toLowerCase(java.util.Locale.ROOT);
+    }
+
     public Face opposite() {
         return values()[ordinal() ^ 1];
     }
