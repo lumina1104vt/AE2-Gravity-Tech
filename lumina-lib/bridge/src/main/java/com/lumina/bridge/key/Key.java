@@ -31,7 +31,7 @@ public final class Key {
         BiPredicate<Key, Key> sameIgnoringData) {
         this.kind = Objects.requireNonNull(kind);
         this.id = Objects.requireNonNull(id);
-        this.unit = Objects.requireNonNull(unit);
+        this.unit = unit == null ? "" : unit;
         this.amountPerUnit = amountPerUnit;
         this.stackLimit = stackLimit;
         this.handle = Objects.requireNonNull(handle);

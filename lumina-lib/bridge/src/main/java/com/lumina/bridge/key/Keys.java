@@ -35,11 +35,17 @@ public final class Keys {
         return (dx == null ? 0 : dx) == (dy == null ? 0 : dy);
     }
 
+    /** AE2 gives items no unit symbol (null): that is an empty one here. */
+    private static String unitOf(AEKey key) {
+        String unit = key.getUnitSymbol();
+        return unit == null ? "" : unit;
+    }
+
     private static Key wrap(AEKey key) {
         Key.Kind kind = key.getType() == appeng.api.stacks.AEKeyType.items() ? Key.Kind.ITEM
                 : key.getType() == appeng.api.stacks.AEKeyType.fluids() ? Key.Kind.FLUID : Key.Kind.OTHER;
         int limit = key instanceof AEItemKey item ? item.getMaxStackSize() : 1;
-        return new Key(kind, key.getId().toString(), key.getUnitSymbol(), key.getAmountPerUnit(), limit, key,
+        return new Key(kind, key.getId().toString(), unitOf(key), key.getAmountPerUnit(), limit, key,
                 () -> key.getDisplayName().getString(), () -> key.getType().getDescription().getString(),
                 Keys::looselyEqual);
     }

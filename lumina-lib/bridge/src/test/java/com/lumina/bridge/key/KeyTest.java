@@ -31,6 +31,12 @@ class KeyTest {
     }
 
     @Test
+    void noUnitIsEmpty() {
+        Key k = new Key(Key.Kind.ITEM, "minecraft:stick", null, 1, 64, "stick", () -> "s", () -> "t", (x, y) -> false);
+        assertEquals("", k.unit());
+    }
+
+    @Test
     void handleOnlyGivesTheRightType() {
         Key k = item("minecraft:stick", "stick");
         assertEquals("stick", k.handle(String.class));
