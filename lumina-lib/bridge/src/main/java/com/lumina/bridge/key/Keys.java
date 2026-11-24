@@ -26,11 +26,21 @@ public final class Keys {
         return key.handle(AEKey.class);
     }
 
+    /** The same item with the same durability, whatever else is on them. */
+    private static boolean looselyEqual(Key a, Key b) {
+        if (!(a.handle(AEKey.class) instanceof AEItemKey x) || !(b.handle(AEKey.class) instanceof AEItemKey y) || x.getItem() != y.getItem())
+            return false;
+        Integer dx = x.get(net.minecraft.core.component.DataComponents.DAMAGE);
+        Integer dy = y.get(net.minecraft.core.component.DataComponents.DAMAGE);
+        return (dx == null ? 0 : dx) == (dy == null ? 0 : dy);
+    }
+
     private static Key wrap(AEKey key) {
         Key.Kind kind = key.getType() == appeng.api.stacks.AEKeyType.items() ? Key.Kind.ITEM
                 : key.getType() == appeng.api.stacks.AEKeyType.fluids() ? Key.Kind.FLUID : Key.Kind.OTHER;
         int limit = key instanceof AEItemKey item ? item.getMaxStackSize() : 1;
         return new Key(kind, key.getId().toString(), key.getUnitSymbol(), key.getAmountPerUnit(), limit, key,
-                () -> key.getDisplayName().getString(), () -> key.getType().getDescription().getString());
+                () -> key.getDisplayName().getString(), () -> key.getType().getDescription().getString(),
+                Keys::looselyEqual);
     }
 }

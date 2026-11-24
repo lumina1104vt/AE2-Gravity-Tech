@@ -3,7 +3,7 @@ package com.lumina.ae2_gvt.items.parts;
 import com.lumina.bridge.Face;
 import com.lumina.bridge.Pos;
 import com.lumina.bridge.Positions;
-import com.lumina.twinstar.algorithm.execution.Ae2Adapters;
+import com.lumina.twinstar.platform.Ae2Adapters;
 import com.lumina.twinstar.port.World;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -18,8 +18,8 @@ import org.jetbrains.annotations.Nullable;
 
 import com.lumina.ae2_gvt.items.tools.MachineLinkTool;
 import com.lumina.twinstar.api.IMachineAccess;
-import com.lumina.twinstar.api.IMachineAccess.Port;
-import com.lumina.twinstar.api.IMachineAccess.PortRole;
+import com.lumina.twinstar.api.IMachine.Port;
+import com.lumina.twinstar.api.IMachine.PortRole;
 
 import appeng.api.config.Actionable;
 import appeng.api.inventories.InternalInventory;
