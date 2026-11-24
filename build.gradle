@@ -26,6 +26,7 @@ evaluationDependsOn(':core')
 evaluationDependsOn(':lumina-multiblock')
 evaluationDependsOn(':twinstar-core')
 evaluationDependsOn(':twinstar-api')
+evaluationDependsOn(':twinstar-ae2')
 evaluationDependsOn(':lumina-bridge')
 evaluationDependsOn(':lumina-corelib')
 
@@ -83,6 +84,9 @@ neoForge {
         "twinstar_api" {
             sourceSet(project(':twinstar-api').sourceSets.main)
         }
+        "twinstar_ae2" {
+            sourceSet(project(':twinstar-ae2').sourceSets.main)
+        }
         "lumina_bridge" {
             sourceSet(project(':lumina-bridge').sourceSets.main)
         }
@@ -115,6 +119,9 @@ dependencies {
     compileOnly project(':twinstar-api')
     localRuntime project(':twinstar-api')
     jarJar(project(':twinstar-api'))
+    compileOnly project(':twinstar-ae2')
+    localRuntime project(':twinstar-ae2')
+    jarJar(project(':twinstar-ae2'))
 
     // the Lumina base layers (version-neutral types, shared infrastructure)
     compileOnly project(':lumina-bridge')
