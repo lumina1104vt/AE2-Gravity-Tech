@@ -24,6 +24,10 @@ tasks.named('wrapper', Wrapper).configure {
 // the runs below reference the lib mods' source sets, so configure those projects first
 evaluationDependsOn(':core')
 evaluationDependsOn(':lumina-multiblock')
+evaluationDependsOn(':twinstar-core')
+evaluationDependsOn(':twinstar-api')
+evaluationDependsOn(':lumina-bridge')
+evaluationDependsOn(':lumina-corelib')
 
 neoForge {
     // access transformers are picked up from META-INF/accesstransformer.cfg automatically
@@ -73,6 +77,18 @@ neoForge {
         "lumina_multiblock" {
             sourceSet(project(':lumina-multiblock').sourceSets.main)
         }
+        "twinstar_core" {
+            sourceSet(project(':twinstar-core').sourceSets.main)
+        }
+        "twinstar_api" {
+            sourceSet(project(':twinstar-api').sourceSets.main)
+        }
+        "lumina_bridge" {
+            sourceSet(project(':lumina-bridge').sourceSets.main)
+        }
+        "lumina_corelib" {
+            sourceSet(project(':lumina-corelib').sourceSets.main)
+        }
     }
 }
 
@@ -91,6 +107,22 @@ dependencies {
     // bundled into the ae2_gvt jar (jar-in-jar); each lib keeps its own mod id
     jarJar(project(':core'))
     jarJar(project(':lumina-multiblock'))
+
+    // the twin-star engine's pure logic (plain library) and its interfaces (lib mod)
+    compileOnly project(':twinstar-core')
+    localRuntime project(':twinstar-core')
+    jarJar(project(':twinstar-core'))
+    compileOnly project(':twinstar-api')
+    localRuntime project(':twinstar-api')
+    jarJar(project(':twinstar-api'))
+
+    // the Lumina base layers (version-neutral types, shared infrastructure)
+    compileOnly project(':lumina-bridge')
+    localRuntime project(':lumina-bridge')
+    jarJar(project(':lumina-bridge'))
+    compileOnly project(':lumina-corelib')
+    localRuntime project(':lumina-corelib')
+    jarJar(project(':lumina-corelib'))
 
     // plain-Java tests (no Minecraft classes on their path), e.g. the same-machine picking of the machine access interface
     testImplementation platform('org.junit:junit-bom:5.10.3')

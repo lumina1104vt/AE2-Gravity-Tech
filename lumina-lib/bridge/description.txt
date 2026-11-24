@@ -1,0 +1,3 @@
+The version-neutral layer: our own key, position and face types that the other Lumina mods are built on.
+
+版本中立層：其他 Lumina 模組所依賴的自有物質、座標與方向型別。

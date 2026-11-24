@@ -130,3 +130,35 @@ config="${mod_id}.mixins.json"
 # stop your mod loading on the server for example.
 #[features.${mod_id}]
 #openGLVersion="[3.2,)"
+
+# twinstar_core: a Lumina base layer this mod is built on; NeoForge loads it first
+[[dependencies.${mod_id}]]
+    modId="twinstar_core"
+    type="required"
+    versionRange="[0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+# twinstar_api: a Lumina base layer this mod is built on; NeoForge loads it first
+[[dependencies.${mod_id}]]
+    modId="twinstar_api"
+    type="required"
+    versionRange="[0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+# lumina_bridge: a Lumina base layer this mod is built on; NeoForge loads it first
+[[dependencies.${mod_id}]]
+    modId="lumina_bridge"
+    type="required"
+    versionRange="[0,)"
+    ordering="AFTER"
+    side="BOTH"
+
+# lumina_corelib: a Lumina base layer this mod is built on; NeoForge loads it first
+[[dependencies.${mod_id}]]
+    modId="lumina_corelib"
+    type="required"
+    versionRange="[0,)"
+    ordering="AFTER"
+    side="BOTH"
