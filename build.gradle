@@ -24,6 +24,7 @@ tasks.named('wrapper', Wrapper).configure {
 // the runs below reference the lib mods' source sets, so configure those projects first
 evaluationDependsOn(':core')
 evaluationDependsOn(':lumina-multiblock')
+evaluationDependsOn(':lumina-multiblock-engine')
 evaluationDependsOn(':twinstar-core')
 evaluationDependsOn(':twinstar-api')
 evaluationDependsOn(':twinstar-ae2')
@@ -78,6 +79,9 @@ neoForge {
         "lumina_multiblock" {
             sourceSet(project(':lumina-multiblock').sourceSets.main)
         }
+        "lumina_multiblock_engine" {
+            sourceSet(project(':lumina-multiblock-engine').sourceSets.main)
+        }
         "twinstar_core" {
             sourceSet(project(':twinstar-core').sourceSets.main)
         }
@@ -107,10 +111,13 @@ dependencies {
     localRuntime project(':core')
     compileOnly project(':lumina-multiblock')
     localRuntime project(':lumina-multiblock')
+    compileOnly project(':lumina-multiblock-engine')
+    localRuntime project(':lumina-multiblock-engine')
 
     // bundled into the ae2_gvt jar (jar-in-jar); each lib keeps its own mod id
     jarJar(project(':core'))
     jarJar(project(':lumina-multiblock'))
+    jarJar(project(':lumina-multiblock-engine'))
 
     // the twin-star engine's pure logic (plain library) and its interfaces (lib mod)
     compileOnly project(':twinstar-core')

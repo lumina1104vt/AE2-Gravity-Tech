@@ -10,6 +10,8 @@ plugins {
 
 include("core")
 include("lumina-multiblock")
+include("lumina-multiblock-engine")
+project(":lumina-multiblock-engine").projectDir = file("lumina-multiblock/engine")
 include("lumina-bridge")
 project(":lumina-bridge").projectDir = file("lumina-lib/bridge")
 include("lumina-corelib")
