@@ -1,0 +1,76 @@
+package com.lumina.bridge.key;
+
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Objects;
+
+/**
+ * One kind of thing the engine moves around, version-neutral. Wraps whatever the platform uses (on 1.21.1 an AE2
+ * key); everything but the version layer talks to this type only. No amount: amounts are separate.
+ * <p>
+ * Equality is the wrapped key's own, so item components stay distinct without the engine knowing they exist.
+ * {@link Keys} hands out one instance per wrapped key.
+ */
+public final class Key {
+    public enum Kind {ITEM, FLUID, OTHER}
+
+    private final Kind kind;
+    private final String id;
+    private final String unit;
+    private final int amountPerUnit;
+    private final int stackLimit;
+    private final Object handle;
+
+    Key(Kind kind, String id, String unit, int amountPerUnit, int stackLimit, Object handle) {
+        this.kind = Objects.requireNonNull(kind);
+        this.id = Objects.requireNonNull(id);
+        this.unit = Objects.requireNonNull(unit);
+        this.amountPerUnit = amountPerUnit;
+        this.stackLimit = stackLimit;
+        this.handle = Objects.requireNonNull(handle);
+    }
+
+    public Kind kind() {
+        return kind;
+    }
+
+    /** Stable name, e.g. {@code minecraft:iron_ingot}; for logs, sorting and tests. Not unique across components. */
+    public String id() {
+        return id;
+    }
+
+    /** Unit symbol: empty for items, "B" for fluids. */
+    public String unit() {
+        return unit;
+    }
+
+    /** How many raw amounts make one unit (1 for items, 1000 for fluids). */
+    public int amountPerUnit() {
+        return amountPerUnit;
+    }
+
+    /** The most that goes into one slot at a time. */
+    public int stackLimit() {
+        return stackLimit;
+    }
+
+    /** The wrapped platform key, or null when it is not a {@code type}. Version layer only. */
+    public <T> @Nullable T handle(Class<T> type) {
+        return type.isInstance(handle) ? type.cast(handle) : null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return this == o || o instanceof Key k && handle.equals(k.handle);
+    }
+
+    @Override
+    public int hashCode() {
+        return handle.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return kind + ":" + id;
+    }
+}

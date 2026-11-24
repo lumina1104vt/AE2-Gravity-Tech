@@ -27,6 +27,8 @@ repositories {
 }
 
 dependencies {
+    compileOnly 'org.jetbrains:annotations:24.1.0'
+    compileOnly "maven.modrinth:ae2:${ae2_version}"   // the 1.21.1 side of Keys
     testImplementation platform('org.junit:junit-bom:5.10.3')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
