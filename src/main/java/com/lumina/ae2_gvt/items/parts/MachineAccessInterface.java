@@ -178,7 +178,7 @@ public class MachineAccessInterface extends AEBasePart implements IMachineAccess
 
     // ── IMachineAccess: the node's owner is this part; the core does it all ──
 
-    @Override public @Nullable Item getMachine() { return core.getMachine(); }
+    @Override public @Nullable Key getMachine() { return core.getMachine(); }
     @Override public boolean isBlocking() { return core.isBlocking(); }
     @Override public BlockMode getBlockMode() { return core.getBlockMode(); }
     @Override public InsertMode getInsertMode() { return core.getInsertMode(); }

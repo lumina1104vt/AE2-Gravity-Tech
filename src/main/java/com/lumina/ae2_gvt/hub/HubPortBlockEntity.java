@@ -1,5 +1,7 @@
 package com.lumina.ae2_gvt.hub;
 
+import com.lumina.bridge.key.Key;
+import com.lumina.bridge.key.Keys;
 import com.lumina.bridge.Face;
 import com.lumina.bridge.Pos;
 import com.lumina.bridge.Positions;
@@ -50,8 +52,8 @@ public class HubPortBlockEntity extends AENetworkedBlockEntity implements IMachi
     // ── IMachineAccess ──
 
     @Override
-    public @Nullable Item getMachine() {
-        return machine == null ? null : machine.getBlockState().getBlock().asItem();
+    public @Nullable Key getMachine() {
+        return machine == null ? null : Keys.of(appeng.api.stacks.AEItemKey.of(machine.getBlockState().getBlock().asItem()));
     }
 
     @Override

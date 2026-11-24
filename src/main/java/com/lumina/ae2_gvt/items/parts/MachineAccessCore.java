@@ -631,9 +631,9 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         }
 
         @Override
-        public @Nullable Item getMachine() {
+        public @Nullable Key getMachine() {
             ItemStack s = entry.settings.machine;
-            return s.isEmpty() ? null : s.getItem();
+            return s.isEmpty() ? null : Keys.of(appeng.api.stacks.AEItemKey.of(s.getItem()));
         }
 
         @Override public boolean isBlocking() { return entry.settings.blockMode != BlockMode.NONE; }
@@ -771,8 +771,8 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
     // ── IMachineAccess: the block the part sits on (no machine bound) ──
 
     @Override
-    public @Nullable Item getMachine() {
-        return own.machine.isEmpty() ? null : own.machine.getItem();
+    public @Nullable Key getMachine() {
+        return own.machine.isEmpty() ? null : Keys.of(appeng.api.stacks.AEItemKey.of(own.machine.getItem()));
     }
 
     @Override

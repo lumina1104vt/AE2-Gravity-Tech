@@ -113,7 +113,7 @@ public class MachineAccessBlockEntity extends AENetworkedBlockEntity implements 
 
     // ── IMachineAccess ──
 
-    @Override public @Nullable Item getMachine() { return core.getMachine(); }
+    @Override public @Nullable Key getMachine() { return core.getMachine(); }
     @Override public boolean isBlocking() { return core.isBlocking(); }
     @Override public BlockMode getBlockMode() { return core.getBlockMode(); }
     @Override public InsertMode getInsertMode() { return core.getInsertMode(); }
