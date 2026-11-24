@@ -1,5 +1,7 @@
 package com.lumina.ae2_gvt.items.parts;
 
+import com.lumina.twinstar.algorithm.execution.Ae2Adapters;
+import com.lumina.twinstar.port.World;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -653,6 +655,11 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         public @Nullable ServerLevel getMachineLevel() {
             return linkLevel(entry.link);
         }
+
+        @Override
+        public @Nullable World getMachineWorld() {
+            return Ae2Adapters.world(getMachineLevel());
+        }
     }
 
     /** What the hub may use: nothing in ME interface mode, each bound machine (not its hatches), or the block the part sits on. */
@@ -836,6 +843,11 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         if (!(host.level() instanceof ServerLevel level) || host.side() == null)
             return null;       // a block has no machine of its own: only the bound ones
         return level;
+    }
+
+    @Override
+    public @Nullable World getMachineWorld() {
+        return Ae2Adapters.world(getMachineLevel());
     }
 
     @Override

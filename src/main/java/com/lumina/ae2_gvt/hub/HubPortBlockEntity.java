@@ -1,5 +1,7 @@
 package com.lumina.ae2_gvt.hub;
 
+import com.lumina.twinstar.algorithm.execution.Ae2Adapters;
+import com.lumina.twinstar.port.World;
 import appeng.blockentity.grid.AENetworkedBlockEntity;
 import com.lumina.ae2_gvt.blockentities.FusionControllerBlockEntity;
 import com.lumina.twinstar.api.IMachineAccess;
@@ -62,6 +64,11 @@ public class HubPortBlockEntity extends AENetworkedBlockEntity implements IMachi
     @Override
     public @Nullable ServerLevel getMachineLevel() {
         return level instanceof ServerLevel server ? server : null;
+    }
+
+    @Override
+    public @Nullable World getMachineWorld() {
+        return Ae2Adapters.world(getMachineLevel());
     }
 
     @Override

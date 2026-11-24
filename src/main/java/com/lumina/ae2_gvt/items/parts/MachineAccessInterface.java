@@ -1,5 +1,6 @@
 package com.lumina.ae2_gvt.items.parts;
 
+import com.lumina.twinstar.port.World;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -177,6 +178,7 @@ public class MachineAccessInterface extends AEBasePart implements IMachineAccess
     @Override public BlockMode getBlockMode() { return core.getBlockMode(); }
     @Override public InsertMode getInsertMode() { return core.getInsertMode(); }
     @Override public @Nullable ServerLevel getMachineLevel() { return core.getMachineLevel(); }
+    @Override public @Nullable World getMachineWorld() { return core.getMachineWorld(); }
     @Override public BlockPos getMachinePos() { return core.getMachinePos(); }
     @Override public Direction getMachineFace() { return core.getMachineFace(); }
     @Override public int getGroup() { return core.getGroup(); }
