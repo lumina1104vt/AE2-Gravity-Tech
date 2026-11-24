@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class KeyTest {
     private static Key item(String id, Object handle) {
-        return new Key(Key.Kind.ITEM, id, "", 1, 64, handle);
+        return new Key(Key.Kind.ITEM, id, "", 1, 64, handle, () -> id, () -> "t");
     }
 
     @Test
@@ -21,7 +21,7 @@ class KeyTest {
 
     @Test
     void fieldsAreKept() {
-        Key water = new Key(Key.Kind.FLUID, "minecraft:water", "B", 1000, 1, "water");
+        Key water = new Key(Key.Kind.FLUID, "minecraft:water", "B", 1000, 1, "water", () -> "Water", () -> "Fluids");
         assertEquals(Key.Kind.FLUID, water.kind());
         assertEquals("minecraft:water", water.id());
         assertEquals("B", water.unit());

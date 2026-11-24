@@ -15,6 +15,8 @@ import com.lumina.twinstar.api.IMachineAccess;
 import appeng.api.networking.IManagedGridNode;
 import appeng.api.networking.security.IActionHost;
 import appeng.api.stacks.AEKey;
+import com.lumina.bridge.key.Key;
+import com.lumina.bridge.key.Keys;
 import appeng.blockentity.grid.AENetworkedBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -119,8 +121,8 @@ public class MachineAccessBlockEntity extends AENetworkedBlockEntity implements 
     @Override public int getGroup() { return core.getGroup(); }
     @Override public int getSubRange() { return core.getSubRange(); }
     @Override public void onRunFed() { core.onRunFed(); }
-    @Override public Set<AEKey> getStockedKeys() { return core.getStockedKeys(); }
-    @Override public void takeReceived(BiConsumer<AEKey, Long> taken) { core.takeReceived(taken); }
+    @Override public Set<Key> getStockedKeys() { return core.getStockedKeys(); }
+    @Override public void takeReceived(BiConsumer<Key, Long> taken) { core.takeReceived(taken); }
     @Override public boolean isAccessActive() { return core.isAccessActive(); }
     @Override public List<IMachineAccess> accessPoints() { return core.accessPoints(); }
     @Override public @Nullable net.minecraft.core.GlobalPos interfacePlace() { return core.interfacePlace(); }

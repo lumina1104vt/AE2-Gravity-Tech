@@ -18,6 +18,8 @@ import appeng.api.parts.IPartCollisionHelper;
 import appeng.api.parts.IPartItem;
 import appeng.api.parts.IPartModel;
 import appeng.api.stacks.AEKey;
+import com.lumina.bridge.key.Key;
+import com.lumina.bridge.key.Keys;
 import appeng.api.util.AECableType;
 import appeng.items.parts.PartModels;
 import appeng.menu.MenuOpener;
@@ -184,8 +186,8 @@ public class MachineAccessInterface extends AEBasePart implements IMachineAccess
     @Override public int getGroup() { return core.getGroup(); }
     @Override public int getSubRange() { return core.getSubRange(); }
     @Override public void onRunFed() { core.onRunFed(); }
-    @Override public Set<AEKey> getStockedKeys() { return core.getStockedKeys(); }
-    @Override public void takeReceived(BiConsumer<AEKey, Long> taken) { core.takeReceived(taken); }
+    @Override public Set<Key> getStockedKeys() { return core.getStockedKeys(); }
+    @Override public void takeReceived(BiConsumer<Key, Long> taken) { core.takeReceived(taken); }
     @Override public boolean isAccessActive() { return core.isAccessActive(); }
     @Override public List<IMachineAccess> accessPoints() { return core.accessPoints(); }
     @Override public @Nullable net.minecraft.core.GlobalPos interfacePlace() { return core.interfacePlace(); }

@@ -3,6 +3,7 @@ package com.lumina.bridge.key;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * One kind of thing the engine moves around, version-neutral. Wraps whatever the platform uses (on 1.21.1 an AE2
@@ -20,14 +21,19 @@ public final class Key {
     private final int amountPerUnit;
     private final int stackLimit;
     private final Object handle;
+    private final Supplier<String> displayName;
+    private final Supplier<String> typeName;
 
-    Key(Kind kind, String id, String unit, int amountPerUnit, int stackLimit, Object handle) {
+    Key(Kind kind, String id, String unit, int amountPerUnit, int stackLimit, Object handle,
+        Supplier<String> displayName, Supplier<String> typeName) {
         this.kind = Objects.requireNonNull(kind);
         this.id = Objects.requireNonNull(id);
         this.unit = Objects.requireNonNull(unit);
         this.amountPerUnit = amountPerUnit;
         this.stackLimit = stackLimit;
         this.handle = Objects.requireNonNull(handle);
+        this.displayName = displayName;
+        this.typeName = typeName;
     }
 
     public Kind kind() {
@@ -52,6 +58,16 @@ public final class Key {
     /** The most that goes into one slot at a time. */
     public int stackLimit() {
         return stackLimit;
+    }
+
+    /** The name a player sees (an item's name, a fluid's name); for messages and logs, not for logic. */
+    public String displayName() {
+        return displayName.get();
+    }
+
+    /** What sort of thing it is, as a player would call it ("Items", "Fluids"); for messages. */
+    public String typeName() {
+        return typeName.get();
     }
 
     /** The wrapped platform key, or null when it is not a {@code type}. Version layer only. */

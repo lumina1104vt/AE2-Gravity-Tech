@@ -34,6 +34,8 @@ import appeng.api.networking.ticking.TickingRequest;
 import appeng.api.stacks.AEFluidKey;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
+import com.lumina.bridge.key.Key;
+import com.lumina.bridge.key.Keys;
 import appeng.api.stacks.AEKeyType;
 import appeng.api.stacks.GenericStack;
 import appeng.api.storage.MEStorage;
@@ -637,7 +639,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         @Override public int getGroup() { return entry.settings.group; }
         @Override public int getSubRange() { return entry.settings.subRange; }
         @Override public void onRunFed() { queuePulse(entry.settings); }
-        @Override public Set<AEKey> getStockedKeys() { return entry.settings.stock.keySet(); }
+        @Override public Set<Key> getStockedKeys() { return stocked(entry.settings.stock.keySet()); }
         @Override public boolean isAccessActive() { return MachineAccessCore.this.isAccessActive(); }
         @Override public BlockPos getMachinePos() { return entry.link.pos(); }
         @Override public Direction getMachineFace() { return entry.link.face(); }
@@ -646,7 +648,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
         @Override public @Nullable net.minecraft.network.chat.Component interfaceName() { return MachineAccessCore.this.interfaceName(); }
 
         @Override
-        public void takeReceived(BiConsumer<AEKey, Long> taken) {
+        public void takeReceived(BiConsumer<Key, Long> taken) {
             if (first())
                 MachineAccessCore.this.takeReceived(taken);
         }
@@ -739,12 +741,19 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
     }
 
     @Override
-    public Set<AEKey> getStockedKeys() {
-        return own.stock.keySet();
+    public Set<Key> getStockedKeys() {
+        return stocked(own.stock.keySet());
+    }
+
+    private static Set<Key> stocked(Set<AEKey> keys) {
+        Set<Key> out = new java.util.HashSet<>();
+        for (AEKey k : keys)
+            out.add(Keys.of(k));
+        return out;
     }
 
     @Override
-    public void takeReceived(BiConsumer<AEKey, Long> taken) {
+    public void takeReceived(BiConsumer<Key, Long> taken) {
         receivedIdle = 0;
         for (int i = 0; i < received.size(); i++) {
             GenericStack s = received.getStack(i);
@@ -752,7 +761,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
                 continue;
             long got = received.extract(i, s.what(), s.amount(), Actionable.MODULATE);
             if (got > 0)
-                taken.accept(s.what(), got);
+                taken.accept(Keys.of(s.what()), got);
         }
     }
 

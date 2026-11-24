@@ -30,6 +30,7 @@ public final class Keys {
         Key.Kind kind = key.getType() == appeng.api.stacks.AEKeyType.items() ? Key.Kind.ITEM
                 : key.getType() == appeng.api.stacks.AEKeyType.fluids() ? Key.Kind.FLUID : Key.Kind.OTHER;
         int limit = key instanceof AEItemKey item ? item.getMaxStackSize() : 1;
-        return new Key(kind, key.getId().toString(), key.getUnitSymbol(), key.getAmountPerUnit(), limit, key);
+        return new Key(kind, key.getId().toString(), key.getUnitSymbol(), key.getAmountPerUnit(), limit, key,
+                () -> key.getDisplayName().getString(), () -> key.getType().getDescription().getString());
     }
 }
