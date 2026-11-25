@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.lumina.ae2_gvt.blocks.Blocks;
+import com.lumina.ae2_gvt.recipes.ExplosionRecipe;
 import com.lumina.ae2_gvt.recipes.FusionRecipe;
 import com.lumina.ae2_gvt.recipes.GravityProcessingRecipe;
 import com.lumina.ae2_gvt.recipes.Recipes;
@@ -12,6 +13,8 @@ import guideme.compiler.tags.RecipeTypeMappingSupplier;
 import guideme.document.block.LytBlock;
 import guideme.document.block.LytSlotGrid;
 import guideme.document.block.recipes.LytStandardRecipeBox;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
@@ -26,6 +29,7 @@ public final class GuideRecipes implements RecipeTypeMappingSupplier {
     public void collect(RecipeTypeMappings mappings) {
         mappings.add(Recipes.GRAVITY_PROCESSING.get(), GuideRecipes::gravityProcessing);
         mappings.add(Recipes.FUSION.get(), GuideRecipes::fusion);
+        mappings.add(Recipes.EXPLOSION.get(), GuideRecipes::explosion);
     }
 
     private static LytBlock gravityProcessing(RecipeHolder<GravityProcessingRecipe> holder) {
@@ -45,6 +49,24 @@ public final class GuideRecipes implements RecipeTypeMappingSupplier {
                 .title(Blocks.FUSION_CONTROLLER.get().getName().getString())
                 .input(LytSlotGrid.rowFromStacks(stacks(r.ingredients()), false))
                 .output(LytSlotGrid.rowFromStacks(r.results(), false))
+                .build(holder);
+    }
+
+    /** What lies together at the explosion (the centre item first), and what it makes: items, or the block put where the centre lay. */
+    private static LytBlock explosion(RecipeHolder<ExplosionRecipe> holder) {
+        ExplosionRecipe r = holder.value();
+        List<ItemStack> in = new ArrayList<>();
+        ItemStack[] centre = r.center().getItems();
+        if (centre.length > 0)
+            in.add(centre[0]);
+        in.addAll(stacks(r.ingredients()));
+        List<ItemStack> out = new ArrayList<>(r.results());
+        r.block().ifPresent(b -> out.add(new ItemStack(BuiltInRegistries.BLOCK.get(b))));
+        return LytStandardRecipeBox.builder()
+                .icon(net.minecraft.world.item.Items.TNT)
+                .title(Component.translatable("gui.ae2_gvt.world.tip.explosion").getString())
+                .input(LytSlotGrid.rowFromStacks(in, false))
+                .output(LytSlotGrid.rowFromStacks(out, false))
                 .build(holder);
     }
 
