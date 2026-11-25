@@ -108,6 +108,18 @@ public final class LinkToolClient extends ShardBase {
     }
 
     private static final List<Flash> FLASHES = new ArrayList<>();
+
+    /** The core's usage screen lights its machines up through this. */
+    @Mod.EventBusSubscriber(modid = AE2GravityTech.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    public static final class Setup {
+        private Setup() {
+        }
+
+        @SubscribeEvent
+        public static void setup(net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent event) {
+            com.lumina.twinstar.client.MachineHighlight.set(LinkToolClient::flash);
+        }
+    }
     private static final long FLASH_TICKS = 120;
 
     /** Lights the machine up for a few seconds; {@code host}/{@code hostSide} is the interface (the line goes to it). */
