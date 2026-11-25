@@ -901,7 +901,9 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
     public List<com.lumina.bridge.Place> machinePlaces() {
         List<com.lumina.bridge.Place> out = new ArrayList<>();
         for (Target t : targets())
-            out.add(Positions.of(net.minecraft.core.GlobalPos.of(t.level().dimension(), t.pos())));
+            // a hatch is part of the machine before it: what it takes in is counted on that machine, so it is no row of its own
+            if (t.settings().role == PortRole.MACHINE)
+                out.add(Positions.of(net.minecraft.core.GlobalPos.of(t.level().dimension(), t.pos())));
         return out;
     }
 
