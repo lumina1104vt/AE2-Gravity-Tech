@@ -25,8 +25,6 @@ Use the Gravity Wave Detector. Like AE2's meteorite compass, it leads you to the
 
 - Regrowing a black hole: use chaos matter, a singularity and 64 gravity crystal dust, then set off an explosion (TNT or a creeper will do) to make a new black hole.
 
-<RecipeFor id="ae2_gvt:black_hole" />
-
 ## White hole
 
 The white hole is almost the same as the black hole. It is the host rock of the anti-gravity crystals, but it does not do world crafting.
@@ -36,7 +34,5 @@ The white hole is almost the same as the black hole. It is the host rock of the 
 ## Making and breaking a white hole
 
 - Making a white hole: white holes never generate naturally, they can only be made. Use chaos matter, an anti-singularity and 64 gravity crystal dust, then set off an explosion (TNT or a creeper will do) to make a new white hole.
-
-<RecipeFor id="ae2_gvt:white_hole" />
 
 - Breaking a white hole: a TNT explosion can break a white hole, and gives chaos matter.

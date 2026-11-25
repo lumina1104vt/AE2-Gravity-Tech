@@ -95,7 +95,6 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
         addToLeftToolbar(range);
         addToLeftToolbar(pulse);
         // what this network's machines used up lately
-        usageButton = addToLeftToolbar(com.lumina.twinstar.client.UsageScreen.button(0, 0, () -> com.lumina.twinstar.client.UsageScreen.open(() -> this)));
         // AE2's upgrade panel on the right: the crafting card (ME interface mode asks the network to craft what a machine's stock is short of)
         widgets.add("upgrades", new UpgradesPanel(menu.getSlots(SlotSemantics.UPGRADE),
                 () -> appeng.api.upgrades.Upgrades.getTooltipLinesForMachine(menu.getPart().host().machineItem())));
@@ -117,27 +116,31 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
         addRenderableWidget(nextPage);
         for (GearButton gear : gears)
             addRenderableWidget(gear);
+        usageButton = addRenderableWidget(com.lumina.twinstar.client.UsageScreen.button(0, 0,
+                () -> com.lumina.twinstar.client.UsageScreen.open(() -> this)));
     }
 
     private boolean providerMode() {
         return menu.getAccessMode() == MachineAccessCore.Mode.PROVIDER;
     }
 
-    /** the toolbar button that opens the usage list; hidden while the toolbar has no room for it */
+    /** the button that opens the usage list: not in AE2's toolbar (one column, it has no room left) but in a column beside it */
     private net.minecraft.client.gui.components.Button usageButton;
 
     @Override
     protected void updateBeforeRender() {
         super.updateBeforeRender();
-        // AE2's toolbar is one column and grows past the screen with too many buttons (its background then sticks out below
-        // the panel): the usage button, the last one, is only there while it fits under the others
+        // AE2's toolbar is one column; this one goes in a column of its own to the left of it, from the same height
         if (usageButton != null) {
-            int bottom = 0;
+            int left = leftPos - 2, top = topPos + 2;
             for (var child : children())
                 if (child instanceof net.minecraft.client.gui.components.AbstractWidget w && w != usageButton && w.visible
-                        && w.getX() < leftPos && w.getY() >= topPos)
-                    bottom = Math.max(bottom, w.getY() + w.getHeight());
-            usageButton.visible = bottom == 0 || bottom + 6 + usageButton.getHeight() <= topPos + imageHeight - 2;
+                        && w.getX() < leftPos && w.getY() >= topPos) {
+                    left = Math.min(left, w.getX());
+                    top = Math.min(top, w.getY());
+                }
+            usageButton.setX(left - usageButton.getWidth() - 4);
+            usageButton.setY(top);
         }
         boolean provider = providerMode();
         boolean wireless = menu.getPart().isWireless();
