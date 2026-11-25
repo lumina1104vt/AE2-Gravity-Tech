@@ -34,9 +34,10 @@ public class DispatchMarkerItem extends Item {
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         appeng.api.stacks.AEKey origin = context.registries() == null ? null : DispatchMarker.originOf(stack, context.registries());
         if (origin instanceof appeng.api.stacks.AEItemKey item) {
-            // what it stands for shows as itself: the product's own tooltip (its name is already the marker's)
-            List<Component> lines = item.toStack().getTooltipLines(context, null, flag);
-            tooltip.addAll(lines.subList(Math.min(1, lines.size()), lines.size()));
+            // what it stands for shows as itself: the product's own description. Only that: the id, the mod name, the tags and
+            // the rest that other mods add to every tooltip are added to the marker's own tooltip by them, once
+            ItemStack product = item.toStack();
+            product.getItem().appendHoverText(product, context, tooltip, flag);
         } else if (origin == null) {
             tooltip.add(Component.translatable("item.ae2_gvt.dispatch_marker.tooltip").withStyle(net.minecraft.ChatFormatting.GRAY));
         }
