@@ -332,6 +332,54 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
         }
         encoded.set(pattern);
         lastEncoded = pattern.copy();
+        uploadToHub(encoded);
+    }
+
+    /**
+     * The pattern just encoded goes straight into the twin-star hub of the network (the slot is then empty). With no active hub
+     * on the network it stays in the slot as before; with one that has the same pattern already or no room it stays and says so.
+     */
+    private void uploadToHub(Slot encoded) {
+        ItemStack pattern = encoded.getItem();
+        var actionHost = getActionHost();
+        var node = actionHost == null ? null : actionHost.getActionableNode();
+        var grid = node == null ? null : node.getGrid();
+        if (grid == null || !PatternDetailsHelper.isEncodedPattern(pattern))
+            return;
+        boolean sawHub = false, same = false;
+        for (Class<?> type : grid.getMachineClasses()) {
+            if (!com.lumina.ae2_gvt.blockentities.cpu.TwinStarHostBlockEntity.class.isAssignableFrom(type))
+                continue;
+            for (appeng.api.networking.IGridNode n : grid.getMachineNodes(type)) {
+                if (!(n.getOwner() instanceof com.lumina.ae2_gvt.blockentities.cpu.TwinStarHostBlockEntity hub) || !hub.isHostActive())
+                    continue;
+                sawHub = true;
+                for (int i = 0; i < hub.getStoredPatterns(); i++)
+                    if (ItemStack.matches(hub.getPatterns().getStackInSlot(i), pattern))
+                        same = true;
+                if (same)
+                    break;
+                var handler = hub.getInsertOnlyHandler();
+                if (!handler.insertItem(0, pattern.copyWithCount(1), true).isEmpty())
+                    continue;                       // this hub is full: another one may have room
+                handler.insertItem(0, pattern.copyWithCount(1), false);
+                encoded.set(ItemStack.EMPTY);
+                lastEncoded = ItemStack.EMPTY;
+                say("ae2_gvt.pattern.uploaded", net.minecraft.ChatFormatting.AQUA);
+                return;
+            }
+            if (same)
+                break;
+        }
+        if (same)
+            say("ae2_gvt.pattern.upload_same", net.minecraft.ChatFormatting.GOLD);
+        else if (sawHub)
+            say("ae2_gvt.pattern.upload_full", net.minecraft.ChatFormatting.GOLD);
+    }
+
+    /** A line above the hotbar, not in chat. */
+    private void say(String key, net.minecraft.ChatFormatting color) {
+        getPlayer().displayClientMessage(net.minecraft.network.chat.Component.translatable(key).withStyle(color), true);
     }
 
     /**
