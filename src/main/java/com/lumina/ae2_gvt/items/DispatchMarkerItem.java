@@ -24,6 +24,16 @@ public class DispatchMarkerItem extends Item {
     }
 
     @Override
+    public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.lumina.ae2_gvt.client.DispatchMarkerClient.renderer();
+            }
+        });
+    }
+
+    @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         appeng.api.stacks.AEKey origin = DispatchMarker.originOf(stack);
         if (origin != null)

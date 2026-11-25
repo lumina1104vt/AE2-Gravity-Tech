@@ -1,6 +1,3 @@
 {
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "ae2_gvt:item/dispatch_marker"
-  }
+  "parent": "minecraft:item/chest"
 }
