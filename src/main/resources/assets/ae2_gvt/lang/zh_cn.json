@@ -557,6 +557,7 @@
   "gui.ae2_gvt.machine_access.slot_click": "左键加一，右键减一，Shift 一次十，减到 0 回到自动",
   "gui.ae2_gvt.machine_access.slot_is": "栏位 %s",
   "item.ae2_gvt.dispatch_marker": "发配记号",
+  "item.ae2_gvt.dispatch_marker.origin": "原本的产物：%s",
   "item.ae2_gvt.dispatch_marker.tooltip": "不是真的物品。样板把它当成产物时，材料全部送进机器就算合成完毕。它不会进入网络。",
   "ae2_gvt.pattern.done": "发配即完成",
   "ae2_gvt.pattern.done.tip": "材料全部送进机器，这一轮就算完成（这个产物就算做好了），工作不会等产物送回来；给产物自己离开机器的机器用。后面的步骤不能指望拿到它。",

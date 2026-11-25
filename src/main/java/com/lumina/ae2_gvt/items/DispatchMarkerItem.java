@@ -24,6 +24,9 @@ public class DispatchMarkerItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+        appeng.api.stacks.AEKey origin = context.registries() == null ? null : DispatchMarker.originOf(stack, context.registries());
+        if (origin != null)
+            tooltip.add(Component.translatable("item.ae2_gvt.dispatch_marker.origin", origin.getDisplayName()).withStyle(net.minecraft.ChatFormatting.AQUA));
         tooltip.add(Component.translatable("item.ae2_gvt.dispatch_marker.tooltip").withStyle(net.minecraft.ChatFormatting.GRAY));
     }
 }
