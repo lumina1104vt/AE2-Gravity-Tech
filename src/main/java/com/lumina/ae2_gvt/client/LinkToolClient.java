@@ -180,8 +180,7 @@ public final class LinkToolClient extends ShardBase {
         for (Flash f : FLASHES) {
             // lit up from the screen: the whole machine block, its face, and the line to the interface
             box(fill, lines, m, f.machine(), Direction.UP, true, cam, 0.30f + 0.15f * pulse);
-            // seen from afar and through walls: a beam standing up from the block, and a line from in front of the player to it
-            beam(fill, lines, m, f.machine(), cam, 0.30f + 0.15f * pulse);
+            // a line from in front of the player to the block, through walls
             Vec3 look = mc.player.getLookAngle();
             Vec3 start = look.scale(1.5).add(0, -0.35, 0);
             line(lines, m, start, Vec3.atCenterOf(f.machine()).subtract(cam), 0.9f);
@@ -204,21 +203,6 @@ public final class LinkToolClient extends ShardBase {
     private static Vec3 blockSideCentre(BlockPos pos, Direction side, double depth) {
         return Vec3.atCenterOf(pos).add(side.getStepX() * (depth - 0.5),
                 side.getStepY() * (depth - 0.5), side.getStepZ() * (depth - 0.5));
-    }
-
-    /** A column of light up from the block (two crossed sheets and a line down its middle), no depth test: it shows through walls. */
-    private static void beam(VertexConsumer fill, VertexConsumer lines, Matrix4f m, BlockPos pos, Vec3 cam, float alpha) {
-        float cx = (float) (pos.getX() + 0.5 - cam.x), cz = (float) (pos.getZ() + 0.5 - cam.z);
-        float y0 = (float) (pos.getY() - cam.y), y1 = y0 + 96;
-        float w = 0.18f;
-        float[][] sheets = {{cx - w, cz, cx + w, cz}, {cx, cz - w, cx, cz + w}};
-        for (float[] q : sheets) {
-            fill.vertex(m, q[0], y0, q[1]).color(GLOW[0], GLOW[1], GLOW[2], alpha).endVertex();
-            fill.vertex(m, q[2], y0, q[3]).color(GLOW[0], GLOW[1], GLOW[2], alpha).endVertex();
-            fill.vertex(m, q[2], y1, q[3]).color(GLOW[0], GLOW[1], GLOW[2], alpha).endVertex();
-            fill.vertex(m, q[0], y1, q[1]).color(GLOW[0], GLOW[1], GLOW[2], alpha).endVertex();
-        }
-        line(lines, m, new Vec3(cx, y0, cz), new Vec3(cx, y1, cz), 0.9f);
     }
 
     /** The part's box: 12/16 square, 4/16 deep, against {@code side} of the block. */
