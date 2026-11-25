@@ -183,7 +183,7 @@ public final class LinkToolClient extends ShardBase {
             // a line from in front of the player to the block, through walls
             Vec3 look = mc.player.getLookAngle();
             Vec3 start = look.scale(1.5).add(0, -0.35, 0);
-            line(lines, m, start, Vec3.atCenterOf(f.machine()).subtract(cam), 0.9f);
+            ribbon(fill, m, start, Vec3.atCenterOf(f.machine()).subtract(cam));
             if (exposed(mc.level, f.machine(), f.face()))
                 face(faceFill, faceLines, m, f.machine(), f.face(), cam, 0.3f + 0.15f * pulse, 0.9f);
             if (f.host() != null) {
@@ -203,6 +203,30 @@ public final class LinkToolClient extends ShardBase {
     private static Vec3 blockSideCentre(BlockPos pos, Direction side, double depth) {
         return Vec3.atCenterOf(pos).add(side.getStepX() * (depth - 0.5),
                 side.getStepY() * (depth - 0.5), side.getStepZ() * (depth - 0.5));
+    }
+
+    /**
+     * The guide line: a flat strip facing the player, as wide on the screen all along (a line of the card is one pixel) and in a
+     * strong orange, no depth test, so it is not lost against walls.
+     */
+    private static void ribbon(VertexConsumer fill, Matrix4f m, Vec3 a, Vec3 b) {
+        Vec3 d = b.subtract(a);
+        if (d.lengthSqr() < 1e-6)
+            return;
+        double k = 0.0045;
+        Vec3 na = d.cross(a), nb = d.cross(b);
+        if (na.lengthSqr() < 1e-9 || nb.lengthSqr() < 1e-9)
+            return;
+        na = na.normalize().scale(k * a.length());
+        nb = nb.normalize().scale(k * b.length());
+        Vector3f a1 = new Vector3f((float) (a.x + na.x), (float) (a.y + na.y), (float) (a.z + na.z));
+        Vector3f a2 = new Vector3f((float) (a.x - na.x), (float) (a.y - na.y), (float) (a.z - na.z));
+        Vector3f b1 = new Vector3f((float) (b.x + nb.x), (float) (b.y + nb.y), (float) (b.z + nb.z));
+        Vector3f b2 = new Vector3f((float) (b.x - nb.x), (float) (b.y - nb.y), (float) (b.z - nb.z));
+        fill.vertex(m, a1.x, a1.y, a1.z).color(1.0f, 0.62f, 0.12f, 0.95f).endVertex();
+        fill.vertex(m, a2.x, a2.y, a2.z).color(1.0f, 0.62f, 0.12f, 0.95f).endVertex();
+        fill.vertex(m, b2.x, b2.y, b2.z).color(1.0f, 0.62f, 0.12f, 0.95f).endVertex();
+        fill.vertex(m, b1.x, b1.y, b1.z).color(1.0f, 0.62f, 0.12f, 0.95f).endVertex();
     }
 
     /** The part's box: 12/16 square, 4/16 deep, against {@code side} of the block. */
