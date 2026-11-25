@@ -1,19 +1,19 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: 空白模組
+  title: Blank Module
 item_ids:
   - ae2_gvt:armor_module_base
 ---
 
-# 空白模組
+# Blank Module
 
-模組卡的基底。所有模組卡都要以它為中心材料製作。
+The base of the module cards. Every module card is crafted with it as the central material.
 
-## 製作
+## Crafting
 
-- 機器：引力加工工廠
-- 材料：
-  - 反引力電路板 ×8
-  - 合金板 ×16
+- Machine: Gravity Processing Factory
+- Materials:
+  - Anti-gravity Circuit ×8
+  - Alloy Plate ×16
   - `ae2:advanced_card` ×1

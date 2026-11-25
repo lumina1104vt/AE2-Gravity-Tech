@@ -1,19 +1,19 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/index.md
-  title: 材料介绍与收集
+  title: Materials
   position: 1
 ---
 
-# 材料与物品
+# Materials and Items
 
-重力科技的材料与核心物品。
+The materials and core items of Gravity Tech.
 
-## 晶体
+## Crystals
 
-* [三种水晶](materials/three-crystals.md)
+* [The Three Crystals](materials/three-crystals.md)
 
-## 网络资源
+## Network resources
 
-* [引力子与反引力子](materials/gravitons.md)
-* [引力子收集器](materials/graviton-collector.md)
+* [Gravitons and Anti-gravitons](materials/gravitons.md)
+* [Graviton Collector](materials/graviton-collector.md)

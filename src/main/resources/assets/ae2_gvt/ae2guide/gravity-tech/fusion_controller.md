@@ -1,11 +1,11 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/machines.md
-  title: 核融合控制器
+  title: Fusion Controller
 item_ids:
   - ae2_gvt:fusion_controller
 ---
 
-# 核融合控制器
+# Fusion Controller
 
-融合發生器的控制器。外殼為 9×9×9，內部 7×7×7。接上 ME 網路即可，不需要額外接口。
+The controller of the Fusion Generator. The shell is 9×9×9 with a 7×7×7 interior. Connect it to the ME network; no extra ports are needed.

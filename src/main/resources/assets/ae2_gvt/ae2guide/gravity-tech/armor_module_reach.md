@@ -1,20 +1,20 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: 延伸互動距離模組
+  title: Reach Module
 item_ids:
   - ae2_gvt:armor_module_reach
 ---
 
-# 延伸互動距離模組
+# Reach Module
 
-延伸互動距離模組。安裝在頭盔上的模組卡。需要的系統元件：感測核心。
+Reach Module. A module card installed on a helmet. Required system component: Sensor Core.
 
-## 製作
+## Crafting
 
-- 機器：引力加工工廠
-- 材料：
-  - 空白模組 ×1
-  - 感測核心 ×1
+- Machine: Gravity Processing Factory
+- Materials:
+  - Blank Module ×1
+  - Sensor Core ×1
   - `minecraft:spyglass` ×1
-  - 奇異白洞計算單元 ×4
+  - Singular White Hole Computing Unit ×4

@@ -1,41 +1,42 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/index.md
-  title: 黑洞与白洞
+  title: Black Holes and White Holes
   position: 0
 ---
 
-## 黑洞
+# Black Holes and White Holes
 
-黑洞是引力科技的最基础的方块，既承担引力水晶母岩的功能，又承担世界合成的功能（比如反奇点）。
+## Black hole
+
+The black hole is the most basic block of Gravity Tech. It is the host rock of the gravity crystals and it also does the world crafting (for example anti-singularities).
 
 <BlockImage id="ae2_gvt:black_hole" scale="4" />
 
-## 寻找黑洞
+## Finding a black hole
 
-使用引力波探测器，它会像AE原版的陨石罗盘一样带你找到世界上的黑洞。
+Use the Gravity Wave Detector. Like AE2's meteorite compass, it leads you to the black holes in the world.
 
 <ItemImage id="ae2_gvt:gravity_wave_detector" scale="4" /> <RecipeFor id="ae2_gvt:gravity_wave_detector" />
 
-## 黑洞的破坏与再生
+## Breaking and regrowing a black hole
 
-- 破坏黑洞：TNT 爆炸可以破坏黑洞，获得混沌物质。
+- Breaking a black hole: a TNT explosion can break a black hole, and gives chaos matter.
 
-- 再生黑洞：使用混沌物质，奇点，64个引力水晶粉，再通过爆炸（TNT，苦力怕都可以），即可重新制造一个新的黑洞。
+- Regrowing a black hole: use chaos matter, a singularity and 64 gravity crystal dust, then set off an explosion (TNT or a creeper will do) to make a new black hole.
 
 <RecipeFor id="ae2_gvt:black_hole" />
 
-# 白洞
+## White hole
 
-白洞与黑洞几乎一致，承担反引力水晶母岩的功能，但不承担承担世界合成的功能。
+The white hole is almost the same as the black hole. It is the host rock of the anti-gravity crystals, but it does not do world crafting.
 
 <BlockImage id="ae2_gvt:white_hole" scale="4" />
 
-## 白洞的生成与破坏
+## Making and breaking a white hole
 
-- 生成白洞：白洞在自然界不会自然生成，只能人造。使用混沌物质，反奇点，64个引力水晶粉，再使用爆炸（TNT，苦力怕都可以），即可制造一个新的白洞。
+- Making a white hole: white holes never generate naturally, they can only be made. Use chaos matter, an anti-singularity and 64 gravity crystal dust, then set off an explosion (TNT or a creeper will do) to make a new white hole.
 
 <RecipeFor id="ae2_gvt:white_hole" />
 
-- 破坏白洞：TNT 爆炸可以破坏白洞，获得混沌物质。
-
+- Breaking a white hole: a TNT explosion can break a white hole, and gives chaos matter.

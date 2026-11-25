@@ -1,31 +1,31 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/machines.md
-  title: 機器連結器
+  title: Machine Linker
 item_ids:
   - ae2_gvt:machine_link_tool
 ---
 
-# 機器連結器
+# Machine Linker
 
-讓機器接入接口（貼在線纜上的，或單方塊的 <ItemLink id="ae2_gvt:machine_access_block" />）從遠端代表機器。
+Lets a Machine Access Interface (the one on a cable, or the single block <ItemLink id="ae2_gvt:machine_access_block" />) stand for a machine from a distance.
 
-## 用法
+## How to use
 
-1. 蹲下右鍵機器接入接口，選取它。
-2. 右鍵機器，把你點的那一面連到這個接口；再右鍵同一台，解除。一個接口可以連多台（供應器模式不限，ME 接口模式最多 9 台）。
-3. 蹲下右鍵空氣，取消選取。
+1. Sneak and right-click a Machine Access Interface to select it.
+2. Right-click a machine to link the face you clicked to this interface; right-click the same one again to unlink. An interface can link many machines (no limit in provider mode, 9 in ME interface mode).
+3. Sneak and right-click the air to cancel the selection.
 
-**Ctrl + 右鍵機器**：一次連接它周圍所有相同的機器（同一種方塊）。例如一排 12 台粉碎機，Ctrl + 右鍵其中一台，12 台一起連上。預設範圍是以你點的那台為中心、半徑 16 格的球內，一次最多 64 台，兩個數字都能在設定檔（`linkAllRadius`、`linkAllMax`）調整；已經連接的會跳過，超出的會提示還有幾台沒連上。Ctrl + 右鍵只會增加，不會解除；一般右鍵還是只連一台。ME 接口模式的 9 台上限照樣有效。
+**Ctrl + right-click a machine**: links every identical machine around it (the same block) at once. For example, with a row of 12 grinders, Ctrl + right-click one of them to link all 12. By default the range is a sphere of radius 16 blocks around the machine you clicked, at most 64 machines at a time; both numbers can be changed in the config (`linkAllRadius`, `linkAllMax`). Machines that are already linked are skipped, and you are told how many were left out. Ctrl + right-click only adds, it never unlinks; a normal right-click still links just one machine. The limit of 9 machines in ME interface mode still applies.
 
-連結器的右鍵比機器自己的右鍵優先，點到有畫面的機器也只會連接。拿著它時，選取的接口會發光，被連接機器的面也會發光，並有細線相連。
+The linker's right-click has priority over the machine's own, so clicking a machine that has a screen only links it. While you hold it, the selected interface glows, the faces of the linked machines glow too, and thin lines connect them.
 
-機器要在同維度、64 格內，區塊要有載入。接口的紅石脈衝不用方塊，機器會直接收到一個來自旁邊的訊號，所以機器周圍不用留空位。
+The machine must be in the same dimension, within 64 blocks, with its chunk loaded. The interface's redstone pulse uses no block: the machine receives a signal as if from a neighbour, so no free space is needed around the machine.
 
-## 製作
+## Crafting
 
-- 機器：引力加工工廠
-- 材料：
-  - 記憶卡 ×1
-  - 無線接收器 ×1
-  - 反引力電路板 ×2
+- Machine: Gravity Processing Factory
+- Materials:
+  - Memory Card ×1
+  - Wireless Receiver ×1
+  - Anti-gravity Circuit Board ×2

@@ -1,18 +1,18 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/components.md
-  title: 推進核心
+  title: Propulsion Core
 item_ids:
   - ae2_gvt:propulsion_core
 ---
 
-# 推進核心
+# Propulsion Core
 
-移動系統的核心元件。製作移動類模組卡時需要放入。
+The core component of the movement system. It goes into the crafting of movement module cards.
 
-## 製作
+## Crafting
 
-- 機器：引力加工工廠
-- 材料：
-  - 反引力合金錠 ×32
-  - 反引力處理器 ×4
+- Machine: Gravity Processing Factory
+- Materials:
+  - Anti-gravity Alloy Ingot ×32
+  - Anti-gravity Processor ×4

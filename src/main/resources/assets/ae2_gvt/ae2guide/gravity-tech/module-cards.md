@@ -1,9 +1,9 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/index.md
-  title: 模組卡
+  title: Module Cards
 ---
 
-# 模組卡
+# Module Cards
 
-反重力裝甲的所有模組卡。
+Every module card of the anti-gravity armor.

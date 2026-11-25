@@ -1,20 +1,20 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: 閃避模組
+  title: Evasion Module
 item_ids:
   - ae2_gvt:armor_module_evasion
 ---
 
-# 閃避模組
+# Evasion Module
 
-閃避模組。安裝在護腿上的模組卡。需要的系統元件：衝擊核心。
+Evasion Module. A module card installed on leggings. Required system component: Impact Core.
 
-## 製作
+## Crafting
 
-- 機器：引力加工工廠
-- 材料：
-  - 空白模組 ×1
-  - 衝擊核心 ×1
+- Machine: Gravity Processing Factory
+- Materials:
+  - Blank Module ×1
+  - Impact Core ×1
   - `minecraft:cobweb` ×32
   - `minecraft:breeze_rod` ×8

@@ -6,14 +6,14 @@ navigation:
 
 # AE2 : Gravity Tech
 
-Gravity Tech 新增的機器、裝甲、元件與模組卡。
+The machines, armor, components and module cards that Gravity Tech adds.
 
-* [機器與方塊](machines.md)
-* [反重力裝甲](armor.md)
-* [系統元件與基底](components.md)
-* [模組卡](module-cards.md)
-* [黑洞與白洞](holes.md)
-* [多方塊結構](multiblocks-index.md)
-* [黑洞存儲盤與白洞能源元件](storage-and-energy.md)
-* [材料與物品](materials-index.md)
-* [量子控制器](quantum-controller.md)
+* [Machines and Blocks](machines.md)
+* [Anti-gravity Armor](armor.md)
+* [System Components and Base](components.md)
+* [Module Cards](module-cards.md)
+* [Black Holes and White Holes](holes.md)
+* [Multiblock Structures](multiblocks-index.md)
+* [Black Hole Storage Disk and White Hole Energy Cell](storage-and-energy.md)
+* [Materials and Items](materials-index.md)
+* [Quantum Controller](quantum-controller.md)

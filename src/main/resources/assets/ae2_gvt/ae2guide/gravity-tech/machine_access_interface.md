@@ -1,27 +1,27 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/machines.md
-  title: 機器接入接口
+  title: Machine Access Interface
 item_ids:
   - ae2_gvt:machine_access_interface
 ---
 
-# 機器接入接口
+# Machine Access Interface
 
-貼在機器上的 AE2 線纜零件（它的方塊版本是 <ItemLink id="ae2_gvt:machine_access_block" />，可以從遠端綁機器），讓機器接上 ME 網路。不佔頻道。
+An AE2 cable part that attaches to a machine and connects it to the ME network. It uses no channel. (Its block version is <ItemLink id="ae2_gvt:machine_access_block" />, which can bind machines from a distance.)
 
-一個接口有兩種模式，右上角切換：
+An interface has two modes, switched at the top right:
 
-- **供應器**：雙星中樞的樣板用它把材料送進機器、把產物收回。每台機器各有自己的阻擋模式、放入方式、配對編號、副方塊範圍和紅石脈衝。
-- **ME 接口**：像 ME 接口一樣，替每台機器設定要維持的物品與數量，由網路補給；下面一排顯示網路現有的數量。中樞不會用這種接口的機器。
+- **Provider**: the patterns of the Twin-Star Hub use it to send materials into the machine and take the products back. Every machine has its own blocking mode, insert mode, matching number, sub-block range and redstone pulse.
+- **ME Interface**: like an ME Interface, you set the items and amounts to keep for each machine and the network supplies them; the row below shows how many the network has. The hub does not use machines on an interface in this mode.
 
-## 畫面
+## The screen
 
-- 上面一排是它代表的機器，每台一格，下面是各自的「機器（選填）」欄位。點一下選中，雙擊在世界裡高亮。機器多時可以換頁。
-- **套用到所有相同的機器**：供應器模式下，左邊工具列有一顆兩個方框疊在一起的按鈕（清單裡有另一台相同的機器時才出現），數字是清單裡相同機器的數量。例如連了 12 台粉碎機，在其中一台的「機器（選填）」放好東西後按它，另外 11 台一起設成一樣的（空的也會複製）。「相同」指同一種方塊；輔助艙口不算機器，不會被改到。
-- 下面是選中那台機器的內容。ME 接口模式裡，每個設定格上方的齒輪：左鍵設定數量，按住 Shift 再左鍵，下排改成顯示 AE 網路裡的數量。
-- 數量直接輸入的上限是 2147483647。
+- The top row shows the machines it stands for, one cell each, with an "optional machine" slot under each. Click to select, double-click to highlight it in the world. Switch pages when there are many machines.
+- **Apply to all identical machines**: in provider mode, the left toolbar has a button of two overlapping squares (shown only when the list has another machine of the same kind); the number is how many identical machines are in the list. For example, with 12 grinders connected, set the optional machine on one of them and press it: the other 11 are set the same (an empty slot is copied too). "Identical" means the same block; auxiliary hatches are not machines and are not changed.
+- Below is the content of the selected machine. In ME interface mode, the gear above each setting cell: left-click sets the amount, Shift + left-click switches the lower row to the amount in the AE network.
+- The largest amount you can type is 2147483647.
 
-## 合成
+## Crafting
 
-- 合成台（無序）：<ItemLink id="ae2_gvt:machine_access_block" />，一換一。方塊和貼片可以互相換回，跟 ME 接口一樣。
+- Crafting table (shapeless): <ItemLink id="ae2_gvt:machine_access_block" />, one for one. The block and the part can be swapped back, like the ME Interface.

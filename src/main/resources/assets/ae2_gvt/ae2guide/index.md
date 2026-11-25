@@ -6,4 +6,4 @@ navigation:
 
 # AE2 : Gravity Tech
 
-Gravity Tech 新增的機器、裝甲、元件與模組卡。
+The machines, armor, components and module cards that Gravity Tech adds.

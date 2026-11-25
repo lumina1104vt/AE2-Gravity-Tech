@@ -1,15 +1,15 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/index.md
-  title: 多方块结构
+  title: Multiblock Structures
   position: 2
 ---
 
-# 多方块结构
+# Multiblock Structures
 
-重力科技包含三座大型多方块结构：
+Gravity Tech has three large multiblock structures:
 
-* [双星枢纽](multiblocks/twin-star-hub.md)
-* [聚变发电机](multiblocks/fusion-generator.md)
-* [太空电梯](multiblocks/space-elevator.md)
-* [多方块建造](building.md)
+* [Twin-Star Hub](multiblocks/twin-star-hub.md)
+* [Fusion Generator](multiblocks/fusion-generator.md)
+* [Space Elevator](multiblocks/space-elevator.md)
+* [Building Multiblocks](multiblocks/building.md)

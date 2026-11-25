@@ -1,72 +1,72 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/index.md
-  title: 量子控制器
+  title: Quantum Controller
   position: 4
 ---
 
-# 量子控制器
+# Quantum Controller
 
-量子控制器是 AE2 **ME 控制器**的量子版本：用法完全一样，可以拼成相同的控制器结构，也能直接接受 FE，并且能把多个网络**跨维度、远距离**连成一体，共享整个网络的频道。
+The Quantum Controller is the quantum version of AE2's **ME Controller**: it is used in exactly the same way, forms the same controller structures, accepts FE directly, and can join several networks into one **across dimensions and over long distances**, sharing the channels of the whole network.
 
 <BlockImage id="ae2_gvt:quantum_controller" scale="4" />
 
-## 画面
+## The screen
 
-右键打开的主界面与 ME 控制器相同，显示网络状态，右上角另外写着当前**剩余频道**（未组网时可能显示「频道：无限」）。左侧的齿轮进入**量子控制器设置**页，用来设置角色与频率；设置页左上角的箭头返回主界面。
+The main screen opened by a right-click is the same as the ME Controller's and shows the network status; the top right also shows the **remaining channels** (before it joins a network it may read "Channels: unlimited"). The gear on the left opens the **Quantum Controller settings** page, where you set the role and the frequency; the arrow at the top left of the settings page goes back to the main screen.
 
-## 角色
+## Roles
 
-量子控制器有三种角色，在设置页切换：
+A Quantum Controller has three roles, switched on the settings page:
 
-| 角色 | 说明 |
+| Role | Description |
 | :--- | :--- |
-| **未启用** | 当作普通的 ME 控制器使用 |
-| **主控制器** | 这个频率的网络主体，**同一频率只能有一个** |
-| **从控制器** | 连到同频率的主控制器，使用整个网络的频道 |
+| **Disabled** | Used as an ordinary ME Controller |
+| **Master** | The body of the network of this frequency; **there can be only one for a frequency** |
+| **Slave** | Connects to the master of the same frequency and uses the channels of the whole network |
 
-- **主控制器**：整个频率网络的中心，负责为网络提供频道。
-- **从控制器**：同频率的从控制器会连到主控制器，两边的网络合并成一个——**不论多远、在不在同一个维度**，只要两侧区块都已加载即可。从控制器一侧的线缆由它提供频道，实际使用的是整个网络的频道。
-- **未启用**：就是一块普通的 ME 控制器。
+- **Master**: the centre of the whole frequency network; it provides the channels for the network.
+- **Slave**: a slave of the same frequency connects to the master and the networks of both sides become one, **however far apart and whichever dimension they are in**, as long as the chunks on both sides are loaded. The cable on the slave's side gets its channels from the slave, but the channels actually used are those of the whole network.
+- **Disabled**: just an ordinary ME Controller.
 
-从控制器不会被 AE2 当作另一组独立的控制器结构，因此**不会触发 AE2 的控制器冲突**。如果某个从控制器没连上主控制器，它那一侧就相当于「没有控制器的网络」。
+AE2 does not treat a slave as another, separate controller structure, so it **does not trigger AE2's controller conflict**. A slave that is not connected to a master is, on its side, a "network without a controller".
 
-## 频率
+## Frequency
 
-- 频率由你自己命名，在设置页上方的输入框填写。
-- **名称相同的控制器会互相连接**。
-- 设置页下方列出当前**已加载**控制器正在使用的频率，每个频率旁标注其主控制器与从控制器的数量，点一下即可采用该频率。
-- 「清除频率」可以取消当前频率设置。
+- You name the frequency yourself, in the input field at the top of the settings page.
+- **Controllers with the same name connect to each other.**
+- The lower part of the settings page lists the frequencies that **loaded** controllers are using, with the number of masters and slaves beside each; click one to use that frequency.
+- "Clear frequency" cancels the current frequency setting.
 
-### 状态提示
+### Status messages
 
-设置页会显示当前连结状态：
+The settings page shows the current link status:
 
-| 提示 | 含义 |
+| Message | Meaning |
 | :--- | :--- |
-| 未连结 | 未启用角色或未设置频率 |
-| 主控制器：已连结 %s 个从控制器 | 正常工作，已带上若干从控制器 |
-| 已连到主控制器，使用整个网络的频道 | 从控制器已成功连上 |
-| 同频率找不到主控制器 | 该频率还没有主控制器（或未加载） |
-| 同频率有多个主控制器 | 频率冲突，网络会打架，需要只保留一个主控制器 |
-| 连结失败，等候对方载入 | 对端区块尚未加载 |
-| 还没有设置频率 | 需要先命名一个频率 |
+| Not linked | No role enabled, or no frequency set |
+| Master: %s slaves linked | Working normally, with some slaves attached |
+| Linked to the master, using the channels of the whole network | The slave has connected |
+| No master found for this frequency | This frequency has no master yet (or it is not loaded) |
+| Several masters for this frequency | A frequency conflict; keep only one master |
+| Link failed, waiting for the other side to load | The chunk on the far side is not loaded yet |
+| No frequency set yet | Name a frequency first |
 
-## 使用要点
+## Tips
 
-1. 像搭 ME 控制器一样摆出控制器结构（或与现有 ME 控制器结构混用）。
-2. 进设置页选定角色：一处选 **主控制器**，其它位置选 **从控制器**。
-3. 给它们填**相同的频率名称**。
-4. 确认两端区块都已加载，跨维度的控制器即可并入同一网络。
+1. Build the controller structure as you would for an ME Controller (it can also be mixed with an existing ME Controller structure).
+2. Choose the roles on the settings page: one **Master**, and **Slave** everywhere else.
+3. Give them the **same frequency name**.
+4. Make sure the chunks on both ends are loaded, and the controllers across dimensions join the same network.
 
-> 小提示：因为从控制器不计入 AE2 的控制器冲突，你可以用「一个主控制器 + 多处从控制器」的方式，把分散在各地的基地网络统一到一个频道池里。
+> Tip: since a slave does not count towards AE2's controller conflict, you can use "one master + several slaves" to unify the networks of bases scattered around into one channel pool.
 
-## 合成
+## Crafting
 
 <RecipeFor id="ae2_gvt:quantum_controller" />
 
-## 相关章节
+## Related chapters
 
-* [黑洞与白洞](holes.md)
-* [多方块结构](multiblocks-index.md)
-* [黑洞存储盘与白洞能源元件](storage-and-energy.md)
+* [Black Holes and White Holes](holes.md)
+* [Multiblock Structures](multiblocks-index.md)
+* [Black Hole Storage Disk and White Hole Energy Cell](storage-and-energy.md)

@@ -1,20 +1,20 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: 移動速度模組
+  title: Movement Speed Module
 item_ids:
   - ae2_gvt:armor_module_move_speed
 ---
 
-# 移動速度模組
+# Movement Speed Module
 
-移動速度模組。安裝在護腿上的模組卡。需要的系統元件：推進核心。
+Movement Speed Module. A module card installed on leggings. Required system component: Propulsion Core.
 
-## 製作
+## Crafting
 
-- 機器：引力加工工廠
-- 材料：
-  - 空白模組 ×1
-  - 推進核心 ×1
+- Machine: Gravity Processing Factory
+- Materials:
+  - Blank Module ×1
+  - Propulsion Core ×1
   - `minecraft:sugar` ×16
   - `minecraft:blue_ice` ×8

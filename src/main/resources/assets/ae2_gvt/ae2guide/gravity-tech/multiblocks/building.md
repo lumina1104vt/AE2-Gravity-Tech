@@ -1,52 +1,49 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/multiblocks-index.md
-  title: 多方块建造
+  title: Building Multiblocks
   position: 3
 item_ids:
   - lumina_multiblock:builder
 ---
 
-## 多方块建造
+# Building Multiblocks
 
-引力科技的大型结构（如 [双子星枢纽](multiblocks/twin-star-hub.md)、[核聚变发生器](multiblocks/fusion-generator.md)、[太空电梯](multiblocks/space-elevator.md)）可以使用**多方块建造器**自动搭建整个结构，也能一键拆除，并可直接从 ME 网络取材料（需要先绑定ME网络）。
+The large structures of Gravity Tech (for example the [Twin-Star Hub](twin-star-hub.md), the [Fusion Generator](fusion-generator.md) and the [Space Elevator](space-elevator.md)) can be built automatically with the **Multiblock Builder**. It can also take a whole structure down with one click, and take materials straight from the ME network (bind the ME network first).
 
-## 获取建造器
+## Getting the builder
 
 <RecipeFor id="lumina_multiblock:builder" />
 
-## 使用方法
+## How to use
 
-先把结构所需的**控制器**放在正确位置（建造器以控制器为基准生成整座结构）。
+First put the structure's **controller** in the right place (the builder generates the whole structure around the controller).
 
-| 操作 | 效果 |
+| Action | Effect |
 | :--- | :--- |
-| 潜行 + 右键控制器 | 开始建造整座结构 |
-| 潜行 + 右键空气 | 打开/切换建造器模式 |
-| 右键空气 | 停止当前建造 |
+| Sneak + right-click the controller | Start building the whole structure |
+| Sneak + right-click the air | Open / switch the builder mode |
+| Right-click the air | Stop the current build |
 
-建造器会按结构定义逐块放置，并实时提示缺少的材料（`缺少：%s`）、被阻挡的方块（`%s 格被阻挡：%s`）等。
+The builder places the structure block by block and tells you at once what is missing (`Missing: %s`), which blocks are in the way (`%s blocks blocked: %s`), and so on.
 
-## 建造器模式
+## Builder modes
 
-在「建造器模式」界面中可组合开启：
+In the "Builder Mode" screen you can combine these:
 
-- **拆除**：拆除整个结构。
-- **镜像**：按镜像方向建造（部分结构不支持，会提示「此结构无法镜像建造」）。
-- **无仓口**：建造时不放置仓口/接口类方块。
+- **Dismantle**: take the whole structure down.
+- **Mirror**: build mirrored (some structures do not support it; you are told "This structure cannot be built mirrored").
+- **No hatches**: do not place hatch / interface blocks while building.
 
-## 从 ME 网络取料
+## Taking materials from the ME network
 
-- shift+右键可以将建造器与 ME 网络绑定，之后物品信息里会显示「已绑定 … 的 AE 网络」，可以直接从网络调取方块。
-- 未连接ME网络时会提示「无法连接绑定的 ME 网络，仅使用背包」，此时只消耗玩家背包材料。
+- Shift + right-click binds the builder to an ME network; its item information then shows "Bound to the AE network of …", and it can take blocks straight from the network.
+- When the ME network cannot be reached you are told "Cannot reach the bound ME network, using the inventory only", and only the materials in the player's inventory are used.
 
+## Commands (permission needed)
 
-## 命令（需权限）
-
-| 命令 | 作用 |
+| Command | Effect |
 | :--- | :--- |
-| `/lmb list` | 列出当前维度中的多方块结构 |
-| `/lmb info <controller>` | 查看指定控制器的结构信息、朝向、参数与未成形原因 |
-| `/lmb form <controller>` | 直接让指定控制器按结构定义成型（调试/快速修复用） |
-
-
+| `/lmb list` | List the multiblock structures in the current dimension |
+| `/lmb info <controller>` | Show the structure information, facing, parameters and the reason it is not formed for the given controller |
+| `/lmb form <controller>` | Make the given controller form its structure directly (for debugging / quick repair) |

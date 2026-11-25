@@ -1,9 +1,9 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/index.md
-  title: 系統元件與基底
+  title: System Components and Base
 ---
 
-# 系統元件與基底
+# System Components and Base
 
-空白模組與五個系統元件。
+The Blank Module and the five system components.

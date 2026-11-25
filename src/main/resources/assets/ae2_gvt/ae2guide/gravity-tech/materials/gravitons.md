@@ -1,55 +1,52 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/materials-index.md
-  title: 引力子与反引力子
+  title: Gravitons and Anti-gravitons
 item_ids:
   - ae2_gvt:graviton
   - ae2_gvt:antigraviton
 ---
 
-# 引力子与反引力子
+# Gravitons and Anti-gravitons
 
-引力子与反引力子是引力科技引入 AE2 网络的两种特殊资源。
+Gravitons and anti-gravitons are two special resources that Gravity Tech brings into the AE2 network.
 
 <ItemGrid>
   <ItemIcon id="ae2_gvt:graviton" />
   <ItemIcon id="ae2_gvt:antigraviton" />
 </ItemGrid>
 
-## 对比
+## Comparison
 
-| 资源 | 来源 |
+| Resource | Source |
 |---|---|
-| 引力子  | 黑洞被爆炸摧毁后释放，引力水晶簇生长完成时释放 | 
-| 反引力子  | 白洞被爆炸摧毁后释放，反引力水晶簇生长完成时释放 |
+| Graviton | Released when a black hole is destroyed by an explosion, and when a gravity crystal cluster finishes growing |
+| Anti-graviton | Released when a white hole is destroyed by an explosion, and when an anti-gravity crystal cluster finishes growing |
 
-## 获取
+## Getting them
 
-两者都在黑洞 / 白洞被爆炸摧毁时和对应的水晶簇生长完成时产生，并自动飞向附近的[引力子收集器](graviton-collector.md)（引力子收集器）收集。
+Both are produced when a black hole / white hole is destroyed by an explosion, and when the matching crystal cluster finishes growing. They fly to a nearby [Graviton Collector](graviton-collector.md) and are collected.
 
-- 黑洞，引力水晶簇 → 引力子
-- 白洞，反引力水晶簇 → 反引力子
+- Black hole, gravity crystal cluster → gravitons
+- White hole, anti-gravity crystal cluster → anti-gravitons
 
-## 存储
+## Storage
 
-它们在网络中属于独立的资源类型，需要专用的引力子存储元件，每个字节可以存储？引力子（或反引力子）
+They are separate resource types in the network and need a dedicated graviton storage cell. Each byte stores ? gravitons (or anti-gravitons).
 
-引力子存储元件：
+Graviton storage cells:
+
 <Row>
 <ItemImage id="ae2_gvt:graviton_storage_cell_1k" scale="3" /><ItemImage id="ae2_gvt:graviton_storage_cell_4k" scale="3" /><ItemImage id="ae2_gvt:graviton_storage_cell_16k" scale="3" /><ItemImage id="ae2_gvt:graviton_storage_cell_64k" scale="3" /><ItemImage id="ae2_gvt:graviton_storage_cell_256k" scale="3" />
 </Row>
 
-## 用途
+## Uses
 
-- 作为双子星枢纽黑白两侧的供能介质
-- 参与相关配方的合成
+- As the energy source of the black and white sides of the Twin-Star Hub
+- Used in crafting related recipes
 
-## 特殊元件
+## Special cell
 
 <ItemImage id="ae2_gvt:infinite_graviton_storage_cell" scale="3" />
 
-无限ME引力子存储元件里有无限单位的引力子与反引力子，不过它在正常情况下生存模式无法获取，仅可在创造模式中获取。
-
-
-
-
+The Infinite ME Graviton Storage Cell holds an infinite amount of gravitons and anti-gravitons. Normally it cannot be obtained in survival mode, only in creative mode.

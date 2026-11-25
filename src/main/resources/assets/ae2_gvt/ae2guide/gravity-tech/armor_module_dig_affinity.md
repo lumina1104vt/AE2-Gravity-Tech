@@ -1,20 +1,20 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: 挖掘不減速模組
+  title: Dig Affinity Module
 item_ids:
   - ae2_gvt:armor_module_dig_affinity
 ---
 
-# 挖掘不減速模組
+# Dig Affinity Module
 
-挖掘不減速模組。安裝在胸甲上的模組卡。需要的系統元件：感測核心。
+Dig Affinity Module. A module card installed on a chestplate. Required system component: Sensor Core.
 
-## 製作
+## Crafting
 
-- 機器：引力加工工廠
-- 材料：
-  - 空白模組 ×1
-  - 感測核心 ×1
+- Machine: Gravity Processing Factory
+- Materials:
+  - Blank Module ×1
+  - Sensor Core ×1
   - `minecraft:netherite_pickaxe` ×1
-  - 虛數白洞計算單元 ×4
+  - Imaginary White Hole Computing Unit ×4

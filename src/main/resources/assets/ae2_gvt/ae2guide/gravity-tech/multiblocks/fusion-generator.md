@@ -1,12 +1,12 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/multiblocks-index.md
-  title: 核聚变发生器
+  title: Fusion Generator
 ---
 
-## 核聚变发生器
+# Fusion Generator
 
-核聚变发生器可以用来制作各种引力科技的物品，另外在运行部分配方可以发电。
+The Fusion Generator is used to craft all kinds of Gravity Tech items, and some of its recipes generate power as they run.
 
 <RecipeFor id="ae2_gvt:fusion_controller" />
 
@@ -15,38 +15,32 @@ navigation:
   <IsometricCamera yaw="195" pitch="30" />
 </GameScene>
 
-## 运行机制
+## How it works
 
-核聚变发生器与大部分机器不同，有着一套独特的运行机制。
+The Fusion Generator works differently from most machines.
 
-核聚变发生器运行配方取决于发生器内的稳定温度是否大于等于配方运行所需的温度。
+Whether it can run a recipe depends on whether the stable temperature inside the generator is greater than or equal to the temperature the recipe needs.
 
-小提示：每个配方的运行所需的温度请通过JEI，EMI等模组查询。
+Tip: look up the temperature each recipe needs in JEI, EMI or a similar mod.
 
-## 温度
+## Temperature
 
-温度是核聚变发生器运行的关键机制。
+Temperature is the key mechanic of the Fusion Generator.
 
-核聚变发生器可在主方块中调整每t输入的FE，每t输入的FE越多发生器中的温度就越高。
+On the main block you can set the FE input per tick. The more FE per tick, the higher the temperature inside the generator.
 
-以下为温度与FE的换算公式：
+The conversion between temperature and FE:
 
-温度=1500+0.0005*FE
+Temperature = 1500 + 0.0005 × FE
 
-小提示：优先使用的是FE储存元件中的FE，消耗完后才会使用ME网络中存储的能量。（如果安装了应用通量模组，那么就会优先消耗该模组的能源存储元件当中的FE。）
+Tip: the FE in FE storage cells is used first, and only when it runs out does it use the energy stored in the ME network. (If Applied Flux is installed, the FE in that mod's energy storage cells is used first.)
 
-## 发电
+## Power generation
 
-你没有看错，核聚变发生器还可以发电（运行黑洞存储磁盘和白洞能源元件配方时除外）。
+Yes, the Fusion Generator can also generate power (except when running the recipes of the Black Hole Storage Disk and the White Hole Energy Cell).
 
-核聚变发生器在配方运行完成时，会产出输入的电量，同时发电量还会受每种配方的能量倍率影响。
+When a recipe finishes, the Fusion Generator outputs the energy that was put in, and the amount is also affected by each recipe's energy multiplier.
 
-以下是发电量的公式：
+The formula for the generated power:
 
-发电量=输入电量*配方的能量倍率
-
-
-
-
-
-
+Generated power = input energy × the recipe's energy multiplier

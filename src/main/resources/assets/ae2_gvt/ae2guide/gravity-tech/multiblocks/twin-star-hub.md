@@ -1,7 +1,7 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/multiblocks-index.md
-  title: 双星枢纽
+  title: Twin-Star Hub
 item_ids:
   - ae2_gvt:twin_star_hub
   - ae2_gvt:hub_port
@@ -9,45 +9,39 @@ item_ids:
   - ae2_gvt:wireless_twin_star_pattern_terminal
 ---
 
-# 双星枢纽
+# Twin-Star Hub
 
-以黑洞与白洞为核心的多方块结构，不仅有合成的功能，还有合成CPU的功能。整个结构的大小为 **63 × 71 × 60**，放置时请注意周围空间，确保双星枢纽可以成型。
+A multiblock structure with a black hole and a white hole at its core. It not only crafts, it also acts as a crafting CPU. The whole structure is **63 × 71 × 60**, so mind the space around it when placing, to make sure the Twin-Star Hub can form.
 
 <Row>
 <BlockImage id="ae2_gvt:twin_star_hub" scale="4" />
 <RecipeFor id="ae2_gvt:twin_star_hub" />
 </Row>
 
-## 双星的使用
+## Using the twin stars
 
-想要使用双星枢纽，首先你需要在结构中放置一个结构连接端口（放置在双星枢纽最底层的任意一个机器框架处。），并且连接上ME网路，其次，在双星调度中枢种放入黑洞单元与白洞单元，使其拥有合成与合成CPU的功能，最后，向其中放入样板就可以正常使用了。
+To use the Twin-Star Hub, first put a Structure Port in the structure (on any machine frame of the lowest layer of the hub) and connect it to the ME network. Second, put a black hole unit and a white hole unit into the Twin-Star Hub, so that it can craft and act as a crafting CPU. Finally, put patterns into it and it works as normal.
 
-下面是两个单元所提供的功能：
+What the two units provide:
 
-| 组成部分 | 提供的功能 |
+| Part | What it provides |
 | :--- | :--- |
-| 黑洞单元 | 合成 |
-| 白洞单元 | 合成CPU |
+| Black hole unit | Crafting |
+| White hole unit | Crafting CPU |
 
-小提示：双星调度中枢界面顶部会显示样板数、任务数、CPU 数、并行、容量与当前使用量。
+Tip: the top of the Twin-Star Hub screen shows the number of patterns, jobs, CPUs, the parallelism, the capacity and the current usage.
 
-## 等级
+## Tiers
 
-等级由**你塞入的黑洞 / 白洞单元**决定，可以随时更换升级，无需重建结构。
+The tier is decided by **the black hole / white hole units you put in**. You can swap them for an upgrade at any time, without rebuilding the structure.
 
-| 等级 | 名称 | 黑洞合成单元容量 | 白洞计算单元并行 |
+| Tier | Name | Black hole crafting unit capacity | White hole computing unit parallelism |
 | :--- | :--- | ---: | ---: |
-| 1 | 奇异  | 32,767 | 127 |
-| 2 | 虚数  | 2,147,483,647 | 32,767 |
-| 3 | 悖论  | 140,737,488,355,327 | 8,388,607 |
-| 4 | 普朗克  | ∞（无限） | ∞（无限） |
+| 1 | Exotic | 32,767 | 127 |
+| 2 | Imaginary | 2,147,483,647 | 32,767 |
+| 3 | Paradox | 140,737,488,355,327 | 8,388,607 |
+| 4 | Planck | ∞ (unlimited) | ∞ (unlimited) |
 
-## 双星枢纽的功能
+## What the Twin-Star Hub can do
 
-双星枢纽拥有极其强大的功能，可以处理循环配方，概率配方，递归配方。另外，还可以在双星下单界面可设置「只做缺少的量 / 能做多少做多少 / 规划完直接开始」，点「规划 →」查看规划结果：每个物品的次数、库存、缺失、共用与样板数，以及容量占用与并行数。还可打开「合成图」查看配方树流向、循环与副产物，或用「理论层」预估路线与成本。  
-
-
-
-
-
-
+The Twin-Star Hub is extremely powerful: it can handle looping recipes, chance recipes and recursive recipes. In the twin-star order screen you can also choose "Only craft what is missing / Craft as much as possible / Start right after planning", and press "Plan →" to see the plan: for every item the number of runs, the stock, what is missing, what is shared and the number of patterns, plus the capacity used and the parallelism. You can also open the "Crafting Graph" to see the flow of the recipe tree, the loops and the by-products, or use the "Theory Layer" to estimate routes and costs.

@@ -1,21 +1,20 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/materials-index.md
-  title: 引力子收集器
+  title: Graviton Collector
 ---
 
-## 引力子收集器
+# Graviton Collector
 
 <Row>
 <ItemImage id="ae2_gvt:graviton_collector" scale="4" />
 <RecipeFor id="ae2_gvt:graviton_collector" />
 </Row>
 
-## 使用方法
+## How to use
 
-在产生引力子与反引力子的16格内，引力子收集器会将它们收集并存储进 ME 网络。
+Within 16 blocks of where gravitons and anti-gravitons are produced, the Graviton Collector collects them and stores them in the ME network.
 
-小提示：引力子和反引力子的收集数量会根据引力子收集器的数量成倍增长。
+Tip: the amount of gravitons and anti-gravitons collected grows multiplicatively with the number of Graviton Collectors.
 
-注意：[引力子与反引力子](gravitons.md)写明了这两种特殊资源如何产生，请仔细阅读。
-
+Note: [Gravitons and Anti-gravitons](gravitons.md) explains how these two special resources are produced; please read it carefully.
