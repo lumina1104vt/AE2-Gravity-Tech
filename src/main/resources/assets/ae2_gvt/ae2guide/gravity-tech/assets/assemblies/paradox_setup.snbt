@@ -1,0 +1,15 @@
+{
+    DataVersion: 3955,
+    size: [3, 1, 1],
+    data: [
+        {pos: [0, 0, 0], state: "ae2_gvt:white_hole"},
+        {pos: [1, 0, 0], state: "ae2:fluix_block"},
+        {pos: [2, 0, 0], state: "ae2_gvt:black_hole"}
+    ],
+    entities: [],
+    palette: [
+        "ae2_gvt:white_hole",
+        "ae2:fluix_block",
+        "ae2_gvt:black_hole"
+    ]
+}
