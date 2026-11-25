@@ -859,7 +859,7 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             }
             GenericStack out = GenericStack.fromItemStack(outs[index].getItem());
             if (out != null) {
-                outs[index].set(GenericStack.wrapInItemStack(new GenericStack(DispatchMarker.key(), Math.max(1, out.amount()))));
+                outs[index].set(GenericStack.wrapInItemStack(new GenericStack(DispatchMarker.key(out.what()), Math.max(1, out.amount()))));
             }
         } catch (NumberFormatException e) {
             // a malformed request: ignore it
