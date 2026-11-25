@@ -1,18 +1,18 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/armor.md
-  title: 反重力護腿
+  title: Anti-gravity Leggings
 item_ids:
   - ae2_gvt:antigravity_leggings
 ---
 
-# 反重力護腿
+# Anti-gravity Leggings
 
-反重力裝甲的護腿。可以安裝腿部的模組卡。
+The leggings of the anti-gravity armor. They take the module cards for the legs.
 
-## 製作
+## Crafting
 
-- 機器：合成台（3×3）
-- 材料：
-  - 合金板 ×7
-  - 反引力合金錠 ×1
+- Machine: Crafting Table (3×3)
+- Materials:
+  - Alloy Plate ×7
+  - Anti-gravity Alloy Ingot ×1

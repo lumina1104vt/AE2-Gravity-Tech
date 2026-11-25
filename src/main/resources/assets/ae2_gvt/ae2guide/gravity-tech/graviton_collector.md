@@ -1,11 +1,11 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/machines.md
-  title: 引力子收集器
+  title: Graviton Collector
 item_ids:
   - ae2_gvt:graviton_collector
 ---
 
-# 引力子收集器
+# Graviton Collector
 
-5 格高的收集塔，收集 16 格內黑洞與白洞產生的引力子。只有接上 ME 網路的收集器能保存引力子。
+A collection tower 5 blocks tall that collects the gravitons produced by black holes and white holes within 16 blocks. Only collectors connected to an ME network can keep the gravitons.

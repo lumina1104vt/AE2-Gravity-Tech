@@ -1,19 +1,19 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/components.md
-  title: 網路核心
+  title: Network Core
 item_ids:
   - ae2_gvt:network_core
 ---
 
-# 網路核心
+# Network Core
 
-物流系統的核心元件。製作物流類模組卡時需要放入。
+The core component of the logistics system. It goes into the crafting of logistics module cards.
 
-## 製作
+## Crafting
 
-- 機器：引力加工工廠
-- 材料：
-  - 奇異白洞計算單元 ×4
+- Machine: Gravity Processing Factory
+- Materials:
+  - Singular White Hole Computing Unit ×4
   - `ae2:engineering_processor` ×16
   - `minecraft:ender_chest` ×1

@@ -1,25 +1,25 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/machines.md
-  title: 吸積發電機
+  title: Accretion Generator
 item_ids:
   - ae2_gvt:accretion_generator
 ---
 
-# 吸積發電機
+# Accretion Generator
 
-貼著白洞放，白洞的吸積讓它持續發電。不用燃料，也不會讓洞變小。
+Place it against a white hole: the white hole's accretion keeps it generating. It needs no fuel and does not shrink the hole.
 
-## 怎麼用
+## How to use
 
-- 接上 ME 網路，並且緊貼著白洞（六個面的任何一面）。貼著黑洞不會發電。
-- 輸出 1,000,000 FE/t。
-- 一個白洞最多完整供應 4 台吸積發電機，超過的話，這個白洞旁的每台會依比例降低輸出。
+- Connect it to the ME network and put it right next to a white hole (any of its six faces). Next to a black hole it generates nothing.
+- Output is 1,000,000 FE/t.
+- One white hole fully supplies at most 4 accretion generators. Beyond that, each generator next to that white hole gets a proportionally lower output.
 
-視窗會顯示相鄰的白洞數量。
+The window shows how many white holes are adjacent.
 
-## 製作
+## Crafting
 
-要在核融合發生器裡製作（100,000 K），需要機械框架、能源接收器、白洞核心、悖論處理器、渾沌物質、悖論量子糾纏奇點，還有一個普朗克白洞計算單元。
+Craft it in the Fusion Generator (100,000 K). It needs a mechanical frame, an energy acceptor, a white hole core, a paradox processor, chaos matter, a paradox quantum entangled singularity, and one Planck white hole computing unit.
 
 <RecipeFor id="ae2_gvt:accretion_generator" />

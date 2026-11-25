@@ -1,20 +1,20 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: 飛行防飄移模組
+  title: Flight Anti-Drift Module
 item_ids:
   - ae2_gvt:armor_module_flight_drift
 ---
 
-# 飛行防飄移模組
+# Flight Anti-Drift Module
 
-飛行防飄移模組。安裝在靴子上的模組卡。需要的系統元件：推進核心。
+Flight Anti-Drift Module. A module card installed on boots. Required system component: Propulsion Core.
 
-## 製作
+## Crafting
 
-- 機器：引力加工工廠
-- 材料：
-  - 空白模組 ×1
-  - 推進核心 ×1
+- Machine: Gravity Processing Factory
+- Materials:
+  - Blank Module ×1
+  - Propulsion Core ×1
   - `minecraft:elytra` ×8
-  - 悖論水晶種子 ×4
+  - Paradox Crystal Seed ×4

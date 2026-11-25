@@ -1,20 +1,20 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: 磁力吸取模組
+  title: Magnet Module
 item_ids:
   - ae2_gvt:armor_module_magnet
 ---
 
-# 磁力吸取模組
+# Magnet Module
 
-磁力吸取模組。安裝在胸甲上的模組卡。需要的系統元件：感測核心。
+Magnet Module. A module card installed on a chestplate. Required system component: Sensor Core.
 
-## 製作
+## Crafting
 
-- 機器：引力加工工廠
-- 材料：
-  - 空白模組 ×1
-  - 感測核心 ×1
+- Machine: Gravity Processing Factory
+- Materials:
+  - Blank Module ×1
+  - Sensor Core ×1
   - `minecraft:lodestone` ×1
-  - 反引力電路板 ×16
+  - Anti-gravity Circuit ×16

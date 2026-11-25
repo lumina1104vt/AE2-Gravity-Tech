@@ -1,18 +1,18 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/armor.md
-  title: 反重力頭盔
+  title: Anti-gravity Helmet
 item_ids:
   - ae2_gvt:antigravity_helmet
 ---
 
-# 反重力頭盔
+# Anti-gravity Helmet
 
-反重力裝甲的頭盔。可以安裝頭部的模組卡。
+The helmet of the anti-gravity armor. It takes the module cards for the head.
 
-## 製作
+## Crafting
 
-- 機器：合成台（3×3）
-- 材料：
-  - 合金板 ×5
-  - 反引力電路板 ×1
+- Machine: Crafting Table (3×3)
+- Materials:
+  - Alloy Plate ×5
+  - Anti-gravity Circuit ×1

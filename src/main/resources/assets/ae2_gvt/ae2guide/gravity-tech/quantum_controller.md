@@ -1,23 +1,23 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/machines.md
-  title: 量子控制器
+  title: Quantum Controller
 item_ids:
   - ae2_gvt:quantum_controller
 ---
 
-# 量子控制器
+# Quantum Controller
 
-用起來跟 AE2 的 ME 控制器一樣，可以組成同樣的結構，也能直接接 FE。右鍵開啟的主畫面跟 ME 控制器一樣，是網路狀態，右上角另外寫著還剩多少頻道。左邊的齒輪進入設定頁，設定角色和頻率，設定頁左上的箭頭回到主畫面。
+It is used like AE2's ME Controller: it forms the same structures and also accepts FE directly. The main screen opened by a right-click is the same as the ME Controller's: the network status, with the remaining channels written at the top right. The gear on the left opens the settings page, where you set the role and the frequency; the arrow at the top left of the settings page goes back to the main screen.
 
-- **主控制器**：這個網路的主體。同一個頻率只能有一個。
-- **從控制器**：同頻率的從控制器會連到主控制器，兩個網路合成一個，不論多遠、在不在同一個維度，只要兩邊都有載入。從控制器那一側的線纜由從控制器給頻道，使用的是整個網路的頻道。
-- **未啟用**：當一般的 ME 控制器。
+- **Master**: the body of this network. There can be only one for a frequency.
+- **Slave**: a slave of the same frequency connects to the master and the two networks become one, however far apart and in whichever dimension, as long as both sides are loaded. The cable on the slave's side gets its channels from the slave, and uses the channels of the whole network.
+- **Disabled**: an ordinary ME Controller.
 
-從控制器不算另一組控制器結構，所以不會觸發 AE2 的控制器衝突。沒連到主控制器的從控制器，那一側是沒有控制器的網路。
+A slave does not count as another controller structure, so it does not trigger AE2's controller conflict. A slave that is not connected to a master is a network without a controller on its side.
 
-頻率是自己取的名字，在畫面上方的欄位輸入。下面的列表是目前有控制器在用的頻率，每個頻率旁邊寫著主控制器和從控制器各幾個，點一下就用那個頻率。列表只列出已經載入的控制器。
+The frequency is a name you choose, typed into the field at the top of the screen. The list below shows the frequencies that controllers are using now, with how many masters and slaves each has; click one to use that frequency. The list only shows loaded controllers.
 
-## 合成
+## Crafting
 
 <RecipeFor id="ae2_gvt:quantum_controller" />

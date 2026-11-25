@@ -1,18 +1,18 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/machines.md
-  title: 機器接入接口（方塊）
+  title: Machine Access Interface (Block)
 item_ids:
   - ae2_gvt:machine_access_block
 ---
 
-# 機器接入接口（方塊）
+# Machine Access Interface (Block)
 
-機器接入接口的方塊版本。它不貼在任何機器上，所有機器都用 <ItemLink id="ae2_gvt:machine_link_tool" /> 從遠端綁定，同維度 64 格內。供應器模式沒有數量上限，ME 接口模式最多 9 台。
+The block version of the Machine Access Interface. It is not attached to any machine: every machine is bound to it from a distance with the <ItemLink id="ae2_gvt:machine_link_tool" />, within 64 blocks in the same dimension. In provider mode there is no limit on the number of machines; in ME interface mode it takes at most 9.
 
-放下後接上 ME 網路（不佔頻道）。右鍵開啟畫面，設定與機器接入接口相同。
+Place it and connect it to the ME network (it uses no channel). Right-click to open the screen; the settings are the same as the Machine Access Interface.
 
-## 合成
+## Crafting
 
-- 合成台（無序）：ME 接口、ME 樣板供應器、無線接收器、重力處理器
-- 與機器接入接口（貼片）可以在合成台上互相換回，一換一
+- Crafting table (shapeless): ME Interface, ME Pattern Provider, Wireless Receiver, Gravity Processor
+- It can be swapped with the Machine Access Interface (the cable part) in the crafting table, one for one

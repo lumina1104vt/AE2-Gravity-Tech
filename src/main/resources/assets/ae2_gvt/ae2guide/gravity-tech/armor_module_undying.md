@@ -1,20 +1,20 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: 瀕死免死模組
+  title: Undying Module
 item_ids:
   - ae2_gvt:armor_module_undying
 ---
 
-# 瀕死免死模組
+# Undying Module
 
-瀕死免死模組。安裝在胸甲上的模組卡。需要的系統元件：生命核心。
+Undying Module. A module card installed on a chestplate. Required system component: Life Core.
 
-## 製作
+## Crafting
 
-- 機器：引力加工工廠
-- 材料：
-  - 空白模組 ×1
-  - 生命核心 ×1
+- Machine: Gravity Processing Factory
+- Materials:
+  - Blank Module ×1
+  - Life Core ×1
   - `minecraft:totem_of_undying` ×4
-  - 合金板 ×32
+  - Alloy Plate ×32

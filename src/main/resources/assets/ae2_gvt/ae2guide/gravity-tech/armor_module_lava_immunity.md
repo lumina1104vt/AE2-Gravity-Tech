@@ -1,20 +1,20 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: 熔岩免疫模組
+  title: Lava Immunity Module
 item_ids:
   - ae2_gvt:armor_module_lava_immunity
 ---
 
-# 熔岩免疫模組
+# Lava Immunity Module
 
-熔岩免疫模組。安裝在胸甲上的模組卡。需要的系統元件：生命核心。
+Lava Immunity Module. A module card installed on a chestplate. Required system component: Life Core.
 
-## 製作
+## Crafting
 
-- 機器：引力加工工廠
-- 材料：
-  - 空白模組 ×1
-  - 生命核心 ×1
+- Machine: Gravity Processing Factory
+- Materials:
+  - Blank Module ×1
+  - Life Core ×1
   - `minecraft:netherite_block` ×1
   - `minecraft:magma_block` ×4

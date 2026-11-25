@@ -1,19 +1,19 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: 生命上限模組
+  title: Max Health Module
 item_ids:
   - ae2_gvt:armor_module_max_health
 ---
 
-# 生命上限模組
+# Max Health Module
 
-生命上限模組。安裝在胸甲上的模組卡。需要的系統元件：生命核心。
+Max Health Module. A module card installed on a chestplate. Required system component: Life Core.
 
-## 製作
+## Crafting
 
-- 機器：引力加工工廠
-- 材料：
-  - 空白模組 ×1
-  - 生命核心 ×1
+- Machine: Gravity Processing Factory
+- Materials:
+  - Blank Module ×1
+  - Life Core ×1
   - `minecraft:enchanted_golden_apple` ×8

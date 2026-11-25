@@ -1,20 +1,20 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: 反傷模組
+  title: Thorns Module
 item_ids:
   - ae2_gvt:armor_module_thorns
 ---
 
-# 反傷模組
+# Thorns Module
 
-反傷模組。安裝在胸甲上的模組卡。需要的系統元件：衝擊核心。
+Thorns Module. A module card installed on a chestplate. Required system component: Impact Core.
 
-## 製作
+## Crafting
 
-- 機器：引力加工工廠
-- 材料：
-  - 空白模組 ×1
-  - 衝擊核心 ×1
+- Machine: Gravity Processing Factory
+- Materials:
+  - Blank Module ×1
+  - Impact Core ×1
   - `minecraft:cactus` ×64
   - `minecraft:netherite_ingot` ×8

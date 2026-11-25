@@ -1,9 +1,9 @@
 ---
 navigation:
-  parent: ae2_gvt:gravity-tech/index.md
-  title: 反重力裝甲
+  parent: ae2_gvt:index.md
+  title: Anti-gravity Armor
 ---
 
-# 反重力裝甲
+# Anti-gravity Armor
 
-反重力裝甲的四件裝甲。
+The four pieces of the anti-gravity armor.

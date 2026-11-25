@@ -1,19 +1,19 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/components.md
-  title: 感測核心
+  title: Sensor Core
 item_ids:
   - ae2_gvt:sensor_core
 ---
 
-# 感測核心
+# Sensor Core
 
-感知系統的核心元件。製作感知類模組卡時需要放入。
+The core component of the perception system. It goes into the crafting of perception module cards.
 
-## 製作
+## Crafting
 
-- 機器：引力加工工廠
-- 材料：
-  - 虛數白洞計算單元 ×8
-  - 奇異白洞計算單元 ×4
-  - 反引力電路板 ×16
+- Machine: Gravity Processing Factory
+- Materials:
+  - Imaginary White Hole Computing Unit ×8
+  - Singular White Hole Computing Unit ×4
+  - Anti-gravity Circuit ×16
