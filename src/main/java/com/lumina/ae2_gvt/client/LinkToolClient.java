@@ -217,10 +217,10 @@ public final class LinkToolClient {
         float w = 0.18f;
         float[][] sheets = {{cx - w, cz, cx + w, cz}, {cx, cz - w, cx, cz + w}};
         for (float[] q : sheets) {
-            fill.vertex(m, q[0], y0, q[1]).color(GLOW[0], GLOW[1], GLOW[2], alpha).endVertex();
-            fill.vertex(m, q[2], y0, q[3]).color(GLOW[0], GLOW[1], GLOW[2], alpha).endVertex();
-            fill.vertex(m, q[2], y1, q[3]).color(GLOW[0], GLOW[1], GLOW[2], alpha).endVertex();
-            fill.vertex(m, q[0], y1, q[1]).color(GLOW[0], GLOW[1], GLOW[2], alpha).endVertex();
+            fill.addVertex(m, q[0], y0, q[1]).setColor(GLOW[0], GLOW[1], GLOW[2], alpha);
+            fill.addVertex(m, q[2], y0, q[3]).setColor(GLOW[0], GLOW[1], GLOW[2], alpha);
+            fill.addVertex(m, q[2], y1, q[3]).setColor(GLOW[0], GLOW[1], GLOW[2], alpha);
+            fill.addVertex(m, q[0], y1, q[1]).setColor(GLOW[0], GLOW[1], GLOW[2], alpha);
         }
         line(lines, m, new Vec3(cx, y0, cz), new Vec3(cx, y1, cz), 0.9f);
     }
