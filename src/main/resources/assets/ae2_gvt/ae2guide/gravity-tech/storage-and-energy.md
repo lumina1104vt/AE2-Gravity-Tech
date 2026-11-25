@@ -1,6 +1,6 @@
 ---
 navigation:
-  parent: ae2_gvt:gravity-tech/index.md
+  parent: ae2_gvt:index.md
   title: Black Hole Storage Disk and White Hole Energy Cell
 item_ids:
   - ae2_gvt:black_hole_storage_cell

@@ -1,6 +1,6 @@
 ---
 navigation:
-  parent: ae2_gvt:gravity-tech/index.md
+  parent: ae2_gvt:index.md
   title: 多方塊結構
   position: 2
 ---

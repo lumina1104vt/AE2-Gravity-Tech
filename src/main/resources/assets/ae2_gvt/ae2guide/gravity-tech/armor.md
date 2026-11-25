@@ -1,6 +1,6 @@
 ---
 navigation:
-  parent: ae2_gvt:gravity-tech/index.md
+  parent: ae2_gvt:index.md
   title: Anti-gravity Armor
 ---
 

@@ -1,6 +1,6 @@
 ---
 navigation:
-  parent: ae2_gvt:gravity-tech/index.md
+  parent: ae2_gvt:index.md
   title: 黑洞存儲磁盤與白洞能源元件
 item_ids:
   - ae2_gvt:black_hole_storage_cell
