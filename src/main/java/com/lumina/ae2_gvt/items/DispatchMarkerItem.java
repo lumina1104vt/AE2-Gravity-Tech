@@ -22,11 +22,23 @@ public class DispatchMarkerItem extends Item {
             stack.setCount(0);
     }
 
+    /** A marker made from a product is called by that product: that is what it stands for. */
+    @Override
+    public Component getName(ItemStack stack) {
+        net.minecraft.core.HolderLookup.Provider registries = DispatchMarker.registries();
+        appeng.api.stacks.AEKey origin = registries == null ? null : DispatchMarker.originOf(stack, registries);
+        return origin != null ? origin.getDisplayName() : super.getName(stack);
+    }
+
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         appeng.api.stacks.AEKey origin = context.registries() == null ? null : DispatchMarker.originOf(stack, context.registries());
-        if (origin != null)
-            tooltip.add(Component.translatable("item.ae2_gvt.dispatch_marker.origin", origin.getDisplayName()).withStyle(net.minecraft.ChatFormatting.AQUA));
-        tooltip.add(Component.translatable("item.ae2_gvt.dispatch_marker.tooltip").withStyle(net.minecraft.ChatFormatting.GRAY));
+        if (origin instanceof appeng.api.stacks.AEItemKey item) {
+            // what it stands for shows as itself: the product's own tooltip (its name is already the marker's)
+            List<Component> lines = item.toStack().getTooltipLines(context, null, flag);
+            tooltip.addAll(lines.subList(Math.min(1, lines.size()), lines.size()));
+        } else if (origin == null) {
+            tooltip.add(Component.translatable("item.ae2_gvt.dispatch_marker.tooltip").withStyle(net.minecraft.ChatFormatting.GRAY));
+        }
     }
 }

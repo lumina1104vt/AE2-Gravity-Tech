@@ -20,6 +20,12 @@ public final class DispatchMarkerClient {
     private DispatchMarkerClient() {
     }
 
+    /** The registries of the world the client is in, or null outside one. */
+    public static net.minecraft.core.HolderLookup.@org.jetbrains.annotations.Nullable Provider registries() {
+        var level = Minecraft.getInstance().level;
+        return level == null ? null : level.registryAccess();
+    }
+
     @SubscribeEvent
     static void extensions(RegisterClientExtensionsEvent event) {
         BlockEntityWithoutLevelRenderer renderer = new Chest();

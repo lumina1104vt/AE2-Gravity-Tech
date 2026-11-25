@@ -55,6 +55,14 @@ public final class DispatchMarker {
         }
     }
 
+    /** Registries to read a marker's product with: the server's when there is one (single player, a dedicated server), else the client's. */
+    public static @Nullable HolderLookup.Provider registries() {
+        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+        if (server != null)
+            return server.registryAccess();
+        return net.neoforged.fml.loading.FMLEnvironment.dist.isClient() ? com.lumina.ae2_gvt.client.DispatchMarkerClient.registries() : null;
+    }
+
     /** Tells the engine which key is a mark. */
     public static void register() {
         VirtualKeys.register(DispatchMarker::is);
