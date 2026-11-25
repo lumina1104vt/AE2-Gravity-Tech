@@ -269,6 +269,16 @@ public class TwinStarTermState implements InternalInventoryHost {
         }
     }
 
+    /** What a pattern sets for the machine it is for: gone when the machine changes. Chances and NBT stay (the recipe and the items own them). */
+    public void clearMachineSettings() {
+        clearInputFaces();
+        clearInputTargets();
+        clearInputRoles();
+        clearInputGuiSlots();
+        clearOutputGuiSlots();
+        clearDispatchDone();
+    }
+
     public void clear() {
         machineInv.clear();
         subMachineInv.clear();

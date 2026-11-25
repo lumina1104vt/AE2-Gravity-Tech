@@ -470,8 +470,14 @@ public class TwinStarPatternTermMenu extends PatternEncodingTermMenu {
             ItemStack machineNow = machineSlot.getItem();
             Item machineItem = machineNow.isEmpty() ? null : machineNow.getItem();
             if (machineItem != machineSeen) {
+                // what the last pattern left (faces, targets, GUI slots, catalysts, done on dispatch, tool, sub-machines) is
+                // that machine's: another machine starts clean, with the sub-machines it was last encoded with
+                boolean changed = machineSeen != null;
                 machineSeen = machineItem;
-                if (machineItem != null && subMachineSlots.stream().noneMatch(Slot::hasItem)) {
+                if (changed) {
+                    host.state().clearMachineSettings();
+                    fillSubMachines(machineNow);
+                } else if (machineItem != null && subMachineSlots.stream().noneMatch(Slot::hasItem)) {
                     fillSubMachines(machineNow);
                 }
             }
