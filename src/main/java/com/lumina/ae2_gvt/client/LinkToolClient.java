@@ -108,6 +108,18 @@ public final class LinkToolClient {
     }
 
     private static final List<Flash> FLASHES = new ArrayList<>();
+
+    /** The core's usage screen lights its machines up through this. */
+    @EventBusSubscriber(modid = AE2GravityTech.MODID, value = Dist.CLIENT)
+    public static final class Setup {
+        private Setup() {
+        }
+
+        @SubscribeEvent
+        public static void setup(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent event) {
+            com.lumina.twinstar.client.MachineHighlight.set(LinkToolClient::flash);
+        }
+    }
     private static final long FLASH_TICKS = 120;
 
     /** Lights the machine up for a few seconds; {@code host}/{@code hostSide} is the interface (the line goes to it). */
