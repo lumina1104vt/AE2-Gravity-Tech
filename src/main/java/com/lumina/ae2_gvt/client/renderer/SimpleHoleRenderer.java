@@ -14,13 +14,13 @@ import net.minecraft.resources.ResourceLocation;
 
 /**
  * A black or white hole where the world's own drawing ({@code client.HoleRenderer}: shaders, lensing of the frame) does not
- * run, a guide's scene for one: a plain sphere and a tilted accretion ring, no lensing. A black hole is a dark ball in a bright
+ * run, a guide's scene for one: a plain sphere and an accretion ring lying nearly flat, tilted a little, no lensing. A black hole is a dark ball in a bright
  * ring, a white hole a bright ball in a dark ring (so the two differ by more than colour). In the real world it draws nothing.
  */
 public final class SimpleHoleRenderer implements BlockEntityRenderer<GravityHoleBlockEntity> {
     private static final ResourceLocation WHITE = new ResourceLocation("textures/misc/white.png");
     private static final int LATS = 12, LONS = 20, RING = 32;
-    private static final float RING_IN = 1.25f, RING_OUT = 2.7f, TILT = (float) Math.toRadians(70);
+    private static final float RING_IN = 1.25f, RING_OUT = 2.7f, TILT = (float) Math.toRadians(20);
 
     @Override
     public void render(GravityHoleBlockEntity hole, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
