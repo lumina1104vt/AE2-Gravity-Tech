@@ -8,8 +8,10 @@ import net.minecraftforge.fml.common.Mod;
 @Mod("twinstar_compat")
 public final class TwinStarCompat {
     public TwinStarCompat() {
-        if (ModList.get().isLoaded("gtlcore"))
+        if (ModList.get().isLoaded("gtlcore")) {
             GtlStorageAdapter.register();
+            GtlPushBatcher.register();
+        }
         if (ModList.get().isLoaded("neoecoae"))
             StorageAdapters.register(new EcoStorageAdapter());
     }
