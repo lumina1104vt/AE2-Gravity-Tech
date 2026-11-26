@@ -374,6 +374,7 @@
   "ae2_gvt.pattern.ignore_nbt.output": "The same item out of the machine counts as this product, whatever its data",
   "ae2_gvt.pattern.ignore_nbt.list": "Ignores NBT: %s",
   "gui.ae2_gvt.machine_access.blocking_full": "Full blocking: one run at a time, the next once its materials are used up",
+  "gui.ae2_gvt.machine_access.blocking_result": "Wait for result: one run at a time, the next once anything comes back out of the machine",
   "gui.ae2_gvt.machine_access.stock": "Config",
   "ae2_gvt.pattern.refused.no_machine": "No machine set: the pattern cannot be encoded",
   "ae2_gvt.pattern.uploaded": "Encoded and uploaded to the hub",

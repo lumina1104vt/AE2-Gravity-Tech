@@ -969,15 +969,28 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
             return menu.getBlockMode() == IMachineAccess.BlockMode.NONE ? Icon.BLOCKING_MODE_NO : Icon.BLOCKING_MODE_YES;
         }
 
-        /** Full blocking: AE2's blocking icon with a "1" in its corner (one run at a time). */
+        /** Full blocking: AE2's blocking icon with a "1" in its corner (one run at a time); waiting for a result: a return arrow. */
         @Override
         public void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
             super.renderWidget(g, mouseX, mouseY, partialTick);
-            if (!visible || menu.getBlockMode() != IMachineAccess.BlockMode.FULL)
+            var mode = menu.getBlockMode();
+            if (!visible || mode != IMachineAccess.BlockMode.FULL && mode != IMachineAccess.BlockMode.RESULT)
                 return;
             g.pose().pushPose();
             g.pose().translate(0, 0, 100);
-            g.drawString(font, "1", getX() + 11, getY() + 9 + (isHovered() ? 1 : 0), 0xFFFFFFFF, true);
+            int x = getX() + 8, y = getY() + 9 + (isHovered() ? 1 : 0);
+            if (mode == IMachineAccess.BlockMode.FULL) {
+                g.drawString(font, "1", x + 3, y, 0xFFFFFFFF, true);
+            } else {
+                // a return arrow, dark under white, so it reads on the icon
+                for (int o = 1; o >= 0; o--) {
+                    int c = o == 1 ? 0xFF3F3F3F : 0xFFFFFFFF;
+                    g.fill(x + 7 + o, y + o, x + 8 + o, y + 5 + o, c);      // down the right side
+                    g.fill(x + 1 + o, y + 4 + o, x + 8 + o, y + 5 + o, c);  // back to the left
+                    g.fill(x + 2 + o, y + 3 + o, x + 3 + o, y + 6 + o, c);  // the head
+                    g.fill(x + 3 + o, y + 2 + o, x + 4 + o, y + 7 + o, c);
+                }
+            }
             g.pose().popPose();
         }
 
@@ -987,6 +1000,7 @@ public class MachineAccessScreen extends AEBaseScreen<MachineAccessMenu> impleme
                 case NONE -> "blocking_off";
                 case BLOCKING -> "blocking_on";
                 case FULL -> "blocking_full";
+                case RESULT -> "blocking_result";
             };
             return List.of(Component.translatable("gui.ae2_gvt.machine_access.blocking"),
                     Component.translatable("gui.ae2_gvt.machine_access." + mode).withStyle(ChatFormatting.GRAY));
