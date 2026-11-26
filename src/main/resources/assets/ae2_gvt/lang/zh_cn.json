@@ -374,6 +374,7 @@
   "ae2_gvt.pattern.ignore_nbt.output": "机器吐出的同种物品，资料不同也算这张样板的产物",
   "ae2_gvt.pattern.ignore_nbt.list": "无视 NBT：%s",
   "gui.ae2_gvt.machine_access.blocking_full": "完全阻挡：一次只放一份，等材料都用完才放下一份",
+  "gui.ae2_gvt.machine_access.blocking_result": "等回收：一次只放一份，机器有东西回收回来（不管是什么）才放下一份",
   "gui.ae2_gvt.machine_access.stock": "配置",
   "ae2_gvt.pattern.refused.no_machine": "没有放工作主方块，不能编码",
   "ae2_gvt.pattern.uploaded": "已编码并上传到中枢",
