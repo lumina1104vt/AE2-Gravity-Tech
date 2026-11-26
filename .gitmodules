@@ -1,8 +1,8 @@
 [submodule "core"]
 	path = core
 	url = https://github.com/lumina1104vt/Twinstar-Core.git
-	branch = 1.21.1
+	branch = 1.20.1
 [submodule "lumina-multiblock"]
 	path = lumina-multiblock
 	url = https://github.com/lumina1104vt/Multiblock.git
-	branch = 1.21.1
+	branch = 1.20.1
