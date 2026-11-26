@@ -4,6 +4,7 @@
   "minVersion": "0.8",
   "package": "com.lumina.ae2_gvt.mixins",
   "compatibilityLevel": "JAVA_17",
+  "mixinPriority": 2000,
   "mixins": [
     "CraftingServiceMixins",
     "ControllerValidatorMixin",

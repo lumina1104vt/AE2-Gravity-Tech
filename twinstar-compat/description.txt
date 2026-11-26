@@ -1,0 +1,2 @@
+Exact amounts of other mods' huge storages (GTLCore disks, Neo ECO storage) for the twin-star engine.
+讓雙星引擎讀到其他模組超大儲存的確切數量（GTLCore 磁盤、Neo ECO 儲存）。

@@ -30,6 +30,7 @@ evaluationDependsOn(':twinstar-api')
 evaluationDependsOn(':twinstar-ae2')
 evaluationDependsOn(':lumina-bridge')
 evaluationDependsOn(':lumina-corelib')
+evaluationDependsOn(':twinstar-compat')
 
 legacyForge {
     // access transformers are picked up from META-INF/accesstransformer.cfg automatically
@@ -116,6 +117,9 @@ legacyForge {
         "lumina_corelib" {
             sourceSet(project(':lumina-corelib').sourceSets.main)
         }
+        "twinstar_compat" {
+            sourceSet(project(':twinstar-compat').sourceSets.main)
+        }
     }
 }
 
@@ -123,6 +127,7 @@ legacyForge {
 mixin {
     config "twinstar.mixins.json"
     config "lumina_multiblock.mixins.json"
+    config "twinstar_compat.mixins.json"
 }
 
 // 'localRuntime': on the dev runtime classpath, but not published as a dependency of this mod
@@ -161,6 +166,7 @@ dependencies {
     localRuntime project(':lumina-bridge')
     compileOnly project(':lumina-corelib')
     localRuntime project(':lumina-corelib')
+    localRuntime project(':twinstar-compat')
 
     // dev runs: Forge reads a mod's mixin config from the classpath before the mod layer exists, so it is put there on its own
     additionalRuntimeClasspath files(tasks.register('devMixinConfig', Copy) {
@@ -170,6 +176,8 @@ dependencies {
         from('core/build/mixin') { include 'twinstar.refmap.json' }
         from('lumina-multiblock/src/main/resources') { include 'lumina_multiblock.mixins.json' }
         from('lumina-multiblock/build/mixin') { include 'lumina_multiblock.refmap.json' }
+        from('twinstar-compat/src/main/resources') { include 'twinstar_compat.mixins.json' }
+        from('twinstar-compat/build/mixin') { include 'twinstar_compat.refmap.json' }
         into layout.buildDirectory.dir('devMixin')
     }.map { it.destinationDir })
 
@@ -186,6 +194,7 @@ dependencies {
     jarJar(project(':twinstar-ae2'))
     jarJar(project(':lumina-bridge'))
     jarJar(project(':lumina-corelib'))
+    jarJar(project(':twinstar-compat'))
 
     // AE2: we build against it (the terminal extends AE2's classes) and run it in the dev client.
     // The mods on Modrinth are obfuscated (SRG): the mod* configurations remap them to the names we write.

@@ -1,0 +1,27 @@
+// TwinStar Compat - what is specific to other mods lives here, none of it in the engine: it registers adapters
+// through twinstar-api. Bundled into ae2_gvt by jarJar. It compiles against none of those mods (calls by name).
+plugins {
+    id 'java-library'
+    id 'idea'
+    id 'net.neoforged.moddev.legacyforge'   // version from the root project
+}
+
+ext.mod_version = rootProject.mod_version
+ext.mod_description = file('description.txt').getText('UTF-8')
+
+apply from: rootProject.file('gradle/mod-common.gradle')
+
+legacyForge {
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+}
+
+dependencies {
+    compileOnly project(':twinstar-api')
+    compileOnly project(':lumina-bridge')
+    modCompileOnly "maven.modrinth:ae2:${ae2_version}"
+    compileOnly 'org.jetbrains:annotations:24.1.0'
+}
