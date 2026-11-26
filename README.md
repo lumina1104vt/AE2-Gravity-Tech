@@ -38,7 +38,7 @@ Changes of each version are in [`changelogs/`](changelogs).
 Needs JDK 21. `core/` and `lumina-multiblock/` are **private** git submodules, so building needs access to them.
 
 ```sh
-git clone --recurse-submodules -b 1.21.1-beta https://github.com/lumina1104vt/AE2-Gravity-Tech.git
+git clone --recurse-submodules -b 1.21.1 https://github.com/lumina1104vt/AE2-Gravity-Tech.git
 cd AE2-Gravity-Tech
 ./gradlew build
 ```
@@ -96,7 +96,7 @@ All Rights Reserved, see [`LICENSE`](LICENSE). `TEMPLATE_LICENSE.txt` covers onl
 需要 JDK 21。`core/` 和 `lumina-multiblock/` 是**私有**的 git 子模組，要有存取權限才能建置。
 
 ```sh
-git clone --recurse-submodules -b 1.21.1-beta https://github.com/lumina1104vt/AE2-Gravity-Tech.git
+git clone --recurse-submodules -b 1.21.1 https://github.com/lumina1104vt/AE2-Gravity-Tech.git
 cd AE2-Gravity-Tech
 ./gradlew build
 ```
