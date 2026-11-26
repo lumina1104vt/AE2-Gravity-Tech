@@ -1,0 +1,75 @@
+## 20.0.0.1-beta
+
+First public beta of AE2 Gravity Tech for Minecraft 1.20.1 (Forge). Requires Applied Energistics 2, GeckoLib and GuideMe.
+
+### Highlights
+- Black and white holes, three crystal lines, the gravity processing factory, graviton collector and fusion generator.
+- Twin-Star Hub: a hexagram crafting hub with its own planner, virtual patterns and pattern terminal.
+- Machine Access Interface and Machine Link Tool: link machines from up to 64 blocks away.
+- Quantum Controller: master/slave controllers with named frequencies.
+- Anti-gravity armor with upgradeable modules.
+
+### Also
+- Sequence patterns: a button beside every recipe in JEI and EMI (while the pattern terminal is open) writes a pattern for machines that need the materials in their places, such as an ordered crafting table.
+- Pattern terminal: a catalyst switch on every material slot (a catalyst stays in the machine for the whole batch), a tool slot (the machine is right-clicked with it once all materials are in), and GUI slot numbers for materials and products, for machines that take items only in a GUI.
+- Wireless Twin-Star Pattern Terminal: the pattern terminal to carry, made from an AE2 wireless terminal and the twin-star pattern terminal.
+- Three generators that feed the ME network's power: the Crystal Dust Generator (2,000 FE/t burning gravity or anti-gravity dust, 4,000 FE/t burning paradox dust, 2 s each), the Graviton Generator (200,000 FE/t, one graviton or anti-graviton a second from the network) and the Accretion Generator (1,000,000 FE/t, touching a white hole, four to a hole; made in the Fusion Generator at 100,000 K).
+- Antigravity armor: the whole set flies (an anti-graviton from a linked network every 5 ticks) and takes no fall damage, and all 31 of its modules work now (the armor can be linked to a wireless access point for auto stock, recharge and pick craft; phase, flying with it on, goes through blocks: magnet, portable workbench (B), dash (V), evasion, flight drift, night vision, water breathing, regeneration, fire resistance, lava immunity, max health, strength, attack speed, damage reduction, thorns, undying, shield, cleanse, dig affinity, luck, move speed, swim speed, jump height, step assist, reach, saturation, auto feed, auto stock, recharge, pick craft, phase).
+- FE Storage Cells (1k to 256k): somewhere in an ME network to keep FE. Not made with Applied Flux, which has cells of its own.
+- Machine Access Interface: in ME interface mode it takes back the FE a machine gives out into the network (a button beside the recover button turns it off).
+- Machine Linker: Ctrl + right-click a machine links every block of the same kind within 16 blocks of it at once (up to 64 machines; both are in the config). It only adds; a plain right-click is still one machine.
+- Machine Access Interface: a button beside the optional-machine slot (provider mode) gives every machine of the same kind in the list the optional machine you set on this one.
+- The world interaction pages in JEI and EMI are pictures now.
+- The guide book has its own recipe layout for the explosions that make black and white holes, and it comes in English, Traditional Chinese and Simplified Chinese (every page). Its index is a top-level entry now, with new chapters on holes, multiblocks, storage and materials and on the quantum controller.
+- Machine usage screen: shows what the machines of a network used up lately, and what pattern providers, ME export buses and ME interfaces sent out (listed apart, under their own heading). It also knows the GregTech family (input buses and hatches, GTM things' ME output assembly, GTL's super pattern assembly). Open it from the machine access interface or from the buttons on the ME terminals (beside the theory viewer button).
+  - Idle machines are hidden by default, groups fold, and a detail panel opens for the machine you pick.
+  - Window mode: the screen can be a small window you move and resize (remembered), and its scroll bars can be dragged.
+  - Double-click a machine in the list to light it up in the world: an orange guide line and a highlight that show through walls.
+- Machine access interface: a fourth blocking mode, "wait for result": one run at a time, the next once anything comes back (for loops such as Create sequenced assembly).
+- Twin-star pattern terminal: an encoded pattern goes straight into the hub.
+- Dispatch marker: shown as a vanilla chest, named after its product, and shows the product's own tooltip.
+- Machine access interface: a crafting card makes ME interface mode craft what a machine's stock is short of; a bound block can be a hatch of the machine before it; bulk removal (marked, same kind, all).
+- Plan screen: holding Shift turns the start button into "bookmark missing"; Enter plans or starts; the unloaded-chunk notice is an orange (!).
+- Memory and speed panels for the theory viewer and the CPU screens (movable, remembered).
+- JEI / EMI bookmark key (A) works on our own screens.
+- The amount input reads expressions: 64*3, (2+3)*1.5K, 2^10, 10K/4.
+- The Twin-Star engine is split into libraries (TwinStar Engine and its API, bundled in the mod).
+
+---
+
+## 20.0.0.1-beta
+
+Minecraft 1.20.1、Forge 版的 AE2 引力科技首個公開測試版。需要 Applied Energistics 2、GeckoLib 和 GuideMe。
+
+### 重點內容
+- 黑洞與白洞、三條水晶線、引力加工工廠、引力子收集器、核融合發生器。
+- 雙星調度中樞：六角星合成中樞，有自己的規劃演算法、虛擬樣板和樣板終端。
+- 機器接入接口與機器連結器：從最遠 64 格外綁定機器。
+- 量子控制器：有主從角色和自訂頻率名稱的控制器。
+- 可升級模組的反重力裝甲。
+
+### 另外
+- 序列樣板：樣板終端開著時，JEI 和 EMI 的每個配方旁多了一個按鈕，可以為需要材料各放各的位置的機器（像有序合成的工作台）寫出樣板。
+- 樣板終端：每個材料格有催化劑開關（催化劑整批留在機器裡）、多了工具格（材料全部放完後用它對機器右鍵）、材料和成品可以指定 GUI 格號，給只能在 GUI 裡放東西的機器用。
+- 無線雙星樣板終端：可以帶著走的樣板終端，用 AE2 無線終端加雙星樣板終端合成。
+- 三種發電機，為 ME 網路供電：結晶粉發電機（燒引力或反引力水晶粉 2,000 FE/t，燒悖論水晶粉 4,000 FE/t，各燒 2 秒）、引力子發電機（200,000 FE/t，每秒從網路取一個引力子或反引力子）、吸積發電機（1,000,000 FE/t，貼著白洞，一個白洞最多四台；要在核融合發生器裡以 100,000 K 製作）。
+- 反重力裝甲：穿齊整套可以飛行（每 5 tick 從連結的網路取 1 個反引力子）、不會摔傷，31 個模組全部都有效果了（盔甲可以連到無線存取點，給自動補貨、充電、中鍵下單用；穿牆在飛行時可以穿過方塊：磁力吸取、隨身工作台（B）、衝刺突進（V）、閃避、飛行防飄移、夜視、水下呼吸、生命回復、抗火、熔岩免疫、生命上限、力量、攻擊速度、固定減傷、反傷、瀕死免死、護盾吸收、清除負面、挖掘不減速、幸運、移動速度、游泳加速、跳躍高度、免跳上階、延伸互動距離、飽和、自動進食、自動補貨、充電、中鍵下單、穿牆）。
+- FE 儲存元件（1k 到 256k）：ME 網路裡存 FE 的地方。有裝 Applied Flux 時不會有合成，用它自己的元件。
+- 機器接入接口：ME 介面模式下，會把機器輸出的 FE 也收回網路（回收按鈕旁多一顆按鈕可以關掉）。
+- 機器連結器：Ctrl + 右鍵機器，一次連接它周圍 16 格內所有相同的機器（最多 64 台，兩個數字都能在設定檔調整）。只會增加；一般右鍵還是只連一台。
+- 機器接入接口：供應器模式下，可選機器格旁多一顆按鈕，把這台設定的可選機器一次套用到清單裡所有相同的機器。
+- JEI 和 EMI 的世界交互頁改用圖像。
+- 導覽書為製造黑洞、白洞的爆炸配方做了專用的版面，並有英文、繁體中文、簡體中文三種語言（每一頁）。目錄改成頂層項目，新增黑白洞、多方塊、儲存、材料和量子控制器的章節。
+- 機器用量畫面：顯示網路裡的機器最近用掉了什麼，以及樣板供應器、ME 輸出匯流排、ME 介面送出了什麼（送出的另列在自己的標題下）。也認得格雷科技系列（輸入總線和艙口、GTM things 的 ME 輸出總成、GTL 的超級樣板總成）。可以從機器接入接口，或 ME 終端上理論層按鈕旁的按鈕開啟。
+  - 預設隱藏閒置的機器，分組可以摺疊，點選機器才會打開詳細面板。
+  - 視窗模式：畫面可以變成小視窗，能移動、縮放（會記住），捲軸也可以拖曳。
+  - 在清單上雙擊機器，會在世界裡標出它：橘色的指引線和高亮，隔著牆也看得到。
+- 機器接入接口：阻擋多了第四種「等回收」：一次放一份，有東西回收回來才放下一份（給機械動力序列組裝這類循環產線）。
+- 雙星樣板終端：編碼好的樣板直接上傳到中樞。
+- 發配記號：用原版箱子的樣子顯示，名字是產物的名字，提示文字顯示產物本身的說明。
+- 機器接入接口：可以放合成卡，ME 介面模式會合成機器庫存缺少的東西；綁定的方塊可以是前一台機器的艙口；批次移除（已標記、同種類、全部）。
+- 計畫畫面：按住 Shift，開始按鈕變成「蒐藏缺失」；Enter 可以計畫或開始；未載入區塊的提示是橘色的 (!)。
+- 理論層和 CPU 畫面多了記憶體與速度面板（可移動，會記住）。
+- JEI / EMI 的蒐藏鍵（A）在我們自己的畫面上也能用。
+- 數量輸入可以寫算式：64*3、(2+3)*1.5K、2^10、10K/4。
+- 雙星引擎拆成函式庫（TwinStar Engine 和它的 API，包在模組裡一起帶著走）。
