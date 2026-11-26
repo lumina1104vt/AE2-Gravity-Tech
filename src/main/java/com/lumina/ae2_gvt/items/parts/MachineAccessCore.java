@@ -721,7 +721,7 @@ public class MachineAccessCore implements IMachineAccess, InternalInventoryHost,
                 if (k < 0)
                     return 0;
                 for (Port p : portsAfter(entries.get(k)))
-                    if (p.pos().equals(e.link.pos()))
+                    if (p.pos().equals(Positions.of(e.link.pos())))
                         return p.slot();
                 return 0;
             }
