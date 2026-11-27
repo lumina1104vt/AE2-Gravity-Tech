@@ -1,0 +1,13 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.lumina.twinstar.compat.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "EcoMountMixin",
+    "EcoStatusScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 0
+  }
+}

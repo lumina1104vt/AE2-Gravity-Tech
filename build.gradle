@@ -30,6 +30,7 @@ evaluationDependsOn(':twinstar-api')
 evaluationDependsOn(':twinstar-ae2')
 evaluationDependsOn(':lumina-bridge')
 evaluationDependsOn(':lumina-corelib')
+evaluationDependsOn(':twinstar-compat')
 
 neoForge {
     // access transformers are picked up from META-INF/accesstransformer.cfg automatically
@@ -97,6 +98,9 @@ neoForge {
         "lumina_corelib" {
             sourceSet(project(':lumina-corelib').sourceSets.main)
         }
+        "twinstar_compat" {
+            sourceSet(project(':twinstar-compat').sourceSets.main)
+        }
     }
 }
 
@@ -137,6 +141,8 @@ dependencies {
     compileOnly project(':lumina-corelib')
     localRuntime project(':lumina-corelib')
     jarJar(project(':lumina-corelib'))
+    localRuntime project(':twinstar-compat')
+    jarJar(project(':twinstar-compat'))
 
     // plain-Java tests (no Minecraft classes on their path), e.g. the same-machine picking of the machine access interface
     testImplementation platform('org.junit:junit-bom:5.10.3')

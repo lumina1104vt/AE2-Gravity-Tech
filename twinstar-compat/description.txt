@@ -1,0 +1,2 @@
+Works with Neo ECO AE Extension: exact amounts of its huge storages, and AE2's crafting status screen on twin-star networks.
+與 Neo ECO AE Extension 相容：讀到超大儲存的確切數量；有雙星中樞的網路保留 AE2 的合成狀態畫面。
