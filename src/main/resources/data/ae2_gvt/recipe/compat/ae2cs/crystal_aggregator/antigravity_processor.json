@@ -1,0 +1,26 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "ae2cs"
+    }
+  ],
+  "type": "ae2cs:crystal_aggregator_recipe_serializer",
+  "energy_cost": 6400,
+  "input_a": {
+    "count": 4,
+    "item": "ae2_gvt:antigravity_circuit"
+  },
+  "input_b": {
+    "count": 4,
+    "item": "minecraft:redstone"
+  },
+  "input_c": {
+    "count": 4,
+    "item": "ae2:printed_silicon"
+  },
+  "result": {
+    "count": 4,
+    "id": "ae2_gvt:antigravity_processor"
+  }
+}

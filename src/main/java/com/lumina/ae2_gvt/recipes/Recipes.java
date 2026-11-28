@@ -43,6 +43,12 @@ public final class Recipes {
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<ExplosionRecipe>> EXPLOSION_SERIALIZER =
             SERIALIZERS.register("explosion", ExplosionRecipe.Serializer::new);
 
+    public static final DeferredHolder<RecipeType<?>, RecipeType<FactoryBorrowRecipe>> FACTORY_BORROW =
+            TYPES.register("factory_borrow", () -> RecipeType.simple(
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(AE2GravityTech.MODID, "factory_borrow")));
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<FactoryBorrowRecipe>> FACTORY_BORROW_SERIALIZER =
+            SERIALIZERS.register("factory_borrow", FactoryBorrowRecipe.Serializer::new);
+
     /** The input of a recipe that no crafting grid or machine feeds: what happens in the world. */
     public enum NoInput implements net.minecraft.world.item.crafting.RecipeInput {
         INSTANCE;

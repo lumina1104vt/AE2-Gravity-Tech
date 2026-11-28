@@ -1,0 +1,25 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "neoecoae"
+    }
+  ],
+  "type": "ae2_gvt:factory_borrow",
+  "from": "neoecoae:integrated_working_station",
+  "items": [
+    "inputItems"
+  ],
+  "fluids": [
+    "inputFluid"
+  ],
+  "outputs": [
+    "itemOutput"
+  ],
+  "fluid_outputs": [
+    "fluidOutput"
+  ],
+  "energy_field": "energy",
+  "energy_scale": 2,
+  "time": 100
+}

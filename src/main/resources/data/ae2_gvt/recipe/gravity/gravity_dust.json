@@ -2,7 +2,7 @@
   "type": "ae2:inscriber",
   "ingredients": {
     "middle": {
-      "item": "ae2_gvt:gravity_crystal"
+      "tag": "ae2_gvt:gravity_crystals"
     }
   },
   "mode": "inscribe",

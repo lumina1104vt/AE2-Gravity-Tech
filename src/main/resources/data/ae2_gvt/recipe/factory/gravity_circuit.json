@@ -2,7 +2,7 @@
   "type": "ae2_gvt:gravity_processing",
   "ingredients": [
     {
-      "item": "ae2_gvt:gravity_crystal",
+      "tag": "ae2_gvt:gravity_crystals",
       "count": 64
     },
     {

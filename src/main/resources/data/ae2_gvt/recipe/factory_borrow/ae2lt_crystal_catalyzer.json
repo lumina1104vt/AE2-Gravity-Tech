@@ -1,0 +1,42 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "ae2lt"
+    }
+  ],
+  "type": "ae2_gvt:factory_borrow",
+  "from": "ae2lt:crystal_catalyzer",
+  "unless": [
+    "mode"
+  ],
+  "alternatives": true,
+  "keep": [
+    "catalyst"
+  ],
+  "outputs": [
+    "output"
+  ],
+  "energy_field": "energyPerCycle",
+  "extra_fluids": [
+    {
+      "fluid": "minecraft:water",
+      "amount": 1000,
+      "without": "inputFluid"
+    }
+  ],
+  "network": [
+    {
+      "key": {
+        "#t": "ae2lt:lightning",
+        "tier": "{lightningTier:high_voltage}"
+      },
+      "amount": 1,
+      "amount_field": "lightningCost"
+    }
+  ],
+  "time": 100,
+  "fluids": [
+    "inputFluid"
+  ]
+}

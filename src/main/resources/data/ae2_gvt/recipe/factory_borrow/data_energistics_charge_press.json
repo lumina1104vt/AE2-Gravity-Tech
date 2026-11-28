@@ -1,0 +1,24 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "data_energistics"
+    }
+  ],
+  "type": "ae2_gvt:factory_borrow",
+  "from": "data_energistics:data_charge_press",
+  "items": [
+    "inputs"
+  ],
+  "outputs": [
+    "result"
+  ],
+  "energy": 3200,
+  "extra_fluids": [
+    {
+      "fluid": "data_energistics:data_corrosion_liquid",
+      "amount_field": "fluid_amount"
+    }
+  ],
+  "time": 100
+}

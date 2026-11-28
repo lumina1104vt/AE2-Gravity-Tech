@@ -1,0 +1,26 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "ae2cs"
+    }
+  ],
+  "type": "ae2cs:crystal_aggregator_recipe_serializer",
+  "energy_cost": 51200,
+  "input_a": {
+    "count": 8,
+    "item": "ae2_gvt:gravity_dust"
+  },
+  "input_b": {
+    "count": 8,
+    "tag": "c:dusts/fluix"
+  },
+  "input_c": {
+    "count": 16,
+    "tag": "c:sands"
+  },
+  "result": {
+    "count": 32,
+    "id": "ae2_gvt:gravity_growth_seed"
+  }
+}

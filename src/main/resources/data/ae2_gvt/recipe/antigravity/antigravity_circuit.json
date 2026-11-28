@@ -2,7 +2,7 @@
   "type": "ae2:inscriber",
   "ingredients": {
     "top": {
-      "item": "ae2_gvt:antigravity_crystal"
+      "tag": "ae2_gvt:antigravity_crystals"
     },
     "middle": {
       "item": "ae2_gvt:anti_singularity"

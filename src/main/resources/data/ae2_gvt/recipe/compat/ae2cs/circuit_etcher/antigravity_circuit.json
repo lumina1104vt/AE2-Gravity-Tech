@@ -1,0 +1,26 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "ae2cs"
+    }
+  ],
+  "type": "ae2cs:circuit_etcher_recipe_serializer",
+  "energy_cost": 57600,
+  "input_a": {
+    "tag": "ae2_gvt:antigravity_crystals",
+    "count": 36
+  },
+  "input_b": {
+    "item": "ae2_gvt:anti_singularity",
+    "count": 36
+  },
+  "input_c": {
+    "tag": "c:storage_blocks/gold",
+    "count": 4
+  },
+  "result": {
+    "count": 36,
+    "id": "ae2_gvt:antigravity_circuit"
+  }
+}

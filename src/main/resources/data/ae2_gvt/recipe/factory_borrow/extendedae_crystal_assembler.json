@@ -1,0 +1,21 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "extendedae"
+    }
+  ],
+  "type": "ae2_gvt:factory_borrow",
+  "from": "extendedae:crystal_assembler",
+  "items": [
+    "input_items"
+  ],
+  "fluids": [
+    "input_fluid"
+  ],
+  "outputs": [
+    "output"
+  ],
+  "energy": 2000,
+  "time": 100
+}

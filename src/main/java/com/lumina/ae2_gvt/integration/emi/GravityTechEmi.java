@@ -5,6 +5,7 @@ import java.util.List;
 import appeng.api.stacks.GenericStack;
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.blocks.Blocks;
+import com.lumina.ae2_gvt.client.FactoryRecipeLook;
 import com.lumina.ae2_gvt.hole.GravityHole;
 import com.lumina.ae2_gvt.integration.WorldInteraction;
 import com.lumina.ae2_gvt.client.SequencePattern;
@@ -13,6 +14,7 @@ import com.lumina.ae2_gvt.items.Items;
 import com.lumina.ae2_gvt.graviton.Gravitons;
 import com.lumina.lmb.compat.CountedEmiSlot;
 import com.lumina.lmb.compat.RecipeNumbers;
+import com.lumina.ae2_gvt.recipes.BorrowedRecipes;
 import com.lumina.ae2_gvt.recipes.FusionRecipe;
 import com.lumina.ae2_gvt.recipes.GravityProcessingRecipe;
 import com.lumina.ae2_gvt.recipes.Recipes;
@@ -60,21 +62,18 @@ public class GravityTechEmi implements EmiPlugin {
         registry.addWorkstation(FACTORY, EmiStack.of(Blocks.GRAVITY_FACTORY.get()));
         registry.addWorkstation(FACTORY, EmiStack.of(Items.CHAOS_MATTER.get()));
         registry.addWorkstation(FUSION, EmiStack.of(Blocks.FUSION_CONTROLLER.get()));
-        for (RecipeHolder<GravityProcessingRecipe> r : registry.getRecipeManager().getAllRecipesFor(Recipes.GRAVITY_PROCESSING.get())) {
-            MutableComponent cost = Component.empty();
+        List<RecipeHolder<GravityProcessingRecipe>> factory = new java.util.ArrayList<>(
+                registry.getRecipeManager().getAllRecipesFor(Recipes.GRAVITY_PROCESSING.get()));
+        var level = net.minecraft.client.Minecraft.getInstance().level;
+        if (level != null)
+            factory.addAll(BorrowedRecipes.build(level));
+        for (RecipeHolder<GravityProcessingRecipe> r : factory) {
             GravityProcessingRecipe v = r.value();
-            if (v.gravitons() > 0)
-                cost.append(Component.translatable("item.ae2_gvt.graviton")).append(" " + RecipeNumbers.compact(v.gravitons()));
-            if (v.antigravitons() > 0)
-                cost.append(v.gravitons() > 0 ? "・" : "").append(Component.translatable("item.ae2_gvt.antigraviton")).append(" " + RecipeNumbers.compact(v.antigravitons()));
-            Recipe recipe = new Recipe(FACTORY, r.id(), 4, ingredients(v.ingredients()), v.results(), List.of(
-                    Component.translatable("gui.ae2_gvt.factory.jei.info", String.format("%.1f", v.time() / 20.0), RecipeNumbers.compact(v.energy())), cost));
-            // paid from the network and shown as text: U on them still finds the recipe
-            if (v.gravitons() > 0)
-                recipe.addCatalyst(EmiStack.of(Gravitons.GRAVITON.get()));
-            if (v.antigravitons() > 0)
-                recipe.addCatalyst(EmiStack.of(Gravitons.ANTIGRAVITON.get()));
-            registry.addRecipe(recipe);
+            List<EmiIngredient> in = new java.util.ArrayList<>(ingredients(v.ingredients()));
+            for (var fluid : v.fluidIngredients())
+                in.add(EmiIngredient.of(java.util.Arrays.stream(fluid.getFluids())
+                        .map(s -> EmiStack.of(s.getFluid(), fluid.amount())).toList(), fluid.amount()));
+            registry.addRecipe(new FactoryRecipe(r.id(), v, in));
         }
         for (RecipeHolder<FusionRecipe> r : registry.getRecipeManager().getAllRecipesFor(Recipes.FUSION.get())) {
             FusionRecipe v = r.value();
@@ -106,10 +105,6 @@ public class GravityTechEmi implements EmiPlugin {
             results.forEach(s -> outputs.add(EmiStack.of(s, s.getCount())));
         }
 
-        void addCatalyst(EmiStack stack) {
-            catalysts.add(stack);
-        }
-
         @Override
         public void addWidgets(WidgetHolder widgets) {
             for (int i = 0; i < inputs.size(); i++)
@@ -123,6 +118,64 @@ public class GravityTechEmi implements EmiPlugin {
                 widgets.addDrawable(0, rows * SLOT + 2 + i * 10, getDisplayWidth(), 10,
                         (g, mouseX, mouseY, delta) -> RecipeNumbers.drawLine(g, line, 0, 0, getDisplayWidth(), 0xFF404040));
             }
+        }
+    }
+
+    /** A factory recipe drawn as the factory's GUI ({@link FactoryRecipeLook}). */
+    private static final class FactoryRecipe extends BasicEmiRecipe {
+        private final GravityProcessingRecipe recipe;
+        private final List<EmiIngredient> kept;
+
+        FactoryRecipe(ResourceLocation id, GravityProcessingRecipe recipe, List<EmiIngredient> in) {
+            super(FACTORY, id, FactoryRecipeLook.WIDTH, FactoryRecipeLook.HEIGHT);
+            this.recipe = recipe;
+            this.kept = recipe.catalysts().stream().map(c -> EmiIngredient.of(c)).toList();
+            inputs.addAll(in);
+            recipe.results().forEach(s -> outputs.add(EmiStack.of(s, s.getCount())));
+            recipe.fluidResults().forEach(f -> outputs.add(EmiStack.of(f.getFluid(), f.getAmount())));
+            catalysts.addAll(kept);
+            // paid from the network and shown as text: U on them still finds the recipe
+            if (recipe.gravitons() > 0)
+                catalysts.add(EmiStack.of(Gravitons.GRAVITON.get()));
+            if (recipe.antigravitons() > 0)
+                catalysts.add(EmiStack.of(Gravitons.ANTIGRAVITON.get()));
+        }
+
+        private static int x(int left, int i) {
+            return left + (i % FactoryRecipeLook.COLUMNS) * FactoryRecipeLook.SLOT - 1;
+        }
+
+        private static int y(int i) {
+            return FactoryRecipeLook.SLOT_Y + (i / FactoryRecipeLook.COLUMNS) * FactoryRecipeLook.SLOT - 1;
+        }
+
+        @Override
+        public void addWidgets(WidgetHolder widgets) {
+            widgets.addDrawable(0, 0, FactoryRecipeLook.WIDTH, FactoryRecipeLook.HEIGHT,
+                    (g, mouseX, mouseY, delta) -> FactoryRecipeLook.draw(g, recipe));
+            if (!recipe.networkCosts().isEmpty())
+                widgets.addTooltipText(FactoryRecipeLook.networkTooltip(recipe), FactoryRecipeLook.INPUT_X,
+                        FactoryRecipeLook.LINE_Y - 1, FactoryRecipeLook.WIDTH - 2 * FactoryRecipeLook.INPUT_X, 11);
+            // items, then fluids, then what is kept, in the input slots
+            int at = 0;
+            for (EmiIngredient in : inputs) {
+                if (at >= FactoryRecipeLook.SLOTS)
+                    break;
+                widgets.add(new CountedEmiSlot(in, x(FactoryRecipeLook.INPUT_X, at), y(at))).drawBack(false);
+                at++;
+            }
+            for (EmiIngredient keep : kept) {
+                if (at >= FactoryRecipeLook.SLOTS)
+                    break;
+                int left = x(FactoryRecipeLook.INPUT_X, at) + 1, top = y(at) + 1;
+                widgets.add(new CountedEmiSlot(keep, left - 1, top - 1)).drawBack(false)
+                        .appendTooltip(Component.translatable("gui.ae2_gvt.factory.jei.kept"));
+                widgets.addDrawable(left, top, 16, 16, (g, mouseX, mouseY, delta) -> FactoryRecipeLook.drawKept(g, 0, 0));
+                at++;
+            }
+            for (int i = 0; i < outputs.size() && i < FactoryRecipeLook.SLOTS; i++)
+                widgets.add(new CountedEmiSlot(outputs.get(i), x(FactoryRecipeLook.OUTPUT_X, i), y(i)))
+                        .drawBack(false).recipeContext(this);
         }
     }
 

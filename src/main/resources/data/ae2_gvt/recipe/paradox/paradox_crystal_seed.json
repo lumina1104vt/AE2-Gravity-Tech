@@ -8,10 +8,10 @@
   ],
   "key": {
     "G": {
-      "item": "ae2_gvt:gravity_crystal"
+      "tag": "ae2_gvt:gravity_crystals"
     },
     "A": {
-      "item": "ae2_gvt:antigravity_crystal"
+      "tag": "ae2_gvt:antigravity_crystals"
     },
     "E": {
       "tag": "c:ender_pearls"

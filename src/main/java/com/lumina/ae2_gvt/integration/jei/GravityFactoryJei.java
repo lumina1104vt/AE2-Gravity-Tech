@@ -5,105 +5,96 @@ import java.util.List;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
 import com.lumina.ae2_gvt.blocks.Blocks;
+import com.lumina.ae2_gvt.client.FactoryRecipeLook;
+import com.lumina.ae2_gvt.recipes.BorrowedRecipes;
 import com.lumina.ae2_gvt.recipes.GravityProcessingRecipe;
 import com.lumina.ae2_gvt.recipes.Recipes;
 
 import com.lumina.ae2_gvt.graviton.Gravitons;
 import com.lumina.ae2_gvt.items.Items;
 import com.lumina.lmb.compat.CountedItemRenderer;
-import com.lumina.lmb.compat.RecipeNumbers;
 import mezz.jei.api.constants.VanillaTypes;
+import mezz.jei.api.neoforge.NeoForgeTypes;
 import mezz.jei.api.IModPlugin;
 import com.lumina.ae2_gvt.graviton.Gravitons;
 import com.lumina.ae2_gvt.items.Items;
 import com.lumina.lmb.compat.CountedItemRenderer;
-import com.lumina.lmb.compat.RecipeNumbers;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.JeiPlugin;
 import com.lumina.ae2_gvt.graviton.Gravitons;
 import com.lumina.ae2_gvt.items.Items;
 import com.lumina.lmb.compat.CountedItemRenderer;
-import com.lumina.lmb.compat.RecipeNumbers;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
+import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
+import mezz.jei.api.gui.builder.ITooltipBuilder;
 import com.lumina.ae2_gvt.graviton.Gravitons;
 import com.lumina.ae2_gvt.items.Items;
 import com.lumina.lmb.compat.CountedItemRenderer;
-import com.lumina.lmb.compat.RecipeNumbers;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.drawable.IDrawable;
 import com.lumina.ae2_gvt.graviton.Gravitons;
 import com.lumina.ae2_gvt.items.Items;
 import com.lumina.lmb.compat.CountedItemRenderer;
-import com.lumina.lmb.compat.RecipeNumbers;
 import mezz.jei.api.constants.VanillaTypes;
-import mezz.jei.api.gui.drawable.IDrawableStatic;
 import com.lumina.ae2_gvt.graviton.Gravitons;
 import com.lumina.ae2_gvt.items.Items;
 import com.lumina.lmb.compat.CountedItemRenderer;
-import com.lumina.lmb.compat.RecipeNumbers;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import com.lumina.ae2_gvt.graviton.Gravitons;
 import com.lumina.ae2_gvt.items.Items;
 import com.lumina.lmb.compat.CountedItemRenderer;
-import com.lumina.lmb.compat.RecipeNumbers;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.helpers.IGuiHelper;
 import com.lumina.ae2_gvt.graviton.Gravitons;
 import com.lumina.ae2_gvt.items.Items;
 import com.lumina.lmb.compat.CountedItemRenderer;
-import com.lumina.lmb.compat.RecipeNumbers;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.recipe.IFocusGroup;
 import com.lumina.ae2_gvt.graviton.Gravitons;
 import com.lumina.ae2_gvt.items.Items;
 import com.lumina.lmb.compat.CountedItemRenderer;
-import com.lumina.lmb.compat.RecipeNumbers;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import com.lumina.ae2_gvt.graviton.Gravitons;
 import com.lumina.ae2_gvt.items.Items;
 import com.lumina.lmb.compat.CountedItemRenderer;
-import com.lumina.lmb.compat.RecipeNumbers;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.recipe.RecipeType;
 import com.lumina.ae2_gvt.graviton.Gravitons;
 import com.lumina.ae2_gvt.items.Items;
 import com.lumina.lmb.compat.CountedItemRenderer;
-import com.lumina.lmb.compat.RecipeNumbers;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import com.lumina.ae2_gvt.graviton.Gravitons;
 import com.lumina.ae2_gvt.items.Items;
 import com.lumina.lmb.compat.CountedItemRenderer;
-import com.lumina.lmb.compat.RecipeNumbers;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import com.lumina.ae2_gvt.graviton.Gravitons;
 import com.lumina.ae2_gvt.items.Items;
 import com.lumina.lmb.compat.CountedItemRenderer;
-import com.lumina.lmb.compat.RecipeNumbers;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import com.lumina.ae2_gvt.graviton.Gravitons;
 import com.lumina.ae2_gvt.items.Items;
 import com.lumina.lmb.compat.CountedItemRenderer;
-import com.lumina.lmb.compat.RecipeNumbers;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.registration.IRecipeRegistration;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.neoforged.neoforge.common.crafting.SizedIngredient;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.crafting.SizedFluidIngredient;
 
 /**
- * 引力加工工廠 recipes in JEI: the inputs (4 × 3, as the factory's input slots), an arrow, the results,
- * and the time, energy and gravitons under them. The factory is the catalyst.
+ * 引力加工工廠 recipes in JEI, drawn as the factory's GUI ({@link FactoryRecipeLook}). The factory is the
+ * catalyst.
  */
 @JeiPlugin
 public class GravityFactoryJei implements IModPlugin {
@@ -123,8 +114,10 @@ public class GravityFactoryJei implements IModPlugin {
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
         var level = Minecraft.getInstance().level;
-        if (level != null)
+        if (level != null) {
             registration.addRecipes(TYPE, level.getRecipeManager().getAllRecipesFor(Recipes.GRAVITY_PROCESSING.get()));
+            registration.addRecipes(TYPE, BorrowedRecipes.build(level));
+        }
     }
 
     @Override
@@ -134,14 +127,26 @@ public class GravityFactoryJei implements IModPlugin {
     }
 
     private static final class Category implements IRecipeCategory<RecipeHolder<GravityProcessingRecipe>> {
-        private static final int SLOT = 18, COLUMNS = 4, ROWS = 3, ARROW_X = COLUMNS * SLOT + 6, OUT_X = ARROW_X + 30;
-        private static final int WIDTH = OUT_X + 3 * SLOT, HEIGHT = ROWS * SLOT + 22;
         private final IDrawable icon;
-        private final IDrawableStatic arrow;
+        private final IDrawable kept = new IDrawable() {
+            @Override
+            public int getWidth() {
+                return 16;
+            }
+
+            @Override
+            public int getHeight() {
+                return 16;
+            }
+
+            @Override
+            public void draw(GuiGraphics g, int x, int y) {
+                FactoryRecipeLook.drawKept(g, x, y);
+            }
+        };
 
         Category(IGuiHelper gui) {
             this.icon = gui.createDrawableItemLike(Blocks.GRAVITY_FACTORY.get());
-            this.arrow = gui.getRecipeArrow();
         }
 
         @Override
@@ -156,12 +161,12 @@ public class GravityFactoryJei implements IModPlugin {
 
         @Override
         public int getWidth() {
-            return WIDTH;
+            return FactoryRecipeLook.WIDTH;
         }
 
         @Override
         public int getHeight() {
-            return HEIGHT;
+            return FactoryRecipeLook.HEIGHT;
         }
 
         @Override
@@ -169,44 +174,76 @@ public class GravityFactoryJei implements IModPlugin {
             return icon;
         }
 
+        // the panel is the factory's own
+        @Override
+        public boolean needsRecipeBorder() {
+            return false;
+        }
+
+        private static IRecipeSlotBuilder slot(IRecipeLayoutBuilder builder, RecipeIngredientRole role, int left, int i) {
+            return builder.addSlot(role, left + (i % FactoryRecipeLook.COLUMNS) * FactoryRecipeLook.SLOT,
+                    FactoryRecipeLook.SLOT_Y + (i / FactoryRecipeLook.COLUMNS) * FactoryRecipeLook.SLOT);
+        }
+
         @Override
         public void setRecipe(IRecipeLayoutBuilder builder, RecipeHolder<GravityProcessingRecipe> holder, IFocusGroup focuses) {
             GravityProcessingRecipe r = holder.value();
-            for (int i = 0; i < r.ingredients().size() && i < COLUMNS * ROWS; i++) {
-                SizedIngredient in = r.ingredients().get(i);
-                builder.addSlot(RecipeIngredientRole.INPUT, 1 + (i % COLUMNS) * SLOT, 1 + (i / COLUMNS) * SLOT)
-                        .setStandardSlotBackground()
+            // items, then fluids, then what is kept, in the input slots
+            int at = 0;
+            for (SizedIngredient in : r.ingredients()) {
+                if (at >= FactoryRecipeLook.SLOTS)
+                    break;
+                slot(builder, RecipeIngredientRole.INPUT, FactoryRecipeLook.INPUT_X, at++)
                         .setCustomRenderer(VanillaTypes.ITEM_STACK, CountedItemRenderer.INSTANCE)
                         .addItemStacks(Arrays.stream(in.ingredient().getItems()).map(s -> s.copyWithCount(in.count())).toList());
+            }
+            for (SizedFluidIngredient in : r.fluidIngredients()) {
+                if (at >= FactoryRecipeLook.SLOTS)
+                    break;
+                slot(builder, RecipeIngredientRole.INPUT, FactoryRecipeLook.INPUT_X, at++)
+                        .setFluidRenderer(in.amount(), false, 16, 16)
+                        .addIngredients(NeoForgeTypes.FLUID_STACK, Arrays.asList(in.getFluids()));
+            }
+            for (var catalyst : r.catalysts()) {
+                if (at >= FactoryRecipeLook.SLOTS)
+                    break;
+                slot(builder, RecipeIngredientRole.CATALYST, FactoryRecipeLook.INPUT_X, at++)
+                        .setOverlay(kept, 0, 0)
+                        .addItemStacks(Arrays.asList(catalyst.getItems()))
+                        .addRichTooltipCallback((view, tooltip) ->
+                                tooltip.add(Component.translatable("gui.ae2_gvt.factory.jei.kept")));
             }
             // paid from the network and shown as text: U on them still finds the recipe
             if (r.gravitons() > 0)
                 builder.addInvisibleIngredients(RecipeIngredientRole.INPUT).addItemStack(new ItemStack(Gravitons.GRAVITON.get()));
             if (r.antigravitons() > 0)
                 builder.addInvisibleIngredients(RecipeIngredientRole.INPUT).addItemStack(new ItemStack(Gravitons.ANTIGRAVITON.get()));
-            List<ItemStack> results = r.results();
-            for (int i = 0; i < results.size() && i < 3 * ROWS; i++)
-                builder.addSlot(RecipeIngredientRole.OUTPUT, OUT_X + 1 + (i % 3) * SLOT, 1 + (i / 3) * SLOT)
-                        .setStandardSlotBackground()
+            int out = 0;
+            for (ItemStack result : r.results()) {
+                if (out >= FactoryRecipeLook.SLOTS)
+                    break;
+                slot(builder, RecipeIngredientRole.OUTPUT, FactoryRecipeLook.OUTPUT_X, out++)
                         .setCustomRenderer(VanillaTypes.ITEM_STACK, CountedItemRenderer.INSTANCE)
-                        .addItemStacks(List.of(results.get(i)));
+                        .addItemStacks(List.of(result));
+            }
+            for (FluidStack result : r.fluidResults()) {
+                if (out >= FactoryRecipeLook.SLOTS)
+                    break;
+                slot(builder, RecipeIngredientRole.OUTPUT, FactoryRecipeLook.OUTPUT_X, out++)
+                        .setFluidRenderer(result.getAmount(), false, 16, 16)
+                        .addIngredient(NeoForgeTypes.FLUID_STACK, result);
+            }
         }
 
         @Override
         public void draw(RecipeHolder<GravityProcessingRecipe> holder, IRecipeSlotsView slots, GuiGraphics g, double mouseX, double mouseY) {
-            arrow.draw(g, ARROW_X, (ROWS * SLOT - 17) / 2);
-            GravityProcessingRecipe r = holder.value();
-            Component info = Component.translatable("gui.ae2_gvt.factory.jei.info",
-                    String.format("%.1f", r.time() / 20.0), RecipeNumbers.compact(r.energy()));
-            RecipeNumbers.drawLine(g, info, 0, ROWS * SLOT + 3, WIDTH, 0xFF404040);
-        // gravitons / anti-gravitons taken from the network when it finishes
-        MutableComponent cost = Component.empty();
-        if (r.gravitons() > 0)
-            cost.append(Component.translatable("item.ae2_gvt.graviton")).append(" " + RecipeNumbers.compact(r.gravitons()));
-        if (r.antigravitons() > 0)
-            cost.append(r.gravitons() > 0 ? "・" : "").append(Component.translatable("item.ae2_gvt.antigraviton"))
-                    .append(" " + RecipeNumbers.compact(r.antigravitons()));
-        RecipeNumbers.drawLine(g, cost, 0, ROWS * SLOT + 13, WIDTH, 0xFF404040);
+            FactoryRecipeLook.draw(g, holder.value());
+        }
+
+        @Override
+        public void getTooltip(ITooltipBuilder tooltip, RecipeHolder<GravityProcessingRecipe> holder, IRecipeSlotsView slots,
+                               double mouseX, double mouseY) {
+            tooltip.addAll(FactoryRecipeLook.tooltip(holder.value(), mouseX, mouseY));
         }
     }
 }

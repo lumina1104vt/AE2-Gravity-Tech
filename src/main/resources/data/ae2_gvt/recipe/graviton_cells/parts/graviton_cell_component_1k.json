@@ -6,7 +6,7 @@
       "item": "ae2_gvt:gravity_dust"
     },
     "b": {
-      "item": "ae2_gvt:gravity_crystal"
+      "tag": "ae2_gvt:gravity_crystals"
     },
     "c": {
       "item": "ae2_gvt:gravity_processor"

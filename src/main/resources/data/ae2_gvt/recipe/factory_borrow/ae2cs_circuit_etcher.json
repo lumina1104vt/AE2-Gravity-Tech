@@ -1,0 +1,21 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "ae2cs"
+    }
+  ],
+  "type": "ae2_gvt:factory_borrow",
+  "from": "ae2cs:circuit_etcher_recipe_serializer",
+  "items": [
+    "input_a",
+    "input_b",
+    "input_c"
+  ],
+  "outputs": [
+    "result"
+  ],
+  "energy_field": "energy_cost",
+  "energy_scale": 2,
+  "time": 100
+}

@@ -1,0 +1,20 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "ae2_gvt:item/paradox_growth_seed_0"
+  },
+  "overrides": [
+    {
+      "model": "ae2_gvt:item/paradox_growth_seed_1",
+      "predicate": {
+        "ae2cs:age": 0.333
+      }
+    },
+    {
+      "model": "ae2_gvt:item/paradox_growth_seed_2",
+      "predicate": {
+        "ae2cs:age": 0.666
+      }
+    }
+  ]
+}

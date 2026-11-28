@@ -1,0 +1,23 @@
+{
+  "type": "ae2_gvt:factory_borrow",
+  "from": "ae2:inscriber",
+  "when": {
+    "mode": "press"
+  },
+  "alternatives": true,
+  "items": [
+    "ingredients.middle"
+  ],
+  "outputs": [
+    "result"
+  ],
+  "energy": 2000,
+  "time": 100,
+  "unless": [
+    "ingredients.top",
+    "ingredients.bottom"
+  ],
+  "needs": [
+    "ae2:inscriber"
+  ]
+}

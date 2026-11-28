@@ -8,7 +8,7 @@
   "type": "mekanism:crushing",
   "input": {
     "count": 1,
-    "item": "ae2_gvt:gravity_crystal"
+    "tag": "ae2_gvt:gravity_crystals"
   },
   "output": {
     "count": 1,

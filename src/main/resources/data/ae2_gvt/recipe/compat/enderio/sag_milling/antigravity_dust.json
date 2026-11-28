@@ -9,7 +9,7 @@
   "bonus": "none",
   "energy": 2400,
   "input": {
-    "item": "ae2_gvt:antigravity_crystal"
+    "tag": "ae2_gvt:antigravity_crystals"
   },
   "outputs": [
     {

@@ -1,0 +1,32 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "data_energistics"
+    }
+  ],
+  "type": "ae2_gvt:factory_borrow",
+  "from": "data_energistics:data_charger",
+  "alternatives": true,
+  "items": [
+    "ingredient"
+  ],
+  "needs": [
+    "data_energistics:data_charger"
+  ],
+  "outputs": [
+    "result"
+  ],
+  "energy_field": "power",
+  "energy_scale": 2,
+  "network": [
+    {
+      "key": {
+        "#t": "data_energistics:digitalization",
+        "resource": "data_energistics:data_flow"
+      },
+      "amount_field": "data_flow"
+    }
+  ],
+  "time": 100
+}

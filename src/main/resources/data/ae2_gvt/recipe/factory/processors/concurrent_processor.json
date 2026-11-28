@@ -1,0 +1,36 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:mod_loaded",
+      "modid": "extendedae"
+    }
+  ],
+  "type": "ae2_gvt:gravity_processing",
+  "ingredients": [
+    {
+      "tag": "c:gems/entro",
+      "count": 64
+    },
+    {
+      "tag": "c:dusts/redstone",
+      "count": 64
+    },
+    {
+      "tag": "c:silicon",
+      "count": 64
+    },
+    {
+      "item": "ae2:singularity",
+      "count": 64
+    }
+  ],
+  "results": [
+    {
+      "id": "extendedae:concurrent_processor",
+      "count": 128
+    }
+  ],
+  "time": 20,
+  "energy": 20000,
+  "gravitons": 16
+}

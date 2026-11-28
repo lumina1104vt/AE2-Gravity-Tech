@@ -101,6 +101,8 @@ public class AE2GravityTech {
                 output.accept(Items.CHIPPED_BUDDING_PARADOX);
                 output.accept(Items.DAMAGED_BUDDING_PARADOX);
                 output.accept(Items.PARADOX_CRYSTAL_SEED);
+                if (com.lumina.ae2_gvt.compat.CrystalScience.loaded())
+                    com.lumina.ae2_gvt.compat.CrystalScience.items().forEach(item -> output.accept(item.get()));
                 output.accept(Items.CHAOS_MATTER);
                 output.accept(com.lumina.ae2_gvt.hole.GravityHole.BLACK_HOLE_ITEM);
                 output.accept(com.lumina.ae2_gvt.hole.GravityHole.WHITE_HOLE_ITEM);
@@ -117,6 +119,7 @@ public class AE2GravityTech {
 
         ITEMS.register(modEventBus);
         Items.register(modEventBus);
+        com.lumina.ae2_gvt.compat.CrystalScience.init(modEventBus);
         com.lumina.ae2_gvt.items.DispatchMarker.register();
 
         CREATIVE_MODE_TABS.register(modEventBus);

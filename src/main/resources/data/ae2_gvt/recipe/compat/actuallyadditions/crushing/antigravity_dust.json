@@ -7,7 +7,7 @@
   ],
   "type": "actuallyadditions:crushing",
   "ingredient": {
-    "item": "ae2_gvt:antigravity_crystal"
+    "tag": "ae2_gvt:antigravity_crystals"
   },
   "result": [
     {

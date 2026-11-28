@@ -1,0 +1,16 @@
+{
+  "type": "ae2_gvt:factory_borrow",
+  "from": "ae2:charger",
+  "alternatives": true,
+  "items": [
+    "ingredient"
+  ],
+  "needs": [
+    "ae2:charger"
+  ],
+  "outputs": [
+    "result"
+  ],
+  "energy": 3200,
+  "time": 100
+}
