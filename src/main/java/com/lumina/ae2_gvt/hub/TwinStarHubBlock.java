@@ -3,6 +3,8 @@ package com.lumina.ae2_gvt.hub;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import appeng.api.orientation.IOrientationStrategy;
+import appeng.api.orientation.OrientationStrategies;
 import appeng.block.AEBaseEntityBlock;
 import appeng.menu.MenuOpener;
 import appeng.menu.locator.MenuLocators;
@@ -26,7 +28,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
- * Controller of the hexagram hub ({@link HexagramHub}), in the middle of the domed floor: the
+ * Controller of the Twin-Star Hub ({@link HexagramHub}), at the tip of its lower anchor: the
  * twin-star engine's host ({@link TwinStarHubBlockEntity}). The lib finds and tracks the structure on
  * its own; {@code formed} is never set in the world - it is the look the lib draws while the hub is
  * formed. Right-click: the controller's GUI (units, patterns), and in the chat what is still wrong
@@ -46,6 +48,12 @@ public class TwinStarHubBlock extends AEBaseEntityBlock<TwinStarHubBlockEntity> 
         builder.add(FORMED);
     }
 
+    /** A front with the screen: placed facing the player, turned by AE2's wrench. */
+    @Override
+    public IOrientationStrategy getOrientationStrategy() {
+        return OrientationStrategies.horizontalFacing();
+    }
+
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
         if (!(level instanceof ServerLevel server)) {
@@ -60,13 +68,13 @@ public class TwinStarHubBlock extends AEBaseEntityBlock<TwinStarHubBlockEntity> 
         } else if (!hub.isFormed()) {
             Map<String, Integer> missing = engine.missing(hub);
             String byRole = missing.entrySet().stream()
-                    .map(e -> Component.translatable("message.ae2_gvt.hexagram_hub.role." + e.getKey()).getString() + " " + e.getValue())
+                    .map(e -> HexagramHub.roleName(e.getKey()).getString() + " " + e.getValue())
                     .collect(Collectors.joining(", "));
             player.displayClientMessage(Component.translatable(hub.state() == Instance.State.DAMAGED
                     ? "message.ae2_gvt.hexagram_hub.damaged" : "message.ae2_gvt.hexagram_hub.pending", byRole), false);
             for (Problem p : engine.problems(hub, 3)) {
                 player.displayClientMessage(Component.translatable("message.ae2_gvt.hexagram_hub.problem",
-                        Component.translatable("message.ae2_gvt.hexagram_hub.role." + p.role()), Pos.str(p.pos())), false);
+                        HexagramHub.roleName(p.role()), Pos.str(p.pos())), false);
             }
         }
         return InteractionResult.CONSUME;

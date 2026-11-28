@@ -44,7 +44,7 @@ public class AE2GravityTech {
         com.lumina.ae2_gvt.hub.HubUnits.init();   // registers the hub units with BLOCKS / ITEMS
         com.lumina.ae2_gvt.hub.HubStructureBlocks.init();   // helix / pillar / ring blocks of the hexagram hub
         com.lumina.ae2_gvt.structure.FusionStructure.register();   // the fusion chamber's lumina-multiblock definition
-        com.lumina.ae2_gvt.hub.HexagramHub.register();   // the hexagram hub's lumina-multiblock definition
+        com.lumina.ae2_gvt.hub.HexagramHub.register();   // the Twin-Star Hub's lumina-multiblock definition
         com.lumina.ae2_gvt.elevator.SpaceElevator.register();   // the space elevator: controller block + lumina-multiblock definition
         com.lumina.ae2_gvt.quantum.QuantumController.init();   // quantum controller
         com.lumina.ae2_gvt.graviton.Gravitons.init();   // graviton storage type and cells

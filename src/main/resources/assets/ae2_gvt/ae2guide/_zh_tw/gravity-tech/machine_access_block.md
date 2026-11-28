@@ -1,18 +1,27 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/machines.md
-  title: 機器接入接口（方塊）
+  title: "機器接入接口"
 item_ids:
   - ae2_gvt:machine_access_block
 ---
 
-# 機器接入接口（方塊）
+# 機器接入接口
 
-機器接入接口的方塊版本。它不貼在任何機器上，所有機器都用 <ItemLink id="ae2_gvt:machine_link_tool" /> 從遠端綁定，同維度 64 格內。供應器模式沒有數量上限，ME 接口模式最多 9 台。
+<Row>
+<BlockImage id="ae2_gvt:machine_access_block" scale="4" />
+<RecipesFor id="ae2_gvt:machine_access_block" />
+</Row>
 
-放下後接上 ME 網路（不佔頻道）。右鍵開啟畫面，設定與機器接入接口相同。
+<ItemLink id="ae2_gvt:machine_access_interface" />的方塊版本。它不貼在任何機器上，所有機器都用<ItemLink id="ae2_gvt:machine_link_tool" />從遠端綁定。
 
-## 合成
+## 使用方法
 
-- 合成台（無序）：ME 接口、ME 樣板供應器、無線接收器、重力處理器
-- 與機器接入接口（貼片）可以在合成台上互相換回，一換一
+1. 放下並接上 ME 網路（不佔頻道）。
+2. 用連結器綁定機器，同維度 64 格內。
+3. 右鍵打開畫面，設定方式與機器接入接口相同。
+
+| 模式 | 可綁定的機器數 |
+| :--- | :--- |
+| 供應器 | 沒有上限 |
+| ME 接口 | 最多 9 台 |

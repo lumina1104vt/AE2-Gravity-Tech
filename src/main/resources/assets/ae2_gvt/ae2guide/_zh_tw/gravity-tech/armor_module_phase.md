@@ -1,20 +1,26 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: 穿牆模組
+  title: "穿牆模組"
 item_ids:
   - ae2_gvt:armor_module_phase
 ---
 
 # 穿牆模組
 
-穿牆模組。安裝在護腿上的模組卡。需要的系統元件：推進核心。
+<Row>
+<ItemImage id="ae2_gvt:armor_module_phase" scale="4" />
+<RecipeFor id="ae2_gvt:armor_module_phase" />
+</Row>
 
-## 製作
+## 效果
 
-- 機器：引力加工工廠
-- 材料：
-  - 空白模組 ×1
-  - 推進核心 ×1
-  - `minecraft:ender_eye` ×16
-  - 悖論量子糾纏態奇點 ×4
+飛行時可以穿過方塊。
+
+## 使用方法
+
+裝在**反重力護腿**上：穿著裝甲按 **K**，選那一件，把模組卡放進格子。在同一個畫面可以隨時關閉或拆下。
+
+製作時需要[推進核心](propulsion_core.md)。
+
+小提示：不想穿牆時，在模組畫面把它關掉。

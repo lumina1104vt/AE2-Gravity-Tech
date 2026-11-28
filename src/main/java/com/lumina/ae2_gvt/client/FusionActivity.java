@@ -249,7 +249,9 @@ public final class FusionActivity {
     }
 
     private static void vertex(PoseStack.Pose pose, VertexConsumer vc, Vec3 p, int rgb, float alpha, float layer, float v, float nx, float ny) {
-        vc.vertex(pose.pose(), (float) p.x, (float) p.y, (float) p.z).uv(layer, v).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(LightTexture.FULL_BRIGHT).normal(nx, ny, 0).endVertex();
+        vc.vertex(pose.pose(), (float) p.x, (float) p.y, (float) p.z)
+                .color((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff, Math.round(Math.max(0, Math.min(1, alpha)) * 255))
+                .uv(layer, v).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(LightTexture.FULL_BRIGHT).normal(nx, ny, 0).endVertex();
     }
 
     // ---- easing / random ----

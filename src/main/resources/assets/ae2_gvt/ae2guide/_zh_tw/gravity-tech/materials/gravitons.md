@@ -5,6 +5,18 @@ navigation:
 item_ids:
   - ae2_gvt:graviton
   - ae2_gvt:antigraviton
+  - ae2_gvt:graviton_cell_housing
+  - ae2_gvt:infinite_graviton_storage_cell
+  - ae2_gvt:graviton_storage_cell_1k
+  - ae2_gvt:graviton_storage_cell_4k
+  - ae2_gvt:graviton_storage_cell_16k
+  - ae2_gvt:graviton_storage_cell_64k
+  - ae2_gvt:graviton_storage_cell_256k
+  - ae2_gvt:graviton_cell_component_1k
+  - ae2_gvt:graviton_cell_component_4k
+  - ae2_gvt:graviton_cell_component_16k
+  - ae2_gvt:graviton_cell_component_64k
+  - ae2_gvt:graviton_cell_component_256k
 ---
 
 # 引力子與反引力子
@@ -30,9 +42,11 @@ item_ids:
 - 黑洞、引力水晶簇 → 引力子
 - 白洞、反引力水晶簇 → 反引力子
 
+小提示：水晶芽每成長一階段釋放 16 個，炸掉一個黑洞或白洞釋放 128 個。
+
 ## 儲存
 
-它們在網路中屬於獨立的資源類型，需要專用的引力子儲存元件，每個位元組可以儲存？個引力子（或反引力子）。
+它們在網路中屬於獨立的資源類型，需要專用的引力子儲存元件，每個位元組可以儲存 8 個引力子（或反引力子）。
 
 引力子儲存元件：
 

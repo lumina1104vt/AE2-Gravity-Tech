@@ -17,3 +17,4 @@ Gravity Tech 新增的机器、装甲、元件与模组卡。
 * [黑洞存储盘与白洞能源元件](gravity-tech/storage-and-energy.md)
 * [材料与物品](gravity-tech/materials-index.md)
 * [量子控制器](gravity-tech/quantum-controller.md)
+* [湮灭 TNT](gravity-tech/annihilation.md)

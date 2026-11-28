@@ -1,20 +1,26 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: Portable Workbench Module
+  title: "Portable Workbench Module"
 item_ids:
   - ae2_gvt:armor_module_portable_workbench
 ---
 
 # Portable Workbench Module
 
-Portable Workbench Module. A module card installed on a chestplate. Required system component: Network Core.
+<Row>
+<ItemImage id="ae2_gvt:armor_module_portable_workbench" scale="4" />
+<RecipeFor id="ae2_gvt:armor_module_portable_workbench" />
+</Row>
 
-## Crafting
+## Effect
 
-- Machine: Gravity Processing Factory
-- Materials:
-  - Blank Module ×1
-  - Network Core ×1
-  - `minecraft:crafting_table` ×1
-  - `minecraft:smithing_table` ×1
+Press **B** to open a 3×3 crafting table anywhere.
+
+## How to use
+
+Install it in the **Anti-gravity Chestplate**: wear the armor, press **K**, choose the piece and put the card in the slot. It can be switched off or taken out there at any time.
+
+Needs the [Network Core](network_core.md) to craft.
+
+Tip: The key can be changed in the controls settings.

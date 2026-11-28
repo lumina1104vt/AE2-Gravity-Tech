@@ -4,7 +4,7 @@
 
 A gravity-themed addon for [Applied Energistics 2](https://github.com/AppliedEnergistics/Applied-Energistics-2): black and white holes, a gravity processing factory, a fusion generator, upgradeable anti-gravity armor, and a twin-star crafting hub.
 
-This branch is for **Minecraft 1.20.1 (Forge)**, version **20.0.0.1-beta** (beta). Mod id: `ae2_gvt`.
+This branch is for **Minecraft 1.20.1 (Forge)**, version **20.0.0.3-beta** (beta). Mod id: `ae2_gvt`.
 
 ## Features
 
@@ -61,7 +61,7 @@ All Rights Reserved, see [`LICENSE`](LICENSE). `TEMPLATE_LICENSE.txt` covers onl
 
 以重力為主題的 [Applied Energistics 2](https://github.com/AppliedEnergistics/Applied-Energistics-2) 附屬模組：黑白洞、引力加工工廠、核融合發生器、可升級的反重力裝甲，以及雙星合成中樞。
 
-這個分支適用 **Minecraft 1.20.1（Forge）**，版本 **20.0.0.1-beta**（測試版）。模組 ID：`ae2_gvt`。
+這個分支適用 **Minecraft 1.20.1（Forge）**，版本 **20.0.0.3-beta**（測試版）。模組 ID：`ae2_gvt`。
 
 ### 內容
 

@@ -50,6 +50,8 @@ public final class HubStructureBlocks {
     public static final DeferredBlock<Block> PARADOX_JOINED = look("paradox_block_joined");
     /** Likewise for the floor's and ceiling's machine frames: joined into one surface. */
     public static final DeferredBlock<Block> FRAME_JOINED = look("machine_frame_joined");
+    /** The structure frame joined, for the formed black / white hole core (client StructureFrameModel). */
+    public static final DeferredBlock<Block> STRUCTURE_FRAME_JOINED = look("structure_frame_joined");
 
     private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES =
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, AE2GravityTech.MODID);

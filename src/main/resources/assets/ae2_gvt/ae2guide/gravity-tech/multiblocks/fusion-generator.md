@@ -2,6 +2,8 @@
 navigation:
   parent: ae2_gvt:gravity-tech/multiblocks-index.md
   title: Fusion Generator
+item_ids:
+  - ae2_gvt:fusion_controller
 ---
 
 # Fusion Generator

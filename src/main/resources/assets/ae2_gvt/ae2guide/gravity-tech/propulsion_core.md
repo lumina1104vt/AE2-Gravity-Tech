@@ -1,18 +1,26 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/components.md
-  title: Propulsion Core
+  title: "Propulsion Core"
 item_ids:
   - ae2_gvt:propulsion_core
 ---
 
 # Propulsion Core
 
-The core component of the movement system. It goes into the crafting of movement module cards.
+<Row>
+<ItemImage id="ae2_gvt:propulsion_core" scale="4" />
+<RecipeFor id="ae2_gvt:propulsion_core" />
+</Row>
 
-## Crafting
+## How to use
 
-- Machine: Gravity Processing Factory
-- Materials:
-  - Anti-gravity Alloy Ingot ×32
-  - Anti-gravity Processor ×4
+The system part of the movement module cards:
+
+* [Movement Speed Module](armor_module_move_speed.md)
+* [Jump Height Module](armor_module_jump_height.md)
+* [Step Assist Module](armor_module_step_assist.md)
+* [Swim Speed Module](armor_module_swim_speed.md)
+* [Flight Anti-Drift Module](armor_module_flight_drift.md)
+* [Phase Module](armor_module_phase.md)
+* [Dash Module](armor_module_dash.md)

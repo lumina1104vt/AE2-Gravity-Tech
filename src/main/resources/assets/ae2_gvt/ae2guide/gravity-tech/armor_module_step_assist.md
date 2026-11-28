@@ -1,20 +1,26 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: Step Assist Module
+  title: "Step Assist Module"
 item_ids:
   - ae2_gvt:armor_module_step_assist
 ---
 
 # Step Assist Module
 
-Step Assist Module. A module card installed on boots. Required system component: Propulsion Core.
+<Row>
+<ItemImage id="ae2_gvt:armor_module_step_assist" scale="4" />
+<RecipeFor id="ae2_gvt:armor_module_step_assist" />
+</Row>
 
-## Crafting
+## Effect
 
-- Machine: Gravity Processing Factory
-- Materials:
-  - Blank Module ×1
-  - Propulsion Core ×1
-  - `minecraft:sticky_piston` ×2
-  - `minecraft:stone_stairs` ×2
+Walk straight up a one block high step without jumping.
+
+## How to use
+
+Install it in the **Anti-gravity Boots**: wear the armor, press **K**, choose the piece and put the card in the slot. It can be switched off or taken out there at any time.
+
+Needs the [Propulsion Core](propulsion_core.md) to craft.
+
+Tip: The number can be changed in `config/ae2_gvt-common.toml`.

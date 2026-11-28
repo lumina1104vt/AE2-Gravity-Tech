@@ -1,20 +1,26 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: Magnet Module
+  title: "Magnet Module"
 item_ids:
   - ae2_gvt:armor_module_magnet
 ---
 
 # Magnet Module
 
-Magnet Module. A module card installed on a chestplate. Required system component: Sensor Core.
+<Row>
+<ItemImage id="ae2_gvt:armor_module_magnet" scale="4" />
+<RecipeFor id="ae2_gvt:armor_module_magnet" />
+</Row>
 
-## Crafting
+## Effect
 
-- Machine: Gravity Processing Factory
-- Materials:
-  - Blank Module ×1
-  - Sensor Core ×1
-  - `minecraft:lodestone` ×1
-  - Anti-gravity Circuit ×16
+Pulls dropped items and experience within 8 blocks to you.
+
+## How to use
+
+Install it in the **Anti-gravity Chestplate**: wear the armor, press **K**, choose the piece and put the card in the slot. It can be switched off or taken out there at any time.
+
+Needs the [Sensor Core](sensor_core.md) to craft.
+
+Tip: Hold sneak to leave them where they are.

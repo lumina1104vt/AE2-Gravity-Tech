@@ -9,7 +9,7 @@ public class ClientConfig {
     /** 0 low, 1 medium, 2 high. */
     public static final ForgeConfigSpec.IntValue HUB_DETAIL = BUILDER
             .comment("How detailed the inside of the Twin-Star Hub is drawn: 0 low, 1 medium, 2 high. A computer that is short of memory or slow",
-                    "when looking at the hub should use 0; it is the sphere's mesh and the tails of the two holes that get coarser.")
+                    "when looking at the hub should use 0; the two holes get coarser, and 0 also leaves out the data arcs.")
             .defineInRange("hubDetail", 2, 0, 2);
 
     /** 0 low, 1 medium, 2 high. */

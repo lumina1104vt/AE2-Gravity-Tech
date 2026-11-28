@@ -1,19 +1,22 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/components.md
-  title: Network Core
+  title: "Network Core"
 item_ids:
   - ae2_gvt:network_core
 ---
 
 # Network Core
 
-The core component of the logistics system. It goes into the crafting of logistics module cards.
+<Row>
+<ItemImage id="ae2_gvt:network_core" scale="4" />
+<RecipeFor id="ae2_gvt:network_core" />
+</Row>
 
-## Crafting
+## How to use
 
-- Machine: Gravity Processing Factory
-- Materials:
-  - Singular White Hole Computing Unit ×4
-  - `ae2:engineering_processor` ×16
-  - `minecraft:ender_chest` ×1
+The system part of the ME network module cards:
+
+* [Auto Restock Module](armor_module_auto_stock.md)
+* [Portable Workbench Module](armor_module_portable_workbench.md)
+* [Recharging Module](armor_module_recharge.md)
