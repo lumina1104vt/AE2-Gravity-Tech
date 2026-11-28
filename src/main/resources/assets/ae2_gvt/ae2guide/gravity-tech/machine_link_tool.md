@@ -1,31 +1,31 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/machines.md
-  title: Machine Linker
+  title: "Machine Linker"
 item_ids:
   - ae2_gvt:machine_link_tool
 ---
 
 # Machine Linker
 
-Lets a Machine Access Interface (the one on a cable, or the single block <ItemLink id="ae2_gvt:machine_access_block" />) stand for a machine from a distance.
+<Row>
+<ItemImage id="ae2_gvt:machine_link_tool" scale="4" />
+<RecipeFor id="ae2_gvt:machine_link_tool" />
+</Row>
+
+Lets a machine access interface (the cable part or the <ItemLink id="ae2_gvt:machine_access_block" />) stand for machines at a distance.
 
 ## How to use
 
-1. Sneak and right-click a Machine Access Interface to select it.
-2. Right-click a machine to link the face you clicked to this interface; right-click the same one again to unlink. An interface can link many machines (no limit in provider mode, 9 in ME interface mode).
-3. Sneak and right-click the air to cancel the selection.
+| Action | Result |
+| :--- | :--- |
+| Sneak + right click an access interface | Select it |
+| Right click a machine | Link the face you clicked; right click the same machine again to unlink |
+| Ctrl + right click a machine | Link every identical machine around it at once |
+| Sneak + right click the air | Clear the selection |
 
-**Ctrl + right-click a machine**: links every identical machine around it (the same block) at once. For example, with a row of 12 grinders, Ctrl + right-click one of them to link all 12. By default the range is a sphere of radius 16 blocks around the machine you clicked, at most 64 machines at a time; both numbers can be changed in the config (`linkAllRadius`, `linkAllMax`). Machines that are already linked are skipped, and you are told how many were left out. Ctrl + right-click only adds, it never unlinks; a normal right-click still links just one machine. The limit of 9 machines in ME interface mode still applies.
+Ctrl linking covers a radius of 16 blocks around the one clicked, 64 machines at most (`linkAllRadius` and `linkAllMax` in the config). It only adds links. ME interface mode still stops at 9.
 
-The linker's right-click has priority over the machine's own, so clicking a machine that has a screen only links it. While you hold it, the selected interface glows, the faces of the linked machines glow too, and thin lines connect them.
+The linker wins over a machine's own right click, so machines with screens are only linked. While held, the selected interface and the linked faces glow, joined by thin lines.
 
-The machine must be in the same dimension, within 64 blocks, with its chunk loaded. The interface's redstone pulse uses no block: the machine receives a signal as if from a neighbour, so no free space is needed around the machine.
-
-## Crafting
-
-- Machine: Gravity Processing Factory
-- Materials:
-  - Memory Card ×1
-  - Wireless Receiver ×1
-  - Anti-gravity Circuit Board ×2
+Tip: machines must be in the same dimension, within 64 blocks and loaded. The redstone pulse needs no block: the machine simply receives a signal, so leave no space for it.

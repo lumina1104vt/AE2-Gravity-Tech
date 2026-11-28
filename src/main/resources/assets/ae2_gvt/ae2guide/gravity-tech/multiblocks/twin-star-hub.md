@@ -11,7 +11,7 @@ item_ids:
 
 # Twin-Star Hub
 
-A multiblock structure with a black hole and a white hole at its core. It not only crafts, it also acts as a crafting CPU. The whole structure is **63 × 71 × 60**, so mind the space around it when placing, to make sure the Twin-Star Hub can form.
+A multiblock structure with a black hole and a white hole at its core. It not only crafts, it also acts as a crafting CPU. The whole structure is **235 × 235 and 121 tall**, so mind the space around it when placing, to make sure the Twin-Star Hub can form.
 
 <Row>
 <BlockImage id="ae2_gvt:twin_star_hub" scale="4" />
@@ -20,7 +20,7 @@ A multiblock structure with a black hole and a white hole at its core. It not on
 
 ## Using the twin stars
 
-To use the Twin-Star Hub, first put a Structure Port in the structure (on any machine frame of the lowest layer of the hub) and connect it to the ME network. Second, put a black hole unit and a white hole unit into the Twin-Star Hub, so that it can craft and act as a crafting CPU. Finally, put patterns into it and it works as normal.
+To use the Twin-Star Hub, first put a Structure Port in the structure (in place of any Hub Pillar of the lower tower, above the controller) and connect it to the ME network. Second, put a black hole unit and a white hole unit into the Twin-Star Hub, so that it can craft and act as a crafting CPU. Finally, put patterns into it and it works as normal.
 
 What the two units provide:
 

@@ -1,20 +1,26 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: Auto Feeding Module
+  title: "Auto Feeding Module"
 item_ids:
   - ae2_gvt:armor_module_auto_feed
 ---
 
 # Auto Feeding Module
 
-Auto Feeding Module. A module card installed on a helmet. Required system component: Life Core.
+<Row>
+<ItemImage id="ae2_gvt:armor_module_auto_feed" scale="4" />
+<RecipeFor id="ae2_gvt:armor_module_auto_feed" />
+</Row>
 
-## Crafting
+## Effect
 
-- Machine: Gravity Processing Factory
-- Materials:
-  - Blank Module ×1
-  - Life Core ×1
-  - `minecraft:bread` ×64
-  - `minecraft:cooked_beef` ×32
+When hunger drops to 14 (7 drumsticks) or less, eats food from your inventory.
+
+## How to use
+
+Install it in the **Anti-gravity Helmet**: wear the armor, press **K**, choose the piece and put the card in the slot. It can be switched off or taken out there at any time.
+
+Needs the [Life Core](life_core.md) to craft.
+
+Tip: It eats the first food it finds, so keep food you don't want eaten elsewhere.

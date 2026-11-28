@@ -3,6 +3,8 @@ navigation:
   parent: ae2_gvt:index.md
   title: Quantum Controller
   position: 4
+item_ids:
+  - ae2_gvt:quantum_controller
 ---
 
 # Quantum Controller

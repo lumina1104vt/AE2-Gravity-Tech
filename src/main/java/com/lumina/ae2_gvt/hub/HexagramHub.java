@@ -1,11 +1,12 @@
 package com.lumina.ae2_gvt.hub;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import com.lumina.ae2_gvt.AE2GravityTech;
-import com.lumina.ae2_gvt.blocks.Blocks;
 import com.lumina.lmb.api.BlockMatchers;
 import com.lumina.lmb.api.FormedLooks;
 import com.lumina.lmb.api.Multiblocks;
@@ -19,109 +20,94 @@ import com.lumina.lmb.core.Role;
 import com.lumina.lmb.core.RoleField;
 import com.lumina.lmb.core.Shape;
 import com.lumina.lmb.core.StructureListener;
-import com.lumina.lmb.core.Transform;
 
+import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.SlabType;
 
 /**
- * The hexagram Twin-Star Hub (design 2026-10-27, tools/hub_structure_block_options.gif and the
- * hub*.png concept sheets), described for the lumina-multiblock lib. About 63×71 wide and 61 tall:
+ * The Twin-Star Hub for the lumina-multiblock lib: since 2026-11-27 the black / white hole computing core
+ * (shape and materials in {@link HubShape}, 235 × 121 × 235), which replaced the hexagram of 2026-10-27.
+ * The id and the class name stay the hexagram's, so saves and the fusion controller's port kind carry on.
  * <ul>
- *   <li>floor: a hexagram in a circle, one block thick, rising 6 towards the centre where the
- *       controller sits, as the apex itself. Star outline and centre hexagon: machine frame; the circle: machine
- *       frame or hub ports (where ME cables come in). Tips of the
- *       "black" triangle (N, SE, SW) and the gap half next to them: gravity crystal block; tips of
- *       the "white" triangle and the gap half next to them: anti-gravity crystal block; the seam
- *       through each gap: paradox crystal block;</li>
- *   <li>ceiling: the same pattern, sagging 6 towards the centre;</li>
- *   <li>a flat layer of the same pattern at the very bottom and the very top, closing the space under
- *       the dome and over the ceiling (that space itself stays "don't care");</li>
- *   <li>six hollow cylinders (5 across) of hub pillars, centred on the block nearest each star tip, floor to ceiling,
- *       capped at the bottom (rim height) and the top (ceiling rim height);</li>
- *   <li>a black and a white helix strand (radius 19.5, 1.5 turns, 3 thick) round the sphere;</li>
- *   <li>three perpendicular 3-wide rings of hub ring blocks (radius 16), floating, 7 clear of floor and ceiling;</li>
- *   <li>the sphere (radius 15) must stay empty: it is drawn, not built.</li>
+ *   <li>controller: the tip of the lower anchor; its screen faces out and the structure turns with it;</li>
+ *   <li>slabs count only in their own half: a lower slab where an upper one belongs (or a double slab) is
+ *       wrong;</li>
+ *   <li>ME cables come in through hub ports, which may stand in for any pillar of the lower anchor (at least
+ *       one);</li>
+ *   <li>the black and white holes and their light are drawn by the client, not built.</li>
  * </ul>
- * Everything else in the box (under the floor, inside the cylinders, the gaps) is "don't care".
- * It has one orientation only, so where the hub goes is never a guess; mirrors are not allowed either (the helix has a hand).
  */
 public final class HexagramHub {
     public static final String ID = AE2GravityTech.MODID + ":hexagram_hub";
     /** What the lib calls the hub ports among the members (their block id): the controller links to these. */
     public static final String PORT_KIND = AE2GravityTech.MODID + ":hub_port";
 
-    // ---- geometry, in blocks, relative to the star's centre (x east, z south) ----
-    private static final double STAR = 29.93;           // tip radius (29.93, not 30: keeps black and white the same size)
-    private static final double RING_IN = 30.0, RING_OUT = 31.6, SEAM = 0.9;
-    private static final double BASE = 31.0;            // floor rim radius for the dome
-    private static final int DOME = 6;                  // floor rise / ceiling sag at the centre
-    private static final int SPHERE = 15, RING = SPHERE + 1, GAP = 7;
-    private static final int FLOOR_TOP = DOME;          // floor surface height at the centre
-    private static final int CONTROLLER_LEVEL = FLOOR_TOP;     // the controller is the floor's apex (lowered a block, user 2026-10-28)
-    private static final int CENTRE = FLOOR_TOP + 1 + GAP + RING;          // 30
-    private static final int CEILING_RIM = CENTRE + RING + 1 + GAP + DOME; // 60
-    private static final double CYLINDER = 2, HELIX = 19.5, HELIX_TURNS = 1.5, HELIX_HALF = 1.3;
-    private static final double[] TIP_ANGLES = {-90, 30, 150, 90, 210, 330};
-    private static final int HALF_X = 31, HALF_Z = 35;   // box half-sizes (cylinders on the N/S tips stick out past the circle)
+    /** Pillar cells up to this height (the lower anchor) may hold a port instead. */
+    private static final int PORT_TOP = HubShape.CY - 32;
+    private static final String CONTROLLER = "controller", PORT_ROLE = "rim";
+    /** Ends the name of a role that wants a slab in one half. */
+    private static final String UPPER = "#top", LOWER = "#bottom";
+
+    /** Role name → the block it is named after in messages. */
+    private static final Map<String, Supplier<Block>> ROLE_BLOCKS = new HashMap<>();
 
     private HexagramHub() {
     }
 
-    /** Called from mod construction: registers the definition and the controller's formed look. */
+    /** Called from mod construction: registers the definition, the formed looks and the commands. */
     public static void register() {
-        Role<BlockState> controller = Role.of("controller", block(HubStructureBlocks.CONTROLLER_BLOCK));
-        Role<BlockState> frame = Role.of("frame", block(Blocks.MACHINE_FRAME));
-        // the outer circle: machine frame, or a hub port where an ME cable comes in
-        Role<BlockState> rim = Role.of("rim", block(Blocks.MACHINE_FRAME, () -> HubStructureBlocks.PORT_BLOCK.get()));
-        RoleBlocks.prefer(rim, Blocks.MACHINE_FRAME);
-        Role<BlockState> gravity = Role.of("gravity_crystal", block(() -> AE2GravityTech.GRAVITY.block().get().getBlock()));
-        Role<BlockState> antigravity = Role.of("antigravity_crystal", block(() -> AE2GravityTech.ANTIGRAVITY.block().get().getBlock()));
-        Role<BlockState> paradox = Role.of("paradox_crystal", block(() -> AE2GravityTech.PARADOX.block().get().getBlock()));
-        Role<BlockState> pillar = Role.of("pillar", block(() -> HubStructureBlocks.PILLAR.get().getBlock()));
-        Role<BlockState> ring = Role.of("ring", block(() -> HubStructureBlocks.RING.get().getBlock()));
-        Role<BlockState> helixBlack = Role.of("helix_black", block(() -> HubStructureBlocks.HELIX_BLACK.get().getBlock()));
-        Role<BlockState> helixWhite = Role.of("helix_white", block(() -> HubStructureBlocks.HELIX_WHITE.get().getBlock()));
-        Role<BlockState> sphere = Role.of("sphere", BlockMatchers.air());
+        @SuppressWarnings("unchecked")
+        Role<BlockState>[] roles = new Role[HubShape.BLOCK_IDS.length];
+        Map<String, Role<BlockState>> byName = new HashMap<>();   // one role per block
+        for (int i = 1; i < roles.length; i++) {
+            Supplier<Block> block = block(i);
+            String name = i == HubShape.CTRL ? CONTROLLER : HubShape.BLOCK_IDS[i];
+            ROLE_BLOCKS.put(name, block);
+            if (isSlab(i)) {
+                roles[i] = slabRole(byName, block, name, SlabType.BOTTOM);
+                continue;
+            }
+            roles[i] = byName.computeIfAbsent(name, n -> {
+                Role<BlockState> role = Role.of(n, matcher(block));
+                if (!n.equals(CONTROLLER)) RoleBlocks.prefer(role, block);
+                return role;
+            });
+        }
+        Role<BlockState> portPlace = Role.of(PORT_ROLE, matcher(() -> HubStructureBlocks.PILLAR.get().getBlock(),
+                () -> HubStructureBlocks.PORT_BLOCK.get()));
+        RoleBlocks.prefer(portPlace, () -> HubStructureBlocks.PILLAR.get().getBlock());
+        ROLE_BLOCKS.put(PORT_ROLE, () -> HubStructureBlocks.PILLAR.get().getBlock());
 
-        java.util.Map<Cell, Role<BlockState>> roles = new java.util.EnumMap<>(Cell.class);
-        roles.put(Cell.CONTROLLER, controller);
-        roles.put(Cell.FRAME, frame);
-        roles.put(Cell.RIM, rim);
-        roles.put(Cell.GRAVITY, gravity);
-        roles.put(Cell.ANTIGRAVITY, antigravity);
-        roles.put(Cell.PARADOX, paradox);
-        roles.put(Cell.PILLAR, pillar);
-        roles.put(Cell.RING, ring);
-        roles.put(Cell.HELIX_BLACK, helixBlack);
-        roles.put(Cell.HELIX_WHITE, helixWhite);
-        roles.put(Cell.SPHERE, sphere);
-        RoleField.Builder<BlockState> b = RoleField.builder(2 * HALF_X + 1, CEILING_RIM + 1, 2 * HALF_Z + 1);
-        for (int x = -HALF_X; x <= HALF_X; x++) {
-            for (int z = -HALF_Z; z <= HALF_Z; z++) {
-                for (int y = 0; y <= CEILING_RIM; y++) {
-                    Cell cell = cell(x, y, z);
-                    b.set(x + HALF_X, y, z + HALF_Z, cell == null || cell == Cell.CLEAR ? null : roles.get(cell));
+        int r = HubShape.R;
+        RoleField.Builder<BlockState> b = RoleField.builder(HubShape.W, HubShape.H, HubShape.W);
+        for (int y = 0; y < HubShape.H; y++) {
+            for (int z = -r; z <= r; z++) {
+                for (int x = -r; x <= r; x++) {
+                    int cell = HubShape.cell(x, y, z);
+                    if (cell == 0) continue;
+                    int i = cell & HubShape.ROLE_MASK;
+                    Role<BlockState> role = isPortPlace(cell, y) ? portPlace
+                            : isSlab(i) && (cell & HubShape.TOP) != 0 ? slabRole(byName, block(i), HubShape.BLOCK_IDS[i], SlabType.TOP)
+                            : roles[i];
+                    b.set(x + r, y, z + r, role);
                 }
             }
         }
-        b.anchor(HALF_X, CONTROLLER_LEVEL, HALF_Z);
-        RoleField<BlockState> field = b.build();
+        b.anchor(r, 0, r);
 
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(HexagramHubCommands::register);   // /gvt hub build
-        // crystals: drawn joined to their neighbours of the same kind (the world keeps the real blocks)
-        FormedLooks.set(ID, "gravity_crystal", s -> HubStructureBlocks.GRAVITY_JOINED.get().defaultBlockState());
-        FormedLooks.set(ID, "antigravity_crystal", s -> HubStructureBlocks.ANTIGRAVITY_JOINED.get().defaultBlockState());
-        FormedLooks.set(ID, "paradox_crystal", s -> HubStructureBlocks.PARADOX_JOINED.get().defaultBlockState());
-        FormedLooks.set(ID, "frame", s -> HubStructureBlocks.FRAME_JOINED.get().defaultBlockState());
-        FormedLooks.set(ID, "rim", s -> s.is(HubStructureBlocks.PORT_BLOCK.get()) ? s : HubStructureBlocks.FRAME_JOINED.get().defaultBlockState());
-        FormedLooks.set(ID, "ring", s -> s.hasProperty(HubRingBlock.FORMED) ? s.setValue(HubRingBlock.FORMED, true) : s);
-        FormedLooks.set(ID, "helix_black", s -> s.hasProperty(HubLookBlock.FORMED) ? s.setValue(HubLookBlock.FORMED, true) : s);
-        FormedLooks.set(ID, "helix_white", s -> s.hasProperty(HubLookBlock.FORMED) ? s.setValue(HubLookBlock.FORMED, true) : s);
-        FormedLooks.set(ID, "pillar", s -> s.hasProperty(HubPillarBlock.FORMED) ? s.setValue(HubPillarBlock.FORMED, true) : s);
-        FormedLooks.set(ID, "controller", s -> s.hasProperty(TwinStarHubBlock.FORMED) ? s.setValue(TwinStarHubBlock.FORMED, true) : s);
-        Multiblocks.register(Definition.builder(ID, Shape.fixed(field))
-                .transforms(List.of(Transform.IDENTITY))     // one way only: the controller faces up, star tips north and south
+        formedLooks();
+        Multiblocks.register(Definition.builder(ID, Shape.fixed(b.build()))
+                // the unturned controller faces south (+z); the lib turns the structure with it
+                .facing(new int[]{0, 0, 1}, HexagramHub::frontOf)
                 .hatchKinds(PORT_KIND)
                 .limit(PORT_KIND, 1, Integer.MAX_VALUE)
                 .listener(new StructureListener<>() {
@@ -149,8 +135,84 @@ public final class HexagramHub {
                 .build());
     }
 
+    private static boolean isSlab(int role) {
+        return role != HubShape.CTRL && HubShape.BLOCK_IDS[role].endsWith("_slab");
+    }
+
+    /** The role "this slab in this half": one per block and half. */
+    private static Role<BlockState> slabRole(Map<String, Role<BlockState>> byName, Supplier<Block> block, String id, SlabType half) {
+        String name = id + (half == SlabType.TOP ? UPPER : LOWER);
+        return byName.computeIfAbsent(name, n -> {
+            ROLE_BLOCKS.put(n, block);
+            Role<BlockState> role = Role.of(n, s -> s.is(block.get()) && s.getValue(SlabBlock.TYPE) == half
+                    ? Match.of(BlockMatchers.id(s)) : null);
+            RoleBlocks.place(role, () -> block.get().defaultBlockState().setValue(SlabBlock.TYPE, half));
+            return role;
+        });
+    }
+
+    static boolean isPortPlace(int cell, int y) {
+        return y <= PORT_TOP && HubShape.BLOCK_IDS[cell & HubShape.ROLE_MASK] != null
+                && HubShape.BLOCK_IDS[cell & HubShape.ROLE_MASK].equals("ae2_gvt:hub_pillar");
+    }
+
+    /** The state /gvt hub build places for a cell of {@link HubShape} (not the controller). */
+    static BlockState stateOf(int cell) {
+        BlockState state = block(cell & HubShape.ROLE_MASK).get().defaultBlockState();
+        if ((cell & HubShape.TOP) != 0) state = state.setValue(SlabBlock.TYPE, SlabType.TOP);
+        return state;
+    }
+
+    /** What a role is called in the controller's messages: the block it wants. */
+    static Component roleName(String role) {
+        Supplier<Block> block = ROLE_BLOCKS.get(role);
+        if (block == null) return Component.literal(role);
+        Component name = block.get().getName();
+        if (role.endsWith(UPPER)) return Component.translatable("message.ae2_gvt.hexagram_hub.slab_top", name);
+        if (role.endsWith(LOWER)) return Component.translatable("message.ae2_gvt.hexagram_hub.slab_bottom", name);
+        return name;
+    }
+
+    /** Blocks of other mods are looked up when first needed (registries are not filled at construction). */
+    static Supplier<Block> block(int role) {
+        if (role == HubShape.CTRL) return HubStructureBlocks.CONTROLLER_BLOCK::get;
+        ResourceLocation key = ResourceLocation.parse(HubShape.BLOCK_IDS[role]);
+        return () -> BuiltInRegistries.BLOCK.get(key);
+    }
+
+    /** Matches by block, looked up when tested (the lib's own matchers need the block at registration). */
+    @SafeVarargs
+    private static Matcher<BlockState> matcher(Supplier<? extends Block>... blocks) {
+        return s -> Arrays.stream(blocks).anyMatch(b -> s.is(b.get())) ? Match.of(BlockMatchers.id(s)) : null;
+    }
+
+    private static int[] frontOf(BlockState state) {
+        if (!state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) return null;
+        Direction d = state.getValue(BlockStateProperties.HORIZONTAL_FACING);
+        return new int[]{d.getStepX(), d.getStepY(), d.getStepZ()};
+    }
+
+    /** Joined crystals and plates, lit veins and edges; ports keep their own look. */
+    private static void formedLooks() {
+        FormedLooks.set(ID, CONTROLLER, s -> s.hasProperty(TwinStarHubBlock.FORMED) ? s.setValue(TwinStarHubBlock.FORMED, true) : s);
+        FormedLooks.set(ID, "ae2_gvt:gravity_block", s -> HubStructureBlocks.GRAVITY_JOINED.get().defaultBlockState());
+        FormedLooks.set(ID, "ae2_gvt:antigravity_block", s -> HubStructureBlocks.ANTIGRAVITY_JOINED.get().defaultBlockState());
+        FormedLooks.set(ID, "ae2_gvt:paradox_block", s -> HubStructureBlocks.PARADOX_JOINED.get().defaultBlockState());
+        FormedLooks.set(ID, "ae2_gvt:machine_frame", s -> HubStructureBlocks.FRAME_JOINED.get().defaultBlockState());
+        FormedLooks.set(ID, "ae2_gvt:structure_frame", s -> HubStructureBlocks.STRUCTURE_FRAME_JOINED.get().defaultBlockState());
+        lit("ae2_gvt:hub_helix_black", HubLookBlock.FORMED);
+        lit("ae2_gvt:hub_helix_white", HubLookBlock.FORMED);
+        lit("ae2_gvt:hub_ring", HubRingBlock.FORMED);
+        lit("ae2_gvt:hub_pillar", HubPillarBlock.FORMED);
+        lit(PORT_ROLE, HubPillarBlock.FORMED);   // a port has no such property and stays as it is
+    }
+
+    private static void lit(String role, BooleanProperty formed) {
+        FormedLooks.set(ID, role, s -> s.hasProperty(formed) ? s.setValue(formed, true) : s);
+    }
+
     private static void log(String what, Instance<BlockState> s) {
-        AE2GravityTech.LOGGER.info("hexagram hub {} at {}", what, Pos.str(s.anchor()));
+        AE2GravityTech.LOGGER.info("twin-star hub {} at {}", what, Pos.str(s.anchor()));
     }
 
     /** Why it broke: the first few wrong cells and what is in them now (the listener has no level, so find it). */
@@ -170,210 +232,5 @@ public final class HexagramHub {
                         level.isLoaded(pos) ? level.getBlockState(pos) : "unloaded");
             }
         }
-    }
-
-    /** Matches by block, looked up when tested (the lib's own matchers need the block at registration). */
-    @SafeVarargs
-    private static Matcher<BlockState> block(Supplier<? extends Block>... blocks) {
-        return s -> Arrays.stream(blocks).anyMatch(b -> s.is(b.get())) ? Match.of(BlockMatchers.id(s)) : null;
-    }
-
-    // ---- what goes where ----
-
-    /** What a cell of the box holds. CLEAR: not part of the structure, but empty space a build should clear. */
-    public enum Cell { CONTROLLER, FRAME, RIM, GRAVITY, ANTIGRAVITY, PARADOX, PILLAR, RING, HELIX_BLACK, HELIX_WHITE, SPHERE, CLEAR }
-
-    /** Box offsets: x in [-HALF_X, HALF_X], z in [-HALF_Z, HALF_Z], y in [0, CEILING_RIM] with 0 = the floor's rim. */
-    public static final int MIN_X = -HALF_X, MAX_X = HALF_X, MIN_Z = -HALF_Z, MAX_Z = HALF_Z, MAX_Y = CEILING_RIM;
-    /** Height of the controller above the floor's rim. */
-    public static final int CONTROLLER_Y = CONTROLLER_LEVEL;
-    /** The drawn sphere: its centre's height above the controller, and its radius. */
-    public static final int SPHERE_ABOVE_CONTROLLER = CENTRE - CONTROLLER_LEVEL, SPHERE_RADIUS = SPHERE;
-
-    /**
-     * The cell at (x, y, z) relative to the star's centre at rim height, in the unturned orientation;
-     * null = don't care and left alone (under the floor, above the ceiling).
-     */
-    public static Cell cell(int x, int y, int z) {
-        if (x == 0 && z == 0 && y == CONTROLLER_LEVEL) {
-            return Cell.CONTROLLER;
-        }
-        double r = Math.hypot(x, z);
-        Plan plan = plan(x, z);
-        int floor = floorY(r), ceiling = CEILING_RIM - floorY(r);
-        // the domed surfaces, plus a flat layer at the very bottom and top closing the space under the
-        // dome and over the ceiling: each in that column's own block
-        boolean surface = plan != null && (y == floor || y == ceiling || y == 0 || y == CEILING_RIM);
-        if (!surface && (y == 0 || y == CEILING_RIM) && inCylinder(x, z)) {
-            return Cell.PILLAR;   // the cylinders' caps
-        }
-        if (surface) {
-            return switch (plan) {
-                case FRAME -> Cell.FRAME;
-                case RIM -> Cell.RIM;
-                case GRAVITY -> Cell.GRAVITY;
-                case ANTIGRAVITY -> Cell.ANTIGRAVITY;
-                case PARADOX -> Cell.PARADOX;
-            };
-        }
-        if (plan != null && (y < floor || y > ceiling)) {
-            return null;
-        }
-        if (Math.sqrt(x * x + (y - CENTRE) * (y - CENTRE) + z * z) < SPHERE) {
-            return Cell.SPHERE;
-        }
-        if (isRing(x, y, z)) {
-            return Cell.RING;
-        }
-        if (isCylinderWall(x, z)) {
-            return Cell.PILLAR;
-        }
-        int strand = helixStrand(x, y, z, r, floor, ceiling);
-        return strand == 0 ? Cell.HELIX_BLACK : strand == 1 ? Cell.HELIX_WHITE : Cell.CLEAR;
-    }
-
-    /** Direction across the width of the ring a ring cell belongs to (the horizontal ring wins at crossings). */
-    public static net.minecraft.core.Direction.Axis ringAxis(int x, int y, int z) {
-        int dy = y - CENTRE;
-        if (Math.abs(dy) <= 1 && Math.abs(Math.hypot(x, z) - RING) < 0.6) {
-            return net.minecraft.core.Direction.Axis.Y;
-        }
-        return Math.abs(z) <= 1 && Math.abs(Math.hypot(x, dy) - RING) < 0.6 ? net.minecraft.core.Direction.Axis.Z
-                : net.minecraft.core.Direction.Axis.X;
-    }
-
-    // ---- floor plan ----
-    private enum Plan { FRAME, RIM, GRAVITY, ANTIGRAVITY, PARADOX }
-
-    private enum Region { CIRCLE, HEX, BLACK_TIP, WHITE_TIP, GAP }
-
-    /** What the floor (and ceiling) holds at this column; null outside the circle. */
-    static Plan plan(int x, int z) {
-        Region here = region(x, z);
-        if (here == null) {
-            return null;
-        }
-        if (here == Region.CIRCLE) {
-            return Plan.RIM;
-        }
-        if (x == 0 && z == 0) {
-            return Plan.FRAME;
-        }
-        if (here != Region.GAP) {   // star cells touching a non-star cell are the outline
-            for (int[] d : new int[][] {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}) {
-                if (!isStar(region(x + d[0], z + d[1]))) {
-                    return Plan.FRAME;
-                }
-            }
-            return switch (here) {
-                case BLACK_TIP -> Plan.GRAVITY;
-                case WHITE_TIP -> Plan.ANTIGRAVITY;
-                default -> Plan.FRAME;
-            };
-        }
-        // a gap: split by the ray through the star's concave corner (0°, 60°, ...)
-        double r = Math.hypot(x, z);
-        double angle = ((Math.toDegrees(Math.atan2(z, x)) % 360) + 360) % 360;
-        double corner = Math.round(angle / 60) * 60;
-        double off = ((angle - corner + 540) % 360) - 180;
-        if (Math.abs(r * Math.sin(Math.toRadians(off))) <= SEAM) {
-            return Plan.PARADOX;
-        }
-        long nearTip = Math.round(((corner + (off > 0 ? 30 : -30)) % 360 + 360) % 360);
-        return nearTip == 270 || nearTip == 30 || nearTip == 150 ? Plan.GRAVITY : Plan.ANTIGRAVITY;
-    }
-
-    private static boolean isStar(Region region) {
-        return region == Region.HEX || region == Region.BLACK_TIP || region == Region.WHITE_TIP;
-    }
-
-    private static Region region(int x, int z) {
-        double r = Math.hypot(x, z);
-        if (r > RING_OUT) {
-            return null;
-        }
-        if (r >= RING_IN) {
-            return Region.CIRCLE;
-        }
-        boolean black = inTriangle(x, z, -90), white = inTriangle(x, z, 90);
-        if (black && white) {
-            return Region.HEX;
-        }
-        return black ? Region.BLACK_TIP : white ? Region.WHITE_TIP : Region.GAP;
-    }
-
-    /** Inside the triangle with a tip at {@code tipAngle} (-90 = north) and the star's tip radius. */
-    private static boolean inTriangle(double px, double pz, double tipAngle) {
-        double[] vx = new double[3], vz = new double[3];
-        for (int i = 0; i < 3; i++) {
-            double a = Math.toRadians(tipAngle + 120 * i);
-            vx[i] = STAR * Math.cos(a);
-            vz[i] = STAR * Math.sin(a);
-        }
-        boolean neg = false, pos = false;
-        for (int i = 0; i < 3; i++) {
-            int j = (i + 1) % 3;
-            double s = (px - vx[j]) * (vz[i] - vz[j]) - (vx[i] - vx[j]) * (pz - vz[j]);
-            neg |= s < 0;
-            pos |= s > 0;
-        }
-        return !(neg && pos);
-    }
-
-    // ---- heights and solids ----
-    static int floorY(double r) {
-        return (int) Math.round(DOME * Math.max(0, 1 - (r / BASE) * (r / BASE)));
-    }
-
-    private static boolean isRing(int x, int y, int z) {
-        int dy = y - CENTRE;
-        return Math.abs(dy) <= 1 && Math.abs(Math.hypot(x, z) - RING) < 0.6
-                || Math.abs(z) <= 1 && Math.abs(Math.hypot(x, dy) - RING) < 0.6
-                || Math.abs(x) <= 1 && Math.abs(Math.hypot(z, dy) - RING) < 0.6;
-    }
-
-    /** Within a cylinder's outline, wall included. */
-    private static boolean inCylinder(int x, int z) {
-        for (double a : TIP_ANGLES) {
-            if (Math.hypot(x - tipX(a), z - tipZ(a)) < CYLINDER + 0.55) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /** The 5-across ring: .###. / #...# / #...# / #...# / .###. round the tip's block. */
-    private static boolean isCylinderWall(int x, int z) {
-        for (double a : TIP_ANGLES) {
-            if (Math.abs(Math.hypot(x - tipX(a), z - tipZ(a)) - CYLINDER) < 0.55) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /** A cylinder's centre: the block nearest the star tip, so every cylinder has the same symmetric outline. */
-    private static long tipX(double angle) {
-        return Math.round(STAR * Math.cos(Math.toRadians(angle)));
-    }
-
-    private static long tipZ(double angle) {
-        return Math.round(STAR * Math.sin(Math.toRadians(angle)));
-    }
-
-    /** 0 = black strand, 1 = white strand, -1 = none. Each strand climbs from the floor to the ceiling. */
-    private static int helixStrand(int x, int y, int z, double r, int floor, int ceiling) {
-        if (Math.abs(r - HELIX) > HELIX_HALF || y <= floor || y >= ceiling) {
-            return -1;
-        }
-        double a = Math.atan2(z, x);
-        double base = 2 * Math.PI * HELIX_TURNS * (y - floor) / (ceiling - floor);
-        for (int strand = 0; strand < 2; strand++) {
-            double da = ((a - base - strand * Math.PI + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
-            if (Math.abs(da * HELIX) <= HELIX_HALF + 0.6) {
-                return strand;
-            }
-        }
-        return -1;
     }
 }

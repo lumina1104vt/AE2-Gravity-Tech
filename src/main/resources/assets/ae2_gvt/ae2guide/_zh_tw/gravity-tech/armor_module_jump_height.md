@@ -1,20 +1,26 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: 跳躍高度模組
+  title: "跳躍高度模組"
 item_ids:
   - ae2_gvt:armor_module_jump_height
 ---
 
 # 跳躍高度模組
 
-跳躍高度模組。安裝在靴子上的模組卡。需要的系統元件：推進核心。
+<Row>
+<ItemImage id="ae2_gvt:armor_module_jump_height" scale="4" />
+<RecipeFor id="ae2_gvt:armor_module_jump_height" />
+</Row>
 
-## 製作
+## 效果
 
-- 機器：引力加工工廠
-- 材料：
-  - 空白模組 ×1
-  - 推進核心 ×1
-  - `minecraft:slime_block` ×2
-  - `minecraft:rabbit_hide` ×16
+跳得更高（跳躍力 +0.25，原本是 0.42）。
+
+## 使用方法
+
+裝在**反重力靴子**上：穿著裝甲按 **K**，選那一件，把模組卡放進格子。在同一個畫面可以隨時關閉或拆下。
+
+製作時需要[推進核心](propulsion_core.md)。
+
+小提示：數值可以在 `config/ae2_gvt-common.toml` 調整。

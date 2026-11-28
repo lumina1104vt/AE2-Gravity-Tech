@@ -1,20 +1,26 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: Luck Module
+  title: "Luck Module"
 item_ids:
   - ae2_gvt:armor_module_luck
 ---
 
 # Luck Module
 
-Luck Module. A module card installed on a helmet. Required system component: Sensor Core.
+<Row>
+<ItemImage id="ae2_gvt:armor_module_luck" scale="4" />
+<RecipeFor id="ae2_gvt:armor_module_luck" />
+</Row>
 
-## Crafting
+## Effect
 
-- Machine: Gravity Processing Factory
-- Materials:
-  - Blank Module ×1
-  - Sensor Core ×1
-  - `minecraft:lapis_block` ×32
-  - `minecraft:rabbit_foot` ×32
+Luck +2.
+
+## How to use
+
+Install it in the **Anti-gravity Helmet**: wear the armor, press **K**, choose the piece and put the card in the slot. It can be switched off or taken out there at any time.
+
+Needs the [Sensor Core](sensor_core.md) to craft.
+
+Tip: The number can be changed in `config/ae2_gvt-common.toml`.

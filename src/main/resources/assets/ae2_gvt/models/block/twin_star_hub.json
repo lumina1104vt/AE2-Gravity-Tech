@@ -1,12 +1,3 @@
 {
-  "parent": "minecraft:block/cube",
-  "textures": {
-    "particle": "ae2_gvt:block/twin_star_hub_off",
-    "up": "ae2_gvt:block/twin_star_hub_off",
-    "north": "ae2_gvt:block/machine_frame",
-    "south": "ae2_gvt:block/machine_frame",
-    "east": "ae2_gvt:block/machine_frame",
-    "west": "ae2_gvt:block/machine_frame",
-    "down": "ae2_gvt:block/machine_frame"
-  }
+  "parent": "ae2_gvt:block/controller_orbit"
 }

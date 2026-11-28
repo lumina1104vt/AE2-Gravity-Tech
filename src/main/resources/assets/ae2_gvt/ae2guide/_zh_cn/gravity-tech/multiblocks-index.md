@@ -9,7 +9,10 @@ navigation:
 
 重力科技包含三座大型多方块结构：
 
-* [双星枢纽](twin-star-hub.md)
-* [聚变发电机](fusion-generator.md)
-* [太空电梯](space-elevator.md)
+* [双星枢纽](multiblocks/twin-star-hub.md)
+* [聚变发电机](multiblocks/fusion-generator.md)
+* [太空电梯](multiblocks/space-elevator.md)
 * [多方块建造](multiblocks/building.md)
+* [中枢单元](multiblocks/units.md)
+* [结构零件](multiblocks/parts.md)
+* [中枢建材](multiblocks/hub-blocks.md)

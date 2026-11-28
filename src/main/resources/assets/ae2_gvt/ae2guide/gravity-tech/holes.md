@@ -3,6 +3,10 @@ navigation:
   parent: ae2_gvt:index.md
   title: Black Holes and White Holes
   position: 0
+item_ids:
+  - ae2_gvt:black_hole
+  - ae2_gvt:white_hole
+  - ae2_gvt:gravity_wave_detector
 ---
 
 # Black Holes and White Holes

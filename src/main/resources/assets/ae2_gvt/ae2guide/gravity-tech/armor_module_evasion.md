@@ -1,20 +1,26 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: Evasion Module
+  title: "Evasion Module"
 item_ids:
   - ae2_gvt:armor_module_evasion
 ---
 
 # Evasion Module
 
-Evasion Module. A module card installed on leggings. Required system component: Impact Core.
+<Row>
+<ItemImage id="ae2_gvt:armor_module_evasion" scale="4" />
+<RecipeFor id="ae2_gvt:armor_module_evasion" />
+</Row>
 
-## Crafting
+## Effect
 
-- Machine: Gravity Processing Factory
-- Materials:
-  - Blank Module ×1
-  - Impact Core ×1
-  - `minecraft:cobweb` ×32
-  - `minecraft:breeze_rod` ×8
+A hit has a 15% chance to do nothing.
+
+## How to use
+
+Install it in the **Anti-gravity Leggings**: wear the armor, press **K**, choose the piece and put the card in the slot. It can be switched off or taken out there at any time.
+
+Needs the [Impact Core](impact_core.md) to craft.
+
+Tip: The number can be changed in `config/ae2_gvt-common.toml`.

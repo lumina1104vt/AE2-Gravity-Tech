@@ -13,3 +13,6 @@ navigation:
 * [核融合發生器](multiblocks/fusion-generator.md)
 * [太空電梯](multiblocks/space-elevator.md)
 * [多方塊建造](multiblocks/building.md)
+* [中樞單元](multiblocks/units.md)
+* [結構零件](multiblocks/parts.md)
+* [中樞建材](multiblocks/hub-blocks.md)

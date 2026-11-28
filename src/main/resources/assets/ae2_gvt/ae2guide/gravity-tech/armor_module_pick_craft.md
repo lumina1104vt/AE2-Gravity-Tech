@@ -1,20 +1,26 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: Pick Craft Module
+  title: "Pick Craft Module"
 item_ids:
   - ae2_gvt:armor_module_pick_craft
 ---
 
 # Pick Craft Module
 
-Pick Craft Module. A module card installed on a helmet. Required system component: Sensor Core.
+<Row>
+<ItemImage id="ae2_gvt:armor_module_pick_craft" scale="4" />
+<RecipeFor id="ae2_gvt:armor_module_pick_craft" />
+</Row>
 
-## Crafting
+## Effect
 
-- Machine: Gravity Processing Factory
-- Materials:
-  - Blank Module ×1
-  - Sensor Core ×1
-  - `ae2:engineering_processor` ×16
-  - `ae2:blank_pattern` ×1
+Middle click a block to take a stack of it from the ME network. If there is none but a pattern for it, AE2's order screen opens.
+
+## How to use
+
+Install it in the **Anti-gravity Helmet**: wear the armor, press **K**, choose the piece and put the card in the slot. It can be switched off or taken out there at any time.
+
+Needs the [Sensor Core](sensor_core.md) to craft.
+
+Tip: The armor must be linked to an ME network (see [Antigravity Armor](armor.md)).

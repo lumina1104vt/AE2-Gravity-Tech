@@ -1,20 +1,26 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: Phase Module
+  title: "Phase Module"
 item_ids:
   - ae2_gvt:armor_module_phase
 ---
 
 # Phase Module
 
-Phase Module. A module card installed on leggings. Required system component: Propulsion Core.
+<Row>
+<ItemImage id="ae2_gvt:armor_module_phase" scale="4" />
+<RecipeFor id="ae2_gvt:armor_module_phase" />
+</Row>
 
-## Crafting
+## Effect
 
-- Machine: Gravity Processing Factory
-- Materials:
-  - Blank Module ×1
-  - Propulsion Core ×1
-  - `minecraft:ender_eye` ×16
-  - Paradox Quantum Entangled Singularity ×4
+While flying you pass through blocks.
+
+## How to use
+
+Install it in the **Anti-gravity Leggings**: wear the armor, press **K**, choose the piece and put the card in the slot. It can be switched off or taken out there at any time.
+
+Needs the [Propulsion Core](propulsion_core.md) to craft.
+
+Tip: Switch it off in the module screen when you don't want to go through walls.

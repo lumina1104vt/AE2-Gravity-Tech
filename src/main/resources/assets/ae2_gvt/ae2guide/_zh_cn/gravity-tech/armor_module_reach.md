@@ -1,20 +1,26 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/module-cards.md
-  title: 延伸互动距离模块
+  title: "延伸互动距离模块"
 item_ids:
   - ae2_gvt:armor_module_reach
 ---
 
 # 延伸互动距离模块
 
-延伸互动距离模块。安装在头盔上的模组卡。需要的系统元件：感测核心。
+<Row>
+<ItemImage id="ae2_gvt:armor_module_reach" scale="4" />
+<RecipeFor id="ae2_gvt:armor_module_reach" />
+</Row>
 
-## 制作
+## 效果
 
-- 机器：引力加工工厂
-- 材料：
-  - 空白模块 ×1
-  - 感测核心 ×1
-  - `minecraft:spyglass` ×1
-  - 奇异白洞计算单元 ×4
+方块与生物的触及距离 +3 格。
+
+## 使用方法
+
+装在**反重力头盔**上：穿着装甲按 **K**，选那一件，把模块卡放进格子。在同一个界面可以随时关闭或拆下。
+
+制作时需要[感测核心](sensor_core.md)。
+
+小提示：数值可以在 `config/ae2_gvt-common.toml` 调整。

@@ -17,3 +17,4 @@ The machines, armor, components and module cards that Gravity Tech adds.
 * [Black Hole Storage Disk and White Hole Energy Cell](gravity-tech/storage-and-energy.md)
 * [Materials and Items](gravity-tech/materials-index.md)
 * [Quantum Controller](gravity-tech/quantum-controller.md)
+* [Annihilation TNT](gravity-tech/annihilation.md)

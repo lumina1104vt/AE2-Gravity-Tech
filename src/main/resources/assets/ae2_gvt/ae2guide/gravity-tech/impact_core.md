@@ -1,19 +1,25 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/components.md
-  title: Impact Core
+  title: "Impact Core"
 item_ids:
   - ae2_gvt:impact_core
 ---
 
 # Impact Core
 
-The core component of the combat system. It goes into the crafting of combat module cards.
+<Row>
+<ItemImage id="ae2_gvt:impact_core" scale="4" />
+<RecipeFor id="ae2_gvt:impact_core" />
+</Row>
 
-## Crafting
+## How to use
 
-- Machine: Gravity Processing Factory
-- Materials:
-  - Anti-singularity ×8
-  - Alloy Plate ×32
-  - `minecraft:nether_star` ×4
+The system part of the combat module cards:
+
+* [Evasion Module](armor_module_evasion.md)
+* [Strength Module](armor_module_strength.md)
+* [Attack Speed Module](armor_module_attack_speed.md)
+* [Damage Reduction Module](armor_module_damage_reduction.md)
+* [Thorns Module](armor_module_thorns.md)
+* [Shield Module](armor_module_shield.md)

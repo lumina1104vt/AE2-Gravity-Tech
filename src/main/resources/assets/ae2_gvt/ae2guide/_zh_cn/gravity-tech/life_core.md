@@ -1,19 +1,28 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/components.md
-  title: 生命核心
+  title: "生命核心"
 item_ids:
   - ae2_gvt:life_core
 ---
 
 # 生命核心
 
-生存系统的核心元件。制作生存类模组卡时需要放入。
+<Row>
+<ItemImage id="ae2_gvt:life_core" scale="4" />
+<RecipeFor id="ae2_gvt:life_core" />
+</Row>
 
-## 制作
+## 使用方法
 
-- 机器：引力加工工厂
-- 材料：
-  - 悖论量子纠缠态奇点 ×4
-  - 悖论水晶种子 ×4
-  - 合金板 ×64
+生存类模块卡的系统元件，以下模块卡需要它：
+
+* [抗火模块](armor_module_fire_resistance.md)
+* [熔岩免疫模块](armor_module_lava_immunity.md)
+* [水下呼吸模块](armor_module_water_breathing.md)
+* [生命上限模块](armor_module_max_health.md)
+* [生命恢复模块](armor_module_regeneration.md)
+* [濒死免死模块](armor_module_undying.md)
+* [自动进食模块](armor_module_auto_feed.md)
+* [饱和模块](armor_module_saturation.md)
+* [清除负面模块](armor_module_cleanse.md)

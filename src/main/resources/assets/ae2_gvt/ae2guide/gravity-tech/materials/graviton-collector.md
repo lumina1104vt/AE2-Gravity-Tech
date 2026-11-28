@@ -2,6 +2,8 @@
 navigation:
   parent: ae2_gvt:gravity-tech/materials-index.md
   title: Graviton Collector
+item_ids:
+  - ae2_gvt:graviton_collector
 ---
 
 # Graviton Collector

@@ -1,19 +1,22 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/components.md
-  title: 網路核心
+  title: "網路核心"
 item_ids:
   - ae2_gvt:network_core
 ---
 
 # 網路核心
 
-物流系統的核心元件。製作物流類模組卡時需要放入。
+<Row>
+<ItemImage id="ae2_gvt:network_core" scale="4" />
+<RecipeFor id="ae2_gvt:network_core" />
+</Row>
 
-## 製作
+## 使用方法
 
-- 機器：引力加工工廠
-- 材料：
-  - 奇異白洞計算單元 ×4
-  - `ae2:engineering_processor` ×16
-  - `minecraft:ender_chest` ×1
+ME 網路類模組卡的系統元件，以下模組卡需要它：
+
+* [自動補貨模組](armor_module_auto_stock.md)
+* [隨身工作台模組](armor_module_portable_workbench.md)
+* [充電模組](armor_module_recharge.md)

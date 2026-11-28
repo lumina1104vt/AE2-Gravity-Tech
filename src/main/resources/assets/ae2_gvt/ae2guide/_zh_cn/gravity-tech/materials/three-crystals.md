@@ -3,6 +3,33 @@ navigation:
   parent: ae2_gvt:gravity-tech/materials-index.md
   title: 三种水晶
   position: 0
+item_ids:
+  - ae2_gvt:gravity_crystal
+  - ae2_gvt:gravity_dust
+  - ae2_gvt:gravity_block
+  - ae2_gvt:gravity_cluster
+  - ae2_gvt:antigravity_crystal
+  - ae2_gvt:antigravity_dust
+  - ae2_gvt:antigravity_block
+  - ae2_gvt:antigravity_cluster
+  - ae2_gvt:paradox_crystal
+  - ae2_gvt:paradox_dust
+  - ae2_gvt:paradox_block
+  - ae2_gvt:paradox_cluster
+  - ae2_gvt:small_gravity_bud
+  - ae2_gvt:medium_gravity_bud
+  - ae2_gvt:large_gravity_bud
+  - ae2_gvt:small_antigravity_bud
+  - ae2_gvt:medium_antigravity_bud
+  - ae2_gvt:large_antigravity_bud
+  - ae2_gvt:small_paradox_bud
+  - ae2_gvt:medium_paradox_bud
+  - ae2_gvt:large_paradox_bud
+  - ae2_gvt:paradox_crystal_seed
+  - ae2_gvt:almost_flawless_budding_paradox
+  - ae2_gvt:flawed_budding_paradox
+  - ae2_gvt:chipped_budding_paradox
+  - ae2_gvt:damaged_budding_paradox
 ---
 
 # 三种水晶

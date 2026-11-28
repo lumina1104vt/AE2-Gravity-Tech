@@ -5,6 +5,18 @@ navigation:
 item_ids:
   - ae2_gvt:graviton
   - ae2_gvt:antigraviton
+  - ae2_gvt:graviton_cell_housing
+  - ae2_gvt:infinite_graviton_storage_cell
+  - ae2_gvt:graviton_storage_cell_1k
+  - ae2_gvt:graviton_storage_cell_4k
+  - ae2_gvt:graviton_storage_cell_16k
+  - ae2_gvt:graviton_storage_cell_64k
+  - ae2_gvt:graviton_storage_cell_256k
+  - ae2_gvt:graviton_cell_component_1k
+  - ae2_gvt:graviton_cell_component_4k
+  - ae2_gvt:graviton_cell_component_16k
+  - ae2_gvt:graviton_cell_component_64k
+  - ae2_gvt:graviton_cell_component_256k
 ---
 
 # Gravitons and Anti-gravitons
@@ -30,9 +42,11 @@ Both are produced when a black hole / white hole is destroyed by an explosion, a
 - Black hole, gravity crystal cluster → gravitons
 - White hole, anti-gravity crystal cluster → anti-gravitons
 
+Tip: every growth stage of a crystal releases 16, and blowing up a hole releases 128.
+
 ## Storage
 
-They are separate resource types in the network and need a dedicated graviton storage cell. Each byte stores ? gravitons (or anti-gravitons).
+They are separate resource types in the network and need a dedicated graviton storage cell. Each byte stores 8 gravitons (or anti-gravitons).
 
 Graviton storage cells:
 

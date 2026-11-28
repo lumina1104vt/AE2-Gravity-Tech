@@ -3,6 +3,8 @@ navigation:
   parent: ae2_gvt:index.md
   title: 量子控制器
   position: 4
+item_ids:
+  - ae2_gvt:quantum_controller
 ---
 
 # 量子控制器

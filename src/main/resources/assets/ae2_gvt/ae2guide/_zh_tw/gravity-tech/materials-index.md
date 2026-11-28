@@ -17,3 +17,8 @@ navigation:
 
 * [引力子與反引力子](materials/gravitons.md)
 * [引力子收集器](materials/graviton-collector.md)
+* [合金](materials/alloys.md)
+* [電路板與處理器](materials/circuits.md)
+* [渾沌物質與奇點](materials/chaos-matter.md)
+* [黑洞核心與白洞核心](materials/hole-cores.md)
+* [FE 儲存元件](materials/fe-cells.md)

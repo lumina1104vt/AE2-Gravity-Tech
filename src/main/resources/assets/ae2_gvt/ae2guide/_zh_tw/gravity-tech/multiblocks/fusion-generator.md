@@ -2,6 +2,8 @@
 navigation:
   parent: ae2_gvt:gravity-tech/multiblocks-index.md
   title: 核融合發生器
+item_ids:
+  - ae2_gvt:fusion_controller
 ---
 
 # 核融合發生器

@@ -2,6 +2,8 @@
 navigation:
   parent: ae2_gvt:gravity-tech/materials-index.md
   title: 引力子收集器
+item_ids:
+  - ae2_gvt:graviton_collector
 ---
 
 # 引力子收集器

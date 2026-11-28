@@ -1,19 +1,25 @@
 ---
 navigation:
   parent: ae2_gvt:gravity-tech/components.md
-  title: 感测核心
+  title: "感测核心"
 item_ids:
   - ae2_gvt:sensor_core
 ---
 
 # 感测核心
 
-感知系统的核心元件。制作感知类模组卡时需要放入。
+<Row>
+<ItemImage id="ae2_gvt:sensor_core" scale="4" />
+<RecipeFor id="ae2_gvt:sensor_core" />
+</Row>
 
-## 制作
+## 使用方法
 
-- 机器：引力加工工厂
-- 材料：
-  - 虚数白洞计算单元 ×8
-  - 奇异白洞计算单元 ×4
-  - 反引力电路板 ×16
+感知类模块卡的系统元件，以下模块卡需要它：
+
+* [磁力吸取模块](armor_module_magnet.md)
+* [延伸互动距离模块](armor_module_reach.md)
+* [中键下单模块](armor_module_pick_craft.md)
+* [幸运模块](armor_module_luck.md)
+* [夜视模块](armor_module_night_vision.md)
+* [挖掘不减速模块](armor_module_dig_affinity.md)
