@@ -264,6 +264,7 @@
   "block.ae2_gvt.black_hole": "Black Hole",
   "block.ae2_gvt.white_hole": "White Hole",
   "message.ae2_gvt.paradox_seed.needs_holes": "Use on a Block of Fluix between a black hole and a white hole",
+  "gui.ae2_gvt.factory.jei.kept": "Not used up",
   "gui.ae2_gvt.factory.jei.info": "%s s · %sFE",
   "message.ae2_gvt.fusion.built": "Fusion generator built; it forms within a second",
   "message.ae2_gvt.fusion.no_controller": "No controller within %s blocks",

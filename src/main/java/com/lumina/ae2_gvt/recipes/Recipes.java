@@ -36,6 +36,11 @@ public final class Recipes {
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<ExplosionRecipe>> EXPLOSION_SERIALIZER =
             SERIALIZERS.register("explosion", ExplosionRecipe.Serializer::new);
 
+    public static final DeferredHolder<RecipeType<?>, RecipeType<FactoryBorrowRecipe>> FACTORY_BORROW =
+            TYPES.register("factory_borrow", () -> RecipeType.simple(new ResourceLocation(AE2GravityTech.MODID, "factory_borrow")));
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<FactoryBorrowRecipe>> FACTORY_BORROW_SERIALIZER =
+            SERIALIZERS.register("factory_borrow", FactoryBorrowRecipe.Serializer::new);
+
     /** The input of a recipe that no crafting grid or machine feeds: what happens in the world. */
     public static final Container NO_INPUT = new SimpleContainer(0);
 

@@ -75,17 +75,17 @@ public class GravityFactoryScreen extends AEBaseScreen<GravityFactoryMenu> {
     @Override
     public void drawBG(GuiGraphics g, int offsetX, int offsetY, int mouseX, int mouseY, float partialTicks) {
         super.drawBG(g, offsetX, offsetY, mouseX, mouseY, partialTicks);
-        // arrows: lit from the outside in
-        float progress = menu.progress / 1000f;
-        if (progress > 0) {
-            float edge = ARROW_MAX_R - (ARROW_MAX_R - ARROW_MIN_R) * progress;
-            for (int i = 0; i < ARROWS.length; i += 2) {
-                if (Math.hypot(ARROWS[i], ARROWS[i + 1]) >= edge - 1e-3) {
-                    int x = offsetX + WELL_X + ARROWS[i], y = offsetY + WELL_Y + ARROWS[i + 1];
-                    g.fill(x, y, x + 1, y + 1, ARROW_LIT);
-                }
-            }
-        }
+        drawArrows(g, offsetX + WELL_X, offsetY + WELL_Y, menu.progress / 1000f);
+    }
+
+    /** The eight arrows round the well at x, y, lit from the outside in as far as progress (0 … 1). */
+    public static void drawArrows(GuiGraphics g, int x, int y, float progress) {
+        if (progress <= 0)
+            return;
+        float edge = ARROW_MAX_R - (ARROW_MAX_R - ARROW_MIN_R) * progress;
+        for (int i = 0; i < ARROWS.length; i += 2)
+            if (Math.hypot(ARROWS[i], ARROWS[i + 1]) >= edge - 1e-3)
+                g.fill(x + ARROWS[i], y + ARROWS[i + 1], x + ARROWS[i] + 1, y + ARROWS[i + 1] + 1, ARROW_LIT);
     }
 
     @Override

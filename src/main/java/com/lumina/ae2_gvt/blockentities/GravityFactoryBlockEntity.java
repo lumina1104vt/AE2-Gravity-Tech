@@ -11,6 +11,7 @@ import appeng.api.networking.security.IActionSource;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKeyType;
 import appeng.api.stacks.AEKeyTypes;
+import appeng.api.stacks.GenericStack;
 import appeng.api.upgrades.IUpgradeInventory;
 import appeng.api.upgrades.IUpgradeableObject;
 import appeng.api.upgrades.UpgradeInventories;
@@ -25,6 +26,7 @@ import appeng.blockentity.grid.AENetworkBlockEntity;
 import com.lumina.ae2_gvt.graviton.GravitonKey;
 import com.lumina.ae2_gvt.blocks.Blocks;
 import com.lumina.ae2_gvt.items.Items;
+import com.lumina.ae2_gvt.recipes.BorrowedRecipes;
 import com.lumina.ae2_gvt.recipes.GravityProcessingRecipe;
 import com.lumina.ae2_gvt.recipes.Recipes;
 import net.minecraft.core.BlockPos;
@@ -37,6 +39,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.energy.IEnergyStorage;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
@@ -74,7 +77,8 @@ public class GravityFactoryBlockEntity extends AENetworkBlockEntity implements I
     });
     private final Buffer energy = new Buffer();
     private final IItemHandler pipes = new PipeHandler(new GenericStackItemStorage(inputs), new GenericStackItemStorage(outputs));
-    private final IFluidHandler fluidPipes = new GenericStackFluidStorage(inputs);
+    private final IFluidHandler fluidPipes = new FluidPipes(new GenericStackFluidStorage(inputs),
+            new GenericStackFluidStorage(outputs));
     private final IUpgradeInventory upgrades = UpgradeInventories.forMachine(Blocks.GRAVITY_FACTORY.get(), MAX_SPEED_CARDS, this::setChanged);
 
     /** ticks run of the current recipe */
@@ -213,7 +217,7 @@ public class GravityFactoryBlockEntity extends AENetworkBlockEntity implements I
             if (taken[i] > 0)
                 inputs.extract(i, inputs.getKey(i), taken[i], Actionable.MODULATE);
         gravitons(r, runs, Actionable.MODULATE);
-        for (ItemStack out : r.results())
+        for (GenericStack out : r.outputs())
             add(outputs, out, runs);
         // the same recipe again while the inputs still hold it (the rest of this tick's steps go on)
         if (!r.matches(input(), level))
@@ -265,7 +269,10 @@ public class GravityFactoryBlockEntity extends AENetworkBlockEntity implements I
             return null;
         if (recipe != null && recipe.value().matches(input, level))
             return recipe;
-        for (RecipeHolder<GravityProcessingRecipe> holder : RecipeHolder.allOf(level.getRecipeManager().getAllRecipesFor(Recipes.GRAVITY_PROCESSING.get())))
+        for (RecipeHolder<GravityProcessingRecipe> holder : BorrowedRecipes.own(level))
+            if (holder.value().matches(input, level))
+                return holder;
+        for (RecipeHolder<GravityProcessingRecipe> holder : BorrowedRecipes.of(level))
             if (holder.value().matches(input, level))
                 return holder;
         return null;
@@ -282,16 +289,16 @@ public class GravityFactoryBlockEntity extends AENetworkBlockEntity implements I
             test.setCapacity(type, outputs.getCapacity(type));
         for (int i = 0; i < outputs.size(); i++)
             test.setStack(i, outputs.getStack(i));
-        for (ItemStack out : r.results())
+        for (GenericStack out : r.outputs())
             if (!add(test, out, runs))
                 return false;
         return true;
     }
 
     /** That many runs' worth of a result into the slots; false if not all went in. */
-    private boolean add(ConfigInventory slots, ItemStack result, long runs) {
-        long amount = result.getCount() * runs;
-        return slots.insert(AEItemKey.of(result), amount, Actionable.MODULATE, IActionSource.ofMachine(this)) == amount;
+    private boolean add(ConfigInventory slots, GenericStack result, long runs) {
+        long amount = result.amount() * runs;
+        return slots.insert(result.what(), amount, Actionable.MODULATE, IActionSource.ofMachine(this)) == amount;
     }
 
     @Override
@@ -416,6 +423,44 @@ public class GravityFactoryBlockEntity extends AENetworkBlockEntity implements I
         @Override
         public boolean canReceive() {
             return true;
+        }
+    }
+
+    /** What fluid pipes see: filling goes into the inputs, draining comes from the outputs. */
+    private record FluidPipes(IFluidHandler in, IFluidHandler out) implements IFluidHandler {
+        @Override
+        public int getTanks() {
+            return in.getTanks() + out.getTanks();
+        }
+
+        @Override
+        public FluidStack getFluidInTank(int tank) {
+            return tank < in.getTanks() ? in.getFluidInTank(tank) : out.getFluidInTank(tank - in.getTanks());
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            return tank < in.getTanks() ? in.getTankCapacity(tank) : out.getTankCapacity(tank - in.getTanks());
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, FluidStack stack) {
+            return tank < in.getTanks() && in.isFluidValid(tank, stack);
+        }
+
+        @Override
+        public int fill(FluidStack resource, FluidAction action) {
+            return in.fill(resource, action);
+        }
+
+        @Override
+        public FluidStack drain(FluidStack resource, FluidAction action) {
+            return out.drain(resource, action);
+        }
+
+        @Override
+        public FluidStack drain(int maxDrain, FluidAction action) {
+            return out.drain(maxDrain, action);
         }
     }
 

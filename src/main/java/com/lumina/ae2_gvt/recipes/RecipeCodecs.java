@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
 /**
@@ -50,6 +51,23 @@ public final class RecipeCodecs {
             ForgeRegistries.ITEMS.getCodec().fieldOf("id").forGetter(ItemStack::getItem),
             ExtraCodecs.POSITIVE_INT.fieldOf("count").forGetter(ItemStack::getCount)
     ).apply(i, ItemStack::new));
+
+    public static final Codec<SizedFluid> SIZED_FLUID = Codec.PASSTHROUGH.flatXmap(
+            d -> {
+                try {
+                    JsonElement json = d.convert(JsonOps.INSTANCE).getValue();
+                    return DataResult.success(SizedFluid.fromJson(json.getAsJsonObject()));
+                } catch (RuntimeException e) {
+                    return DataResult.error(e::getMessage);
+                }
+            },
+            s -> DataResult.success(new Dynamic<>(JsonOps.INSTANCE, s.toJson())));
+
+    /** A fluid result: {@code {"id": "minecraft:water", "amount": 1000}}. */
+    public static final Codec<FluidStack> FLUID_RESULT = RecordCodecBuilder.create(i -> i.group(
+            ForgeRegistries.FLUIDS.getCodec().fieldOf("id").forGetter(FluidStack::getFluid),
+            ExtraCodecs.POSITIVE_INT.fieldOf("amount").forGetter(FluidStack::getAmount)
+    ).apply(i, FluidStack::new));
 
     /** AE2 key with an amount, as AE2 writes it: {@code {"#c": "ae2:f", "id": "minecraft:water", "#": 1000}}. */
     public static final Codec<GenericStack> GENERIC_STACK = CompoundTag.CODEC.flatXmap(

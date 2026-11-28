@@ -1,0 +1,21 @@
+{
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "expatternprovider"
+    }
+  ],
+  "type": "ae2_gvt:factory_borrow",
+  "from": "expatternprovider:circuit_cutter",
+  "items": [
+    "item_input"
+  ],
+  "fluids": [
+    "fluid_input"
+  ],
+  "outputs": [
+    "output"
+  ],
+  "energy": 2000,
+  "time": 100
+}

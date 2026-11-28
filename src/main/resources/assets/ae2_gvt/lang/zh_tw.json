@@ -227,6 +227,7 @@
   "block.ae2_gvt.black_hole": "黑洞",
   "block.ae2_gvt.white_hole": "白洞",
   "message.ae2_gvt.paradox_seed.needs_holes": "需用在兩側為黑洞與白洞的福魯伊克斯水晶塊上",
+  "gui.ae2_gvt.factory.jei.kept": "不消耗",
   "gui.ae2_gvt.factory.jei.info": "%s 秒・%sFE",
   "itemGroup.ae2_gvt": "引力科技",
   "item.ae2_gvt.anti_singularity": "反奇點",
